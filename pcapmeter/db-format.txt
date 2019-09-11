@@ -1,0 +1,8 @@
+IPv4 packets:
+
+host = ip
+dialogue = ipCommStarter-ipCommReceiver
+protocol = "tcp"|"udp"
+flow = ipCommStarter-portCommStarter-ipCommReceiver-portCommReceiver-inFlowCounter
+
+hosts_db = [{host: "ip1", host_features: [...], dialogues: [{dialogue: "ip1-ip2", dialogue_features: [...], flows: [{flow: "ip1-port1-ip2-port2-inFlowCounter", flow_features: [***]}, {flow: "ipX-portA-ipY-portB-inFlowCounter", ***}, ***]}, {dialogue: "ip1-ip3", ***}, ***]}, {host: "ip2", ***}, ***]
