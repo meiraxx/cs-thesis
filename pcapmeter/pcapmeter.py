@@ -647,22 +647,50 @@ def calculate_hosts_features(dialogues):
     host_ids = list()
     hosts = OrderedDict()
     for dialogue_id in dialogues:
+        curr_dialogue = dialogues[dialogue_id]
         src_ip = dialogue_id[0]
         dst_ip = dialogue_id[1]
+        
+        # start and end times
+        #host_active_start_time = curr_dialogue["dialogue_start_time"]
+        #host_active_end_time = curr_dialogue["dialogue_end_time"]
+        dialogue_start_time = curr_dialogue["dialogue_start_time"]
+        dialogue_end_time = curr_dialogue["dialogue_end_time"]
+        dialogue_duration = curr_dialogue["dialogue_duration"]
 
         try:
-            hosts[src_ip][dialogue_id] = {"cenas1": "cenas2"}
+            hosts[src_ip][dialogue_id] = \
+            {
+                "dialogue_start_time": dialogue_start_time,
+                "dialogue_end_time": dialogue_end_time,
+                "dialogue_duration": dialogue_duration,
+            }
         except KeyError:
             hosts[src_ip] = OrderedDict()
             host_ids.append(src_ip)
-            hosts[src_ip][dialogue_id] = {"cenas1": "cenas2"}
+            hosts[src_ip][dialogue_id] = \
+            {
+                "dialogue_start_time": dialogue_start_time,
+                "dialogue_end_time": dialogue_end_time,
+                "dialogue_duration": dialogue_duration,
+            }
 
         try:
-            hosts[dst_ip][dialogue_id] = {"cenas1": "cenas2"}
+            hosts[src_ip][dialogue_id] = \
+            {
+                "dialogue_start_time": dialogue_start_time,
+                "dialogue_end_time": dialogue_end_time,
+                "dialogue_duration": dialogue_duration,
+            }
         except KeyError:
             hosts[dst_ip] = OrderedDict()
             host_ids.append(dst_ip)
-            hosts[dst_ip][dialogue_id] = {"cenas1": "cenas2"}
+            hosts[src_ip][dialogue_id] = \
+            {
+                "dialogue_start_time": dialogue_start_time,
+                "dialogue_end_time": dialogue_end_time,
+                "dialogue_duration": dialogue_duration,
+            }
 
     for i, host_id in enumerate(host_ids):
         n_dialogues = len(hosts[host_id])
