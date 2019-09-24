@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-This script is meant to create a json file with a hierarchy "host" (ip1), "dialogues" (ip1-ip2) and "flows" (ip1-port1-ip2-port2),
+This script is meant to create a json file with a hierarchy "hosts" (ipX), "dialogues" (ipX-ipY) and "flows" (ipX-portA-ipY-portB),
 while at the same time recording flow features, dialogue features and host features
 
 AUTHORSHIP:

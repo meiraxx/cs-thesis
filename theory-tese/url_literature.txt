@@ -1,0 +1,54 @@
+-------------------------------------------------------------------------------------------------------------------------------------
+#URL: https://www.darkreading.com/cloud/diy-botnet-detection-techniques-and-challenges/a/d-id/1333949
+#Author: Johnathan Azaria
+
+#Motivation:
+Botnets have been around for over two decades, and with the rise of the Internet of Things (IoT), they have spread further to devices no one imagined they would: routers, mobile devices, and even toasters.
+To prevent botnet infections, organizations must be able to detect them. But botnet detection isn't easy. Let's explore some of the top techniques and challenges in botnet detection.
+
+#Methods for Botnet Detection:
+So, what's a botnet? Simply put, it's a cluster of bots — compromised computers and devices — that perform commands given by the botnet owner. Usually, the botnet owner will dedicate a command and control server (C2), a compromised server for communicating with the bots, usually via Internet Relay Chat commands. The botnet owner uses the C2 server to order botnets to execute attacks, whether that's DDoS attacks, data theft, identity theft, or another type of attack. Thus, the smoking gun that points to a botnet is its C2 server.
+
+Unfortunately, finding the C2 isn't usually a simple task. Many botnet commands emerge from multiple servers or take hidden forms, masking the malicious commands as harmless activity such as Tor network traffic, social media traffic, traffic between peer-to-peer services, or domain-generation algorithms. Further complicating matters, the commands are often very subtle, making it difficult to detect any anomalies.
+
+One method for attempting to detect C2s is breaking down and analyzing the malware code. Organizations can try to disassemble the compiled code, from which they can sometimes identify the root source of the botnet's commands. However, since botnet creators and administrators increasingly are using integrated encryption, this technique is less and less effective.
+
+Generally, C2 detection requires visibility into the communication between a C2 server and its bots, but only security solutions that specifically protect C2 servers will have this kind of visibility. A more common approach for detecting botnets is tracking and analyzing the attacks themselves — into which standard security solutions provide visibility — and determining which attacks originated from botnets.
+
+When looking at exploit attempts, there are a few possible indications for a botnet. For example, if the same IP addresses attack the same sites, at the same time, using the same payloads and attack patterns, there's a good chance they're part of a botnet. This is especially true if many IPs and sites are involved. One prominent example is a DDoS attempt by a botnet on a web service.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#URL: https://www.distilnetworks.com/glossary/term/botnet-detection/
+#Author: Distil Networks (part of Imperva)
+#Motivation:
+
+#Methods for Botnet Detection:
+Basic botnet detection is broken out into two categories: static analysis and behavioral analysis.
+
+Static analysis techniques involve seeking out a particular data point and blocking or blacklisting the source from future requests. For example, uncovering a malware signature or C&C address. The upside is, static techniques can be very quick and effective. However, the downside is that malicious users and botnet managers are increasingly able to obscure themselves and get lost in the crowd. Botnets become harder and harder to pinpoint, verify, and then block. They’re able to use unpredictable means to cloak themselves, such as obscuring their targets through URL obfuscation and rapidly cycling through the IP addresses of their own C&C servers.
+
+On the other hand, behavioral analysis techniques involve a much larger time commitment, but are more essential in today’s botnet detection and mitigation landscape. One behavioral analysis involves keeping an eye on the timing of attacks. For example, a C&C server often sends mass orders for bots designed to take specific actions. All of these endpoint connections swell beyond the normal level, and you may also notice connections having numerical IP addresses rather than server names. There’s also port-scanning, which involves a bot looking on a local network for new and untapped vulnerabilities.
+
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#URL: https://www.imperva.com/blog/the-challenges-of-diy-botnet-detection-and-how-to-overcome-them/
+#Author: Johnathan Azaria
+#Motivation:
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#URL: https://www.alienvault.com/blogs/security-essentials/botnet-detection-and-removal-methods-best-practices
+#Author: Garrett Gross
+#Motivation:
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------
