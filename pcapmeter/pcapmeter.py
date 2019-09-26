@@ -391,8 +391,7 @@ def calculate_flows_features(flows,flow_ids):
             bwd_pkts_per_sec = bwd_n_pkts/flow_duration
 
         # packet lengths
-        flow_pkt_len_total = float(np.sum(flow_pkt_lens))           # to add and test x
-        flow_bytes_per_sec = 0 if flow_duration==0 else float(flow_pkt_len_total/flow_duration)
+        flow_pkt_len_total = float(np.sum(flow_pkt_lens))
         flow_pkt_len_mean = float(np.mean(flow_pkt_lens))
         flow_pkt_len_std = float(np.std(flow_pkt_lens))
         flow_pkt_len_var = float(np.var(flow_pkt_lens))
@@ -402,7 +401,7 @@ def calculate_flows_features(flows,flow_ids):
         fwd_pkt_len_total = float(np.sum(fwd_pkt_lens))
         fwd_pkt_len_mean = float(np.mean(fwd_pkt_lens))
         fwd_pkt_len_std = float(np.std(fwd_pkt_lens))
-        fwd_pkt_len_var = float(np.var(fwd_pkt_lens))               # to add and test x
+        fwd_pkt_len_var = float(np.var(fwd_pkt_lens))
         fwd_pkt_len_max = float(np.max(fwd_pkt_lens))
         fwd_pkt_len_min = float(np.min(fwd_pkt_lens))
 
@@ -410,39 +409,45 @@ def calculate_flows_features(flows,flow_ids):
             bwd_pkt_len_total = float(np.sum(bwd_pkt_lens))
             bwd_pkt_len_mean = float(np.mean(bwd_pkt_lens))
             bwd_pkt_len_std = float(np.std(bwd_pkt_lens))
-            bwd_pkt_len_var = float(np.var(bwd_pkt_lens))           # to add and test x
+            bwd_pkt_len_var = float(np.var(bwd_pkt_lens))
             bwd_pkt_len_max = float(np.max(bwd_pkt_lens))
             bwd_pkt_len_min = float(np.min(bwd_pkt_lens))
         else:
             bwd_pkt_len_total = bwd_pkt_len_mean = bwd_pkt_len_std = bwd_pkt_len_var = bwd_pkt_len_max = bwd_pkt_len_min = 0
 
-        # header lengths
-        fwd_header_len_total = float(np.sum(fwd_header_lens))                                    # 14 byte Ether header + ip header + tcp/udp header
-        bwd_header_len_total = float(np.sum(bwd_header_lens)) if len(bwd_header_lens)!=0 else 0  # 14 byte Ether header + ip header + tcp/udp header
+        # bytes per sec
+        flow_bytes_per_sec = 0 if flow_duration==0 else float(flow_pkt_len_total/flow_duration)
+        fwd_bytes_per_sec = 0 if flow_duration==0 else float(fwd_pkt_len_total/flow_duration)
+        bwd_bytes_per_sec = 0 if flow_duration==0 else float(bwd_pkt_len_total/flow_duration)
+
+        # header lengths (14 byte Ether header + ip header + tcp/udp header)
+        flow_header_len_total = float(np.sum(flow_header_lens))
+        fwd_header_len_total = float(np.sum(fwd_header_lens))
+        bwd_header_len_total = float(np.sum(bwd_header_lens)) if len(bwd_header_lens)!=0 else 0
 
         # packet size
         flow_pkt_size_mean = float(np.mean(flow_pkt_sizes))
-        flow_pkt_size_std = float(np.std(flow_pkt_sizes))       # to add and test x
-        flow_pkt_size_max = float(np.max(flow_pkt_sizes))       # to add and test x
-        flow_pkt_size_min = float(np.min(flow_pkt_sizes))       # to add and test x
+        flow_pkt_size_std = float(np.std(flow_pkt_sizes))
+        flow_pkt_size_max = float(np.max(flow_pkt_sizes))
+        flow_pkt_size_min = float(np.min(flow_pkt_sizes))
 
         fwd_pkt_size_mean = float(np.mean(fwd_pkt_sizes))
-        fwd_pkt_size_std = float(np.std(fwd_pkt_sizes))         # to add and test x
-        fwd_pkt_size_max = float(np.max(fwd_pkt_sizes))         # to add and test x
+        fwd_pkt_size_std = float(np.std(fwd_pkt_sizes))
+        fwd_pkt_size_max = float(np.max(fwd_pkt_sizes))
         fwd_pkt_size_min = float(np.min(fwd_pkt_sizes))
 
         if len(bwd_pkt_sizes)!=0:
             bwd_pkt_size_mean = float(np.mean(bwd_pkt_sizes))
-            bwd_pkt_size_std = float(np.std(bwd_pkt_sizes))     # to add and test x
-            bwd_pkt_size_max = float(np.max(bwd_pkt_sizes))     # to add and test x
-            bwd_pkt_size_min = float(np.min(bwd_pkt_sizes))     # to add and test x
+            bwd_pkt_size_std = float(np.std(bwd_pkt_sizes))
+            bwd_pkt_size_max = float(np.max(bwd_pkt_sizes))
+            bwd_pkt_size_min = float(np.min(bwd_pkt_sizes))
         else:
             bwd_pkt_size_mean = bwd_pkt_size_std = bwd_pkt_size_max = bwd_pkt_size_min = 0
 
 
         # packet inter-arrival times
         if len(flow_iats)!=0:
-            flow_iat_total = float(np.sum(flow_iats))           # to add and test x
+            flow_iat_total = float(np.sum(flow_iats))
             flow_iat_mean = float(np.mean(flow_iats))
             flow_iat_std = float(np.std(flow_iats))
             flow_iat_max = float(np.max(flow_iats))
@@ -489,16 +494,20 @@ def calculate_flows_features(flows,flow_ids):
                 if flag:
                     bwd_flag_counts[i]+=1
 
-        flow_features_header = "flow_id,flow_start_time,flow_end_time,flow_duration,fwd_header_len_total,bwd_header_len_total,flow_pkt_size_mean,flow_pkt_size_std,flow_pkt_size_max,"+\
+        flow_features_header = "flow_id,flow_start_time,flow_end_time,flow_duration,"+\
+            "flow_n_pkts,fwd_n_pkts,bwd_n_pkts,"+\
+            "flow_n_data_pkts,fwd_n_data_pkts,bwd_n_data_pkts,"+\
+            "flow_header_len_total,fwd_header_len_total,bwd_header_len_total,"+\
+            "flow_pkt_size_mean,flow_pkt_size_std,flow_pkt_size_max,"+\
             "flow_pkt_size_min,fwd_pkt_size_mean,fwd_pkt_size_std,fwd_pkt_size_max,fwd_pkt_size_min,bwd_pkt_size_mean,bwd_pkt_size_std,bwd_pkt_size_max,bwd_pkt_size_min,"+\
-            "fwd_n_pkts,bwd_n_pkts,flow_pkts_per_sec,fwd_pkts_per_sec,bwd_pkts_per_sec,flow_bytes_per_sec,"+\
+            "flow_pkts_per_sec,fwd_pkts_per_sec,bwd_pkts_per_sec,"+\
+            "flow_bytes_per_sec,fwd_bytes_per_sec,bwd_bytes_per_sec,"+\
             "flow_pkt_len_total,flow_pkt_len_mean,flow_pkt_len_std,flow_pkt_len_var,flow_pkt_len_max,flow_pkt_len_min,"+\
             "fwd_pkt_len_total,fwd_pkt_len_mean,fwd_pkt_len_std,fwd_pkt_len_var,fwd_pkt_len_max,fwd_pkt_len_min,"+\
             "bwd_pkt_len_total,bwd_pkt_len_mean,bwd_pkt_len_std,bwd_pkt_len_var,bwd_pkt_len_max,bwd_pkt_len_min,"+\
             "flow_iat_total,flow_iat_mean,flow_iat_std,flow_iat_max,flow_iat_min,"+\
             "fwd_iat_total,fwd_iat_mean,fwd_iat_std,fwd_iat_max,fwd_iat_min,"+\
             "bwd_iat_total,bwd_iat_mean,bwd_iat_std,bwd_iat_max,bwd_iat_min,"+\
-            "flow_n_data_pkts,fwd_n_data_pkts,bwd_n_data_pkts,"+\
             "flow_df_count,flow_mf_count,flow_fin_count,flow_syn_count,flow_rst_count,flow_psh_count,flow_ack_count,flow_urg_count,flow_ece_count,flow_cwr_count,"+\
             "fwd_df_count,fwd_mf_count,fwd_fin_count,fwd_syn_count,fwd_rst_count,fwd_psh_count,fwd_ack_count,fwd_urg_count,fwd_ece_count,fwd_cwr_count,"+\
             "bwd_df_count,bwd_mf_count,bwd_fin_count,bwd_syn_count,bwd_rst_count,bwd_psh_count,bwd_ack_count,bwd_urg_count,bwd_ece_count,bwd_cwr_count,"+\
@@ -507,16 +516,20 @@ def calculate_flows_features(flows,flow_ids):
         flow_keys = flow_features_header.split(",")
 
         flow_values = \
-            [flow_id,first_pkt_time,last_pkt_time,flow_duration,fwd_header_len_total,bwd_header_len_total,flow_pkt_size_mean,flow_pkt_size_std,flow_pkt_size_max,\
+            [flow_id,first_pkt_time,last_pkt_time,flow_duration,\
+            flow_n_pkts,fwd_n_pkts,bwd_n_pkts,\
+            flow_n_data_pkts,fwd_n_data_pkts,bwd_n_data_pkts,\
+            flow_header_len_total,fwd_header_len_total,bwd_header_len_total,\
+            flow_pkt_size_mean,flow_pkt_size_std,flow_pkt_size_max,\
             flow_pkt_size_min,fwd_pkt_size_mean,fwd_pkt_size_std,fwd_pkt_size_max,fwd_pkt_size_min,bwd_pkt_size_mean,bwd_pkt_size_std,bwd_pkt_size_max,bwd_pkt_size_min,\
-            fwd_n_pkts,bwd_n_pkts,flow_pkts_per_sec,fwd_pkts_per_sec,bwd_pkts_per_sec,flow_bytes_per_sec,\
+            flow_pkts_per_sec,fwd_pkts_per_sec,bwd_pkts_per_sec,\
+            flow_bytes_per_sec,fwd_bytes_per_sec,bwd_bytes_per_sec,\
             flow_pkt_len_total,flow_pkt_len_mean,flow_pkt_len_std,flow_pkt_len_var,flow_pkt_len_max,flow_pkt_len_min,\
             fwd_pkt_len_total,fwd_pkt_len_mean,fwd_pkt_len_std,fwd_pkt_len_var,fwd_pkt_len_max,fwd_pkt_len_min,\
             bwd_pkt_len_total,bwd_pkt_len_mean,bwd_pkt_len_std,bwd_pkt_len_var,bwd_pkt_len_max,bwd_pkt_len_min,\
             flow_iat_total,flow_iat_mean,flow_iat_std,flow_iat_max,flow_iat_min,\
             fwd_iat_total,fwd_iat_mean,fwd_iat_std,fwd_iat_max,fwd_iat_min,\
-            bwd_iat_total,bwd_iat_mean,bwd_iat_std,bwd_iat_max,bwd_iat_min,\
-            flow_n_data_pkts,fwd_n_data_pkts,bwd_n_data_pkts] +\
+            bwd_iat_total,bwd_iat_mean,bwd_iat_std,bwd_iat_max,bwd_iat_min,] +\
             flow_flag_counts +\
             fwd_flag_counts +\
             bwd_flag_counts +\
@@ -619,6 +632,7 @@ def calculate_dialogues_features(flows, flow_ids):
 
         dialogue_start_time = float(np.max(dialogue_first_times))
         dialogue_end_time = float(np.max(dialogue_last_times))
+        dialogue_duration = dialogue_end_time - dialogue_start_time
 
         total_flow_duration = float(np.sum(flow_durations))
         mean_flow_duration = float(np.mean(flow_durations))
@@ -630,12 +644,12 @@ def calculate_dialogues_features(flows, flow_ids):
         fwd_flows_rate = 0 if total_flow_duration==0 else float(n_fwd_flows/total_flow_duration)
         bwd_flows_rate = 0 if total_flow_duration==0 else float(n_bwd_flows/total_flow_duration)
 
-        dialogue_features_header = "dialogue_id,dialogue_start_time,dialogue_end_time,n_fwd_flows,n_bwd_flows,fwd_flows_rate,bwd_flows_rate," +\
+        dialogue_features_header = "dialogue_id,dialogue_start_time,dialogue_end_time,dialogue_duration,n_fwd_flows,n_bwd_flows,fwd_flows_rate,bwd_flows_rate," +\
         "total_flow_duration,mean_flow_duration,std_flow_duration,var_flow_duration,max_flow_duration,min_flow_duration," +\
         "label"
         dialogue_keys = dialogue_features_header.split(",")
         dialogue_values = \
-            [dialogue_id, dialogue_start_time, dialogue_end_time, n_fwd_flows, n_bwd_flows, fwd_flows_rate, bwd_flows_rate,\
+            [dialogue_id, dialogue_start_time, dialogue_end_time, dialogue_duration, n_fwd_flows, n_bwd_flows, fwd_flows_rate, bwd_flows_rate,\
             total_flow_duration, mean_flow_duration,std_flow_duration, var_flow_duration, max_flow_duration, min_flow_duration,\
             args.label]
 
@@ -657,6 +671,7 @@ def calculate_hosts_features(dialogues):
         dialogue_start_time = curr_dialogue["dialogue_start_time"]
         dialogue_end_time = curr_dialogue["dialogue_end_time"]
         dialogue_duration = curr_dialogue["dialogue_duration"]
+        total_flow_duration = curr_dialogue["total_flow_duration"]
 
         try:
             hosts[src_ip][dialogue_id] = \
@@ -664,32 +679,36 @@ def calculate_hosts_features(dialogues):
                 "dialogue_start_time": dialogue_start_time,
                 "dialogue_end_time": dialogue_end_time,
                 "dialogue_duration": dialogue_duration,
+                "total_flow_duration": total_flow_duration,
             }
         except KeyError:
-            hosts[src_ip] = OrderedDict()
             host_ids.append(src_ip)
+            hosts[src_ip] = OrderedDict()
             hosts[src_ip][dialogue_id] = \
             {
                 "dialogue_start_time": dialogue_start_time,
                 "dialogue_end_time": dialogue_end_time,
                 "dialogue_duration": dialogue_duration,
+                "total_flow_duration": total_flow_duration,
             }
 
         try:
-            hosts[src_ip][dialogue_id] = \
+            hosts[dst_ip][dialogue_id] = \
             {
                 "dialogue_start_time": dialogue_start_time,
                 "dialogue_end_time": dialogue_end_time,
                 "dialogue_duration": dialogue_duration,
+                "total_flow_duration": total_flow_duration,
             }
         except KeyError:
-            hosts[dst_ip] = OrderedDict()
             host_ids.append(dst_ip)
-            hosts[src_ip][dialogue_id] = \
+            hosts[dst_ip] = OrderedDict()
+            hosts[dst_ip][dialogue_id] = \
             {
                 "dialogue_start_time": dialogue_start_time,
                 "dialogue_end_time": dialogue_end_time,
                 "dialogue_duration": dialogue_duration,
+                "total_flow_duration": total_flow_duration,
             }
 
     for i, host_id in enumerate(host_ids):
@@ -765,21 +784,6 @@ def print_flows(file):
         host_features_dict.pop(curr_host_id, None)
         hosts[curr_host_id] = host_features_dict
 
-    """
-    for dialogue_id in dialogues:
-        src_ip = dialogue_id[0]
-        dst_ip = dialogue_id[1]
-        try:
-            hosts[src_ip].append(dialogue_id)
-        except KeyError:
-            hosts[src_ip] = [dialogue_id]
-
-        try:
-            hosts[dst_ip].append(dialogue_id)
-        except KeyError:
-            hosts[dst_ip] = [dialogue_id]
-    """
-
     # ---------------------------------------
     # INSERT hosts, dialogues and hosts in DB
     # ---------------------------------------
@@ -815,6 +819,7 @@ def print_flows(file):
         # dialogue features
         dialogue_start_time = dialogues[dialogue_id]["dialogue_start_time"]
         dialogue_end_time = dialogues[dialogue_id]["dialogue_end_time"]
+        dialogue_duration = dialogues[dialogue_id]["dialogue_duration"]
         n_fwd_flows = dialogues[dialogue_id]["n_fwd_flows"]
         n_bwd_flows = dialogues[dialogue_id]["n_bwd_flows"]
         fwd_flows_rate = dialogues[dialogue_id]["fwd_flows_rate"]
@@ -833,12 +838,12 @@ def print_flows(file):
 
         localdbconnector.safe_insert_query(
             "INSERT INTO Dialogues (src_ip, dst_ip, src_host_id, dst_host_id," + \
-            "dialogue_start_time, dialogue_end_time, n_fwd_flows, n_bwd_flows, fwd_flows_rate, bwd_flows_rate, total_flow_duration," + \
+            "dialogue_start_time, dialogue_end_time, dialogue_duration, n_fwd_flows, n_bwd_flows, fwd_flows_rate, bwd_flows_rate, total_flow_duration," + \
             "mean_flow_duration, std_flow_duration, var_flow_duration, max_flow_duration, min_flow_duration)" + \
             " VALUES (%s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s, %s," + \
+            "%s, %s, %s, %s, %s, %s, %s, %s," + \
             "%s, %s, %s, %s, %s)",
-            (src_ip, dst_ip, src_sql_host_id, dst_sql_host_id, dialogue_start_time, dialogue_end_time, n_fwd_flows, n_bwd_flows, fwd_flows_rate, bwd_flows_rate,\
+            (src_ip, dst_ip, src_sql_host_id, dst_sql_host_id, dialogue_start_time, dialogue_end_time, dialogue_duration, n_fwd_flows, n_bwd_flows, fwd_flows_rate, bwd_flows_rate,\
             total_flow_duration, mean_flow_duration, std_flow_duration, var_flow_duration, max_flow_duration, min_flow_duration)
         )
 
@@ -863,27 +868,41 @@ def print_flows(file):
         flow_start_time = flows[flow_id]["flow_start_time"]
         flow_end_time = flows[flow_id]["flow_end_time"]
         flow_duration = flows[flow_id]["flow_duration"]
+        
+        flow_n_pkts = flows[flow_id]["flow_n_pkts"]
+        fwd_n_pkts = flows[flow_id]["fwd_n_pkts"]
+        bwd_n_pkts = flows[flow_id]["bwd_n_pkts"]
+
+        flow_n_data_pkts = flows[flow_id]["flow_n_data_pkts"]
+        fwd_n_data_pkts = flows[flow_id]["fwd_n_data_pkts"]
+        bwd_n_data_pkts = flows[flow_id]["bwd_n_data_pkts"]
+
+        flow_header_len_total = flows[flow_id]["flow_header_len_total"]
         fwd_header_len_total = flows[flow_id]["fwd_header_len_total"]
         bwd_header_len_total = flows[flow_id]["bwd_header_len_total"]
+
         flow_pkt_size_mean = flows[flow_id]["flow_pkt_size_mean"]
         flow_pkt_size_std = flows[flow_id]["flow_pkt_size_std"]
         flow_pkt_size_max = flows[flow_id]["flow_pkt_size_max"]
         flow_pkt_size_min = flows[flow_id]["flow_pkt_size_min"]
+        
         fwd_pkt_size_mean = flows[flow_id]["fwd_pkt_size_mean"]
         fwd_pkt_size_std = flows[flow_id]["fwd_pkt_size_std"]
         fwd_pkt_size_max = flows[flow_id]["fwd_pkt_size_max"]
         fwd_pkt_size_min = flows[flow_id]["fwd_pkt_size_min"]
+
         bwd_pkt_size_mean = flows[flow_id]["bwd_pkt_size_mean"]
         bwd_pkt_size_std = flows[flow_id]["bwd_pkt_size_std"]
         bwd_pkt_size_max = flows[flow_id]["bwd_pkt_size_max"]
         bwd_pkt_size_min = flows[flow_id]["bwd_pkt_size_min"]
 
-        fwd_n_pkts = flows[flow_id]["fwd_n_pkts"]
-        bwd_n_pkts = flows[flow_id]["bwd_n_pkts"]
         flow_pkts_per_sec = flows[flow_id]["flow_pkts_per_sec"]
         fwd_pkts_per_sec = flows[flow_id]["fwd_pkts_per_sec"]
         bwd_pkts_per_sec = flows[flow_id]["bwd_pkts_per_sec"]
+
         flow_bytes_per_sec = flows[flow_id]["flow_bytes_per_sec"]
+        fwd_bytes_per_sec = flows[flow_id]["fwd_bytes_per_sec"]
+        bwd_bytes_per_sec = flows[flow_id]["bwd_bytes_per_sec"]
 
         flow_pkt_len_total = flows[flow_id]["flow_pkt_len_total"]
         flow_pkt_len_mean = flows[flow_id]["flow_pkt_len_mean"]
@@ -923,10 +942,6 @@ def print_flows(file):
         bwd_iat_std = flows[flow_id]["bwd_iat_std"]
         bwd_iat_max = flows[flow_id]["bwd_iat_max"]
         bwd_iat_min = flows[flow_id]["bwd_iat_min"]
-
-        flow_n_data_pkts = flows[flow_id]["flow_n_data_pkts"]
-        fwd_n_data_pkts = flows[flow_id]["fwd_n_data_pkts"]
-        bwd_n_data_pkts = flows[flow_id]["bwd_n_data_pkts"]
 
         flow_df_count = flows[flow_id]["flow_df_count"]
         flow_mf_count = flows[flow_id]["flow_mf_count"]
@@ -968,51 +983,61 @@ def print_flows(file):
 
         localdbconnector.safe_insert_query(
             "INSERT INTO Flows (transport_protocol, src_ip, dst_ip, src_port, dst_port, sep_counter, dialogue_id," + \
-            "flow_start_time, flow_end_time, flow_duration, fwd_header_len_total, bwd_header_len_total," + \
+            "flow_start_time, flow_end_time, flow_duration," + \
+            "flow_n_pkts,fwd_n_pkts,bwd_n_pkts," + \
+            "flow_n_data_pkts,fwd_n_data_pkts,bwd_n_data_pkts," + \
+            "flow_header_len_total, fwd_header_len_total, bwd_header_len_total," + \
             "flow_pkt_size_mean, flow_pkt_size_std,flow_pkt_size_max, flow_pkt_size_min," + \
             "fwd_pkt_size_mean, fwd_pkt_size_std, fwd_pkt_size_max, fwd_pkt_size_min," + \
             "bwd_pkt_size_mean, bwd_pkt_size_std, bwd_pkt_size_max, bwd_pkt_size_min," + \
-            "fwd_n_pkts,bwd_n_pkts,flow_pkts_per_sec,fwd_pkts_per_sec,bwd_pkts_per_sec,flow_bytes_per_sec," + \
+            "flow_pkts_per_sec,fwd_pkts_per_sec,bwd_pkts_per_sec," + \
+            "flow_bytes_per_sec,fwd_bytes_per_sec,bwd_bytes_per_sec," + \
             "flow_pkt_len_total,flow_pkt_len_mean,flow_pkt_len_std,flow_pkt_len_var,flow_pkt_len_max,flow_pkt_len_min," + \
             "fwd_pkt_len_total,fwd_pkt_len_mean,fwd_pkt_len_std,fwd_pkt_len_var,fwd_pkt_len_max,fwd_pkt_len_min," + \
             "bwd_pkt_len_total,bwd_pkt_len_mean,bwd_pkt_len_std,bwd_pkt_len_var,bwd_pkt_len_max,bwd_pkt_len_min," + \
             "flow_iat_total,flow_iat_mean,flow_iat_std,flow_iat_max,flow_iat_min," + \
             "fwd_iat_total,fwd_iat_mean,fwd_iat_std,fwd_iat_max,fwd_iat_min," + \
             "bwd_iat_total,bwd_iat_mean,bwd_iat_std,bwd_iat_max,bwd_iat_min," + \
-            "flow_n_data_pkts,fwd_n_data_pkts,bwd_n_data_pkts," + \
             "flow_df_count,flow_mf_count,flow_fin_count,flow_syn_count,flow_rst_count,flow_psh_count,flow_ack_count,flow_urg_count,flow_ece_count,flow_cwr_count," + \
             "fwd_df_count,fwd_mf_count,fwd_fin_count,fwd_syn_count,fwd_rst_count,fwd_psh_count,fwd_ack_count,fwd_urg_count,fwd_ece_count,fwd_cwr_count," + \
             "bwd_df_count,bwd_mf_count,bwd_fin_count,bwd_syn_count,bwd_rst_count,bwd_psh_count,bwd_ack_count,bwd_urg_count,bwd_ece_count,bwd_cwr_count)" + \
-            " VALUES (%s, %s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s," + \
-            "%s, %s, %s, %s," + \
-            "%s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s," + \
+            " VALUES (" + \
+            "%s, %s, %s, %s, %s, %s, %s," + \
             "%s, %s, %s," + \
+            "%s, %s, %s," + \
+            "%s, %s, %s," + \
+            "%s, %s, %s," + \
+            "%s, %s, %s, %s," + \
+            "%s, %s, %s, %s," + \
+            "%s, %s, %s, %s," + \
+            "%s, %s, %s," + \
+            "%s, %s, %s," + \
+            "%s, %s, %s, %s, %s, %s," + \
+            "%s, %s, %s, %s, %s, %s," + \
+            "%s, %s, %s, %s, %s, %s," + \
+            "%s, %s, %s, %s, %s," + \
+            "%s, %s, %s, %s, %s," + \
+            "%s, %s, %s, %s, %s," + \
             "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s," + \
             "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s," + \
             "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s" + \
             ")",
             (transport_protocol, src_ip, dst_ip, src_port, dst_port, sep_counter, sql_dialogue_id,\
-            flow_start_time, flow_end_time, flow_duration, fwd_header_len_total, bwd_header_len_total,\
+            flow_start_time, flow_end_time, flow_duration,\
+            flow_n_pkts,fwd_n_pkts,bwd_n_pkts,\
+            flow_n_data_pkts,fwd_n_data_pkts,bwd_n_data_pkts,\
+            flow_header_len_total, fwd_header_len_total, bwd_header_len_total,\
             flow_pkt_size_mean, flow_pkt_size_std,flow_pkt_size_max, flow_pkt_size_min,\
             fwd_pkt_size_mean, fwd_pkt_size_std, fwd_pkt_size_max, fwd_pkt_size_min,\
             bwd_pkt_size_mean, bwd_pkt_size_std, bwd_pkt_size_max, bwd_pkt_size_min,\
-            fwd_n_pkts,bwd_n_pkts,flow_pkts_per_sec,fwd_pkts_per_sec,bwd_pkts_per_sec,flow_bytes_per_sec,\
+            flow_pkts_per_sec,fwd_pkts_per_sec,bwd_pkts_per_sec,\
+            flow_bytes_per_sec,fwd_bytes_per_sec,bwd_bytes_per_sec,\
             flow_pkt_len_total,flow_pkt_len_mean,flow_pkt_len_std,flow_pkt_len_var,flow_pkt_len_max,flow_pkt_len_min,\
             fwd_pkt_len_total,fwd_pkt_len_mean,fwd_pkt_len_std,fwd_pkt_len_var,fwd_pkt_len_max,fwd_pkt_len_min,\
             bwd_pkt_len_total,bwd_pkt_len_mean,bwd_pkt_len_std,bwd_pkt_len_var,bwd_pkt_len_max,bwd_pkt_len_min,\
             flow_iat_total,flow_iat_mean,flow_iat_std,flow_iat_max,flow_iat_min,\
             fwd_iat_total,fwd_iat_mean,fwd_iat_std,fwd_iat_max,fwd_iat_min,\
             bwd_iat_total,bwd_iat_mean,bwd_iat_std,bwd_iat_max,bwd_iat_min,\
-            flow_n_data_pkts,fwd_n_data_pkts,bwd_n_data_pkts,\
             flow_df_count,flow_mf_count,flow_fin_count,flow_syn_count,flow_rst_count,flow_psh_count,flow_ack_count,flow_urg_count,flow_ece_count,flow_cwr_count,\
             fwd_df_count,fwd_mf_count,fwd_fin_count,fwd_syn_count,fwd_rst_count,fwd_psh_count,fwd_ack_count,fwd_urg_count,fwd_ece_count,fwd_cwr_count,\
             bwd_df_count,bwd_mf_count,bwd_fin_count,bwd_syn_count,bwd_rst_count,bwd_psh_count,bwd_ack_count,bwd_urg_count,bwd_ece_count,bwd_cwr_count,
