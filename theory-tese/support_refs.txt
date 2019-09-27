@@ -1,0 +1,2 @@
+https://stats.stackexchange.com/questions/199445/standard-deviation-vs-variance-as-a-feature:
+I should keep statistics on data as indicators: total, max, min, mean, std deviation, variance

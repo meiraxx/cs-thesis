@@ -11,4 +11,17 @@ My idea is the same as in article 1, but try to detect both centralized and dece
 
 I propose to develop a tool that can extrapolate key indicators from network traffic, optionally presenting them on a dashboard for manual inspection of the network capture file and the key indicators. After this, it's important to manually analyze different botnet pcap files to determine what features seem to be the most anomolous when compared to regular/benign network traffic. Then, test different machine-learning algorithms (or other algorithms) to determine the best one at differing botnets from regular/benign traffic. There can also be an integration with an external tool such as PowerBI to visually see what indicators it uses to determine the presence of a botnet.
 
-I believe that by using key indicators on three different levels (flows, dialogues and hosts), the detection of any botnet becomes very feasible given that the traffic it generates has unique features. The idea is implementing a behavioral analysis method based on machine-learning which will be responsible for detecting the presence of a botnet in the network, and joining this with a static analysis method. The static analysis method will be used as well, and it will consist of a database that tracks malware signatures, C&C known addresses and, possibly, C&C known domain names. The reason for using the latter is that we will be able to more rapidly find the existence of a botnet in a network in the long term, since it just needs to be detected once by the behavioral analysis machine-learning model. Furthermore, it would be interesting to keep an accessible list, per trusted entity, hosted on the internet, which should be regularly updated by each entity's botnet detection engine. This information system will thus allow trusted entities to use other trusted entities blacklists as well and create a shared bulky blacklist set.
+I believe that by using key indicators on three different levels (flows, dialogues and hosts), the detection of any botnet becomes very feasible given that the traffic it generates has unique features.
+
+The idea then is implementing a behavioral analysis method based on machine-learning which will be responsible for detecting the presence of a botnet in the network, and joining this with a static analysis method. The static analysis method will be used as well, and it will consist of a database that tracks malware signatures, C&C known addresses and, possibly, C&C known domain names. The reason for using the latter is that we will be able to more rapidly find the existence of a botnet in a network in the long term, since it just needs to be detected once by the behavioral analysis machine-learning model. Furthermore, it would be interesting to keep an accessible list, per trusted entity, hosted on the internet, which should be regularly updated by each entity's botnet detection engine. This information system will thus allow trusted entities to use other trusted entities blacklists as well and create a shared bulky blacklist set.
+
+Blacklist set:
+- sha1+sha2 signature of common (to all flows) FLOW features
+- C&C ips and domain names
+
+
+-------------------------------------------------------------------------------------------------------------------------------------
+other papers:
+https://dl.acm.org/citation.cfm?id=3098163
+https://ieeexplore.ieee.org/abstract/document/6504162
+https://ieeexplore.ieee.org/abstract/document/6785439
