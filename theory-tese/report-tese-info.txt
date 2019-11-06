@@ -1,0 +1,40 @@
+Datas Importantes
+
+    6 de janeiro de 2020: Data limite para os alunos submeterem os relatórios no Fénix, através da unidade curricular de Projecto de Dissertação
+    4 de fevereiro de 2020: Data limite para os orientadores entregarem as actas das discussões na secretaria do Departamento
+
+
+Processo de avaliação
+
+    cada aluno deve fazer um relatório com 20-25 páginas;
+    o formato sugerido é o da LNCS (http://www.springer.com/computer/lncs?SGWID=0-164-6-793341-0) da Springer (no link podem fazer o download de instruções para produção do relatório em Word e Latex);
+    a avaliação será feita pelo júri composto pelo orientador, co-orientador (se existir) e um outro docente (que, em princípio, será também o arguente da Dissertação), com base no relatório e numa apresentação aberta ao público (máximo de 20 min) seguida de discussão;
+    o relatório é entregue pelo sistema Fénix e a acta da discussão terão de ser entregues na secretaria até à data indicada acima.
+
+
+Estrutura do Relatório
+
+O relatório deve conter as seguintes secções:
+
+    Resumo/Abstract
+    Índice (tabela de conteúdos)
+    Introdução (inclui uma subsecção Objectivos do Trabalho)
+    Trabalho Relacionado
+    Proposta de Solução
+    Metodologia de Avaliação do Trabalho
+    Calendarização do Trabalho
+    Conclusões
+    Referências
+    Anexo (opcional)
+
+A secção acima denominada Proposta pode ter outra designação; de qualquer modo, esta secção deve apresentar uma versão inicial da solução, incluindo a sua arquitetura global, que o aluno pretende desenvolver no semestre seguinte no âmbito da cadeira de Dissertação. 
+
+A secção de Referências deve incluir maioritariamente artigos de revistas/conferências/workshops, livros e relatórios técnicos; devem ser evitadas referências na web, cuja perenidade não é assegurada. 
+
+No final da cadeira de Projecto de Dissertação em Engenharia Informática, através do relatório e da apresentação acima mencionados, o aluno deve ser capaz de mostrar que sabe:
+
+    Qual a motivação subjacente ao trabalho que desenvolve,
+    Qual o objectivo e respectivos requisitos,
+    Quais as soluções existentes (ou relacionadas) tendo uma perspectiva crítica sobre elas,
+    Quais os elementos principais da solução proposta,
+    Como tenciona avaliar essa mesma solução.
