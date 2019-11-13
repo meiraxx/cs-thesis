@@ -55,7 +55,30 @@ Stream features:
 #Threat types: ---
 
 -------------------------------------------------------------------------------------------------------------------------------------
-other papers:
-https://dl.acm.org/citation.cfm?id=3098163
-https://ieeexplore.ieee.org/abstract/document/6504162
-https://ieeexplore.ieee.org/abstract/document/6785439
+#Paper: "PeerShark: Detecting Peer-to-Peer Botnetsby Tracking Conversations"
+#Paper no.: 6
+#Authors: Pratik Narang, Subhajit Ray, Chittaranjan Hota
+#Threat types: P2P Botnets
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#Paper: "On Designing Machine Learning Models for Malicious Network Traffic Classification"
+#Paper no.: 7
+#Authors: Talha Ongun, Timothy Sakharaov, Simona Boboila, Alina Oprea, Tina Eliassi-Rad
+#Threat types: ---
+In this paper, the authors worked with Bro logs and the metrics associated with them.
+It is explained that there are some important aspects to take into account in network traffic analysis for optimizing the machine learning model's effectiveness:
+	- Feature aggregation;
+	- Fine-grained labeling;
+	- Algorithm choice;
+	- Time window choice.
+
+The authors tried three different feature-sets, which they call "feature aggregation":
+	- Connection features;
+	- Traffic features;
+	- Traffic and temporal features.
+The authors noted that using feature aggregation was beneficial for the performance of their machine learning models. They grouped network features into these categories.
+
+The authors noted that fine-grained labeling is very beneficial for the performance of machine learning in detecting botnets, although this requires that the labeling is done manually.
+
+The authors do not observe a major difference when they consider both traffic and timing features, in comparison to using only aggregated traffic features, as also mentioned in the paper by (me and Fábio) [?].
+-------------------------------------------------------------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 My idea is the same as in article 1, but try to detect both centralized and decentralized botnet architectures using machine-learning models.
 
-I propose to develop a tool that can extrapolate key indicators from network traffic, optionally presenting them on a dashboard for manual inspection of the network capture file and the key indicators in a more visual way. After this, it's important to analyze different botnet pcap files to determine what features seem to be the most anomolous when compared to regular/benign network traffic. Then, test different machine-learning algorithms (or other algorithms) to determine the best one at differing botnets from regular/benign traffic. There can also be an integration with an external tool such as PowerBI to visually see what indicators it uses to determine the presence of a botnet.
+We propose to develop a tool that can extrapolate key indicators from network traffic, optionally presenting them on a dashboard for manual inspection of the network capture file and the key indicators in a more visual way. After this, it's important to analyze different botnet pcap files to determine what features seem to be the most anomolous when compared to regular/benign network traffic. Then, test different machine-learning algorithms (or other algorithms) to determine the best one at differing botnets from regular/benign traffic. There can also be an integration with an external tool such as PowerBI to visually see what indicators it uses to determine the presence of a botnet.
 
 I believe that by using key indicators on three different levels (flows, dialogues and hosts), the detection of any botnet becomes very feasible given that the traffic it generates has unique features.
 
@@ -13,3 +13,68 @@ Blacklist set:
 -------------------------------------------------------------------------------------------------------------------------------------
 NEW IDEA:
 If we find suspects of the source of the commands, we can correlate the time in which that source is modified with the time that suspected infected machines perform new actions. If those timings are correlated, we can make sure that those machines are indeed receiving commands from that host. If so, an alert is generated and the network administrator must verify the source of the commands and verify if it's a normal application or if it is unintended behavior. This alert must have the suspected victims' ips, the suspected command and control IP, the URL accessed for receiving commands (domain, IP and port) with a direct link to the accessed text.
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+As in paper [7], we propose to try new feature-aggregation techniques, by using the concepts of "flow", "dialogue" and "host", in an organized way. It might be interesting to directly test flow-features, dialogue-features and host-features as separate feature-sets for three different classifier systems. A feature-set with all of the features in it, with no "rational" feature-aggregation, shall also be tested in parallel.
+
+Each one of the four feature-sets will be tested using different ML algorithms. I have contemplated four types of ML algorithms:
+	- Novelty Detection Algorithms
+	- Outlier Detection Algorithms
+	- Classification Algorithms
+	- Regression Algorithms
+
+Novelty detection algorithms will not be tested because the false positive ratio is usually much higher. However, in order to extend this work for generic anomaly and threat detection in the future, we propose the use of such algorithms. An advantage of novelty detection algorithms is that, in order to train and build a model, it will only require the use of regular traffic in the training datasets.
+
+Outlier detection algorithms might be interesting to detect outliers in a big dataset. These algorithms can be used to aid the labeling of botnet traffic, in case it is mixed with regular traffic.
+
+Classification Algorithms ...
+Regression Algorithms ...
+
+After the whole dataset is labeled, it will be splitted in training and testing datasets, as it is usually done for machine-learning model validation. Then, we propose training several ML models using regression and classification ML algorithms:
+	- Logistic Regression
+	- Gradient Boosting Regression
+	- Multi-layered Perceptron Regression
+	- K-Nearest Neighbors Regression
+	- Random Forest Regression
+	- Support Vector Machine Regression
+	- Decision Tree Regression
+	- Naive Bayes Classification (Gaussian, Bernoulli, Multinomial, Complement)
+
+Finally, these models will be tested against the testing dataset. The ML model evaluation is shown through the usual ML evaluation metrics:
+	- 1
+	- 2
+	- 3
+	- 4
+
+# Evaluation Phase:
+	- Presenting the results (in the form of evaluation metrics) and identifying the best results;
+	- Presenting the features chosen by the best classifier systems;
+	- Analyse the results and conclude 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GLOSSARY:
+Machine Learning (ML) - 
+Regression Algorithm - 
+Classification Algorithm - 
+(https://scikit-learn.org/stable/modules/outlier_detection.html)
+Outlier Detection - "The training data contains outliers which are defined as observations that are far from the others. Outlier detection estimators thus try to fit the regions where the training data is the most concentrated, ignoring the deviant observations."
+Novelty Detection - "The training data is not polluted by outliers and we are interested in detecting whether a new observation is an outlier. In this context an outlier is also called a novelty."
+Regular Traffic - 
+Suspicious Traffic - 
+Malicious Traffic - 
