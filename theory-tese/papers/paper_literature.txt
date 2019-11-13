@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------------------------------------------------------------
-#Article: An Adaptive Multi-Layer Botnet Detection Technique Using Machine Learning Classifiers
-#Article no.: 1
+#Paper: "An Adaptive Multi-Layer Botnet Detection Technique Using Machine Learning Classifiers"
+#Paper no.: 1
 #Authors: Riaz Ullah Khan, Xiaosong Zhang, Rajesh Kumar, Abubakar Sharif, Noorbakhsh Amiri Golilarz and Mamoun Alazab
-#Botnet type: P2P
+#Threat types: Botnet P2P
 
 #Abstract:
 In recent years, the botnets have been the most common threats to network security since it exploits multiple malicious codes like a worm, Trojans, Rootkit, etc. The botnets have been used to carry phishing links, to perform attacks and provide malicious services on the internet. It is challenging to identify Peer-to-peer (P2P) botnets as compared to Internet Relay Chat (IRC), Hypertext Transfer Protocol (HTTP) and other types of botnets because P2P traffic has typical features of the centralization and distribution. To resolve the issues of P2P botnet identification, we propose an effective multi-layer traffic classification method by applying machine learning classifiers on features of network traffic. Our work presents a framework based on decision trees which effectively detects P2P botnets. A decision tree algorithm is applied for feature selection to extract the most relevant features and ignore the irrelevant features. At the first layer, we filter non-P2P packets to reduce the amount of network traffic through well-known ports, Domain Name System (DNS). query, and flow counting. The second layer further characterized the captured network traffic into non-P2P and P2P. At the third layer of our model, we reduced the features which may marginally affect the classification. At the final layer, we successfully detected P2P botnets using decision tree Classifier by extracting network communication features. Furthermore, our experimental evaluations show the significance of the proposed method in P2P botnets detection and demonstrate an average accuracy of 98.7%.
@@ -16,10 +16,10 @@ In recent years, the botnets have been the most common threats to network securi
 6. Benchmarking of proposed technique: results were tested against diverse datasets and compared with other machine learning algorithms implemented for botnet detection.
 
 -------------------------------------------------------------------------------------------------------------------------------------
-#Article: "BotSniffer: Detecting Botnet Command and Control Channelsin Network Traffic"
-#Article no.: 2
+#Paper: "BotSniffer: Detecting Botnet Command and Control Channels in Network Traffic"
+#Paper no.: 2
 #Authors: Guofei Gu, Junjie Zhang, and Wenke Lee
-#Botnet type: C&C
+#Threat types: C&C
 
 #Abstract:
 Botnets are now recognized as one of the most serious security threats. In contrast to previous malware, botnets have the characteristic of a command and control (C&C) channel. Botnets also often use existing common protocols,e.g.,IRC,HTTP, and in protocol-conforming manners. This makes the detection of botnet C&C a challenging problem. In this paper, we propose an approach that uses network-based anomaly detection to identify botnet C&C channels in a local area network without any prior knowledge of signatures or C&C server addresses. This detection approach can identify both the C&C servers and infected hosts in the network. Our approach is based on the observation that, because of the pre-programmed activities related to C&C, bots within the same botnet will likely demonstrate spatial-temporal correlation and similarity. For example,they engage in coordinated communication, propagation,and attack and fraudulent activities. Our prototype system,BotSniffer, can capture this spatial-temporal correlation in network traffic and utilize statistical algorithms to detect botnets with theoretical bounds on the false positive and false negative rates. We evaluated BotSniffer using many real-world network traces. The results show that BotSniffer can detect real-world botnets with high accuracy and has avery low false positive rate
@@ -37,40 +37,22 @@ Stream features:
 - Packets loaded in one stream.
 
 -------------------------------------------------------------------------------------------------------------------------------------
-
-#MainNotes:
-Zhang et al. developed a framework to effectively and efficiently detect suspicious hosts probable to be bots
-A new P2P traffic detection algorithm:
-- Identify and profile P2P applications
-A novel P2P botnet detection system:
--Detect P2P bots without observing malicious activities
--Detect P2P bots even if legitimate P2P applications are running on the underlying systems
--High detection rate and low false positive rate
-
-Phase I: Identify P2P Hosts
-Phase II: Identify P2P Bots
+#Paper: Botnet detection based on traffic behavior analysis and flow intervals
+#Paper no.: 3
+#Authors: David Zhaoa, Issa Traorea, Bassam Sayeda, Wei Lub, Sherif Saada, Ali Ghorbanic, Dan Garant
+#Threat types: C&C
 
 -------------------------------------------------------------------------------------------------------------------------------------
+#Paper: "BotMiner: Clustering Analysis of Network Traffic for Protocol- and Structure-Independent Botnet Detection"
+#Paper no.: 4
+#Authors: Guofei Gu, Roberto Perdisci, Junjie Zhang, and Wenke Lee
+#Threat types: C&C, P2P
 
 -------------------------------------------------------------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------------------------------------------------------------
-
-My idea is the same as in article 1, but try to detect both centralized and decentralized botnet architectures using machine-learning models.
-
-I propose to develop a tool that can extrapolate key indicators from network traffic, optionally presenting them on a dashboard for manual inspection of the network capture file and the key indicators. After this, it's important to manually analyze different botnet pcap files to determine what features seem to be the most anomolous when compared to regular/benign network traffic. Then, test different machine-learning algorithms (or other algorithms) to determine the best one at differing botnets from regular/benign traffic. There can also be an integration with an external tool such as PowerBI to visually see what indicators it uses to determine the presence of a botnet.
-
-I believe that by using key indicators on three different levels (flows, dialogues and hosts), the detection of any botnet becomes very feasible given that the traffic it generates has unique features.
-
-The idea then is implementing a behavioral analysis method based on machine-learning which will be responsible for detecting the presence of a botnet in the network, and joining this with a static analysis method. The static analysis method will be used as well, and it will consist of a database that tracks malware signatures, C&C known addresses and, possibly, C&C known domain names. The reason for using the latter is that we will be able to more rapidly find the existence of a botnet in a network in the long term, since it just needs to be detected once by the behavioral analysis machine-learning model. Furthermore, it would be interesting to keep an accessible list, per trusted entity, hosted on the internet, which should be regularly updated by each entity's botnet detection engine. This information system will thus allow trusted entities to use other trusted entities blacklists as well and create a shared bulky blacklist set.
-
-Blacklist set:
-- sha1+sha2 signature of common (to all flows) FLOW features
-- C&C ips and domain names
-
--------------------------------------------------------------------------------------------------------------------------------------
-NEW IDEA:
-If we find suspects of the source of the commands, we can correlate the time in which that source is modified with the time that suspected infected machines perform new actions. If those timings are correlated, we can make sure that those machines are indeed receiving commands from that host. If so, an alert is generated and the network administrator must verify the source of the commands and verify if it's a normal application or if it is unintended behavior. This alert must have the suspected victims' ips, the suspected command and control IP, the URL accessed for receiving commands (domain, IP and port) with a direct link to the accessed text.
+#Paper: "Detecting Anomalies in Network Traffic Using Maximum Entropy Estimation"
+#Paper no.: 5
+#Authors: Yu Gu, Andrew McCallum, Don Towsley
+#Threat types: ---
 
 -------------------------------------------------------------------------------------------------------------------------------------
 other papers:
