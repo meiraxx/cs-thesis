@@ -494,6 +494,7 @@ def calculate_flows_features(flows,flow_ids):
                 if flag:
                     bwd_flag_counts[i]+=1
 
+        # TODO: remove "flow_" from some fields, add "pkt_iat" instead of "flow_iat"
         flow_features_header = "flow_id,flow_start_time,flow_end_time,flow_duration,"+\
             "flow_n_pkts,fwd_n_pkts,bwd_n_pkts,"+\
             "flow_n_data_pkts,fwd_n_data_pkts,bwd_n_data_pkts,"+\

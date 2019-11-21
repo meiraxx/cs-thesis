@@ -1,24 +1,36 @@
-My idea is the same as in article 1, but try to detect both centralized and decentralized botnet architectures using machine-learning models.
+#############
+# BL MODULE #
+#############
 
-We propose to develop a tool that can extrapolate key indicators from network traffic, optionally presenting them on a dashboard for manual inspection of the network capture file and the key indicators in a more visual way. After this, it's important to analyze different botnet pcap files to determine what features seem to be the most anomolous when compared to regular/benign network traffic. Then, test different machine-learning algorithms (or other algorithms) to determine the best one at differing botnets from regular/benign traffic. There can also be an integration with an external tool such as PowerBI to visually see what indicators it uses to determine the presence of a botnet.
+Signature-based intrusion detection systems, such as Suricata, often focus on packet features and a few flow features to determine the existence of an attack. Anomaly-based intrusion detection systems such as Zeek focus a lot on flow features, but only a few on dialogues and hosts (these features are often not many and there is the possibility that some anomalies exist outside the scope of these features). Thus, we will propose a new set of features that is wide enough to cover the maximum number of possibly relevant communication-features and their correlations with each attack or type of attack.
 
-I believe that by using key indicators on three different levels (flows, dialogues and hosts), the detection of any botnet becomes very feasible given that the traffic it generates has unique features.
+We propose to develop a tool that can extract a big set of communication-features from a network capture file, completely ignoring any packet data other than packet metadata. The extracted feature-set contains every possibly-relevant feature we could think of until the moment for the task of threat detection. Similarly to if we were trying to obtain the greatest possible quantity of good juice out of an orange, we try to extract the most out of the network capture file. This is the reason why we will use CICFlowMeter, Bro, Suricata, Maltrail and other known network tools as a basis to take away additional ideas of good features to extract from the PCAP.
 
-The idea then is implementing a behavioral analysis method based on machine-learning which will be responsible for detecting the presence of a botnet in the network, and joining this with a static analysis method. The static analysis method will be used as well, and it will consist of a database that tracks malware signatures, C&C known addresses and, possibly, C&C known domain names. The reason for using the latter is that we will be able to more rapidly find the existence of a botnet in a network in the long term, since it just needs to be detected once by the behavioral analysis machine-learning model. Furthermore, it would be interesting to keep an accessible list, per trusted entity, hosted on the internet, which should be regularly updated by each entity's botnet detection engine. This information system will thus allow trusted entities to use other trusted entities blacklists as well and create a shared bulky blacklist set.
+This extraction will serve the purpose of gathering expert-chosen communication-features at higher abstraction levels. Network traffic will be abstracted into four main network-objects:
+	- Packet
+	- Flow
+	- Dialogue
+	- Host
+The packet object is the basis for building the other objects. Flow features enable the construction of dialogue features, and dialogue features enable the construction of host features. I believe that organising network communication-features in different abstraction levels will be important for the success of the detection algorithms.
 
-Blacklist set:
-- sha1+sha2 signature of common (to all flows) FLOW features
-- C&C ips and domain names
+Signature-based detection will not be used at all by the detection system because we assume all communication is encrypted by default.
+We propose to develop a detection system that is focused in network behavior, rather than signatures, because we want to understand and model attack behaviors rather than creating an enormous database of malware signatures that will not work for both encrypted communications and zero-day threats.
 
--------------------------------------------------------------------------------------------------------------------------------------
-NEW IDEA:
-If we find suspects of the source of the commands, we can correlate the time in which that source is modified with the time that suspected infected machines perform new actions. If those timings are correlated, we can make sure that those machines are indeed receiving commands from that host. If so, an alert is generated and the network administrator must verify the source of the commands and verify if it's a normal application or if it is unintended behavior. This alert must have the suspected victims' ips, the suspected command and control IP, the URL accessed for receiving commands (domain, IP and port) with a direct link to the accessed text.
+We will, however, implement a module (i.e., "blacklist module") that saves relevant IoCs that were caught by our detection system in a blacklist. In order to avoid the blacklisting of false-positive results, the security expert in-charge will be asked for a manual confirmation. The IoC database will be continuously updated and shared with the community. This would also create the opportunity for different entities to collaborating towards shared IoC databases, thus helping each other detect new threats to their businesses.
 
--------------------------------------------------------------------------------------------------------------------------------------
+The blacklist module will detect the presence of C2 servers in a network through the maintained IoC database, and through external and well-known maintained botnet blacklists (depending on the feed, this will include IoCs like C2 IP-addresses, C2 domain-names and a few others.
 
-As in paper [7], we propose to try new feature-aggregation techniques, by using the concepts of "flow", "dialogue" and "host", in an organized way. It might be interesting to directly test flow-features, dialogue-features and host-features as separate feature-sets for three different classifier systems. A feature-set with all of the features in it, with no "rational" feature-aggregation, shall also be tested in parallel.
 
-Each one of the four feature-sets will be tested using different ML algorithms. I have contemplated four types of ML algorithms:
+#############
+# BA MODULE #
+#############
+In paper [7], the authors were successful in the detection of botnets using feature-aggregation techniques and varying time-window techniques applied to Zeek logs. Similarly, we propose to apply the feature-aggregation technique by grouping features by network-object. It will be interesting to directly test flow-features, dialogue-features and host-features as separate feature-sets to build three different classifiers, each one representing a different abstraction level. A feature-set with all of the features in it, with no logical feature aggregation, will also be tested in parallel. This will leave us with four different classifier types:
+	- Flow classifier
+	- Dialogue classifier
+	- Host classifier
+	- Generic classifier
+
+Each one of the four types of classifier will be tested using different ML algorithms. I have contemplated four types of ML algorithms:
 	- Novelty Detection Algorithms
 	- Outlier Detection Algorithms
 	- Classification Algorithms
@@ -28,8 +40,7 @@ Novelty detection algorithms will not be tested because the false positive ratio
 
 Outlier detection algorithms might be interesting to detect outliers in a big dataset. These algorithms can be used to aid the labeling of botnet traffic, in case it is mixed with regular traffic.
 
-Classification Algorithms ...
-Regression Algorithms ...
+Classification and regression algorithms are very interesting because by fitting the model to labeled data (labels: "r-traffic", "malicious"), we will be able to provide a final classification: "suspicious" or "r-traffic". For classification purposes, the probabilistic output of the regression models will be used to perform a final classification.
 
 After the whole dataset is labeled, it will be splitted in training and testing datasets, as it is usually done for machine-learning model validation. Then, we propose training several ML models using regression and classification ML algorithms:
 	- Logistic Regression
@@ -41,40 +52,81 @@ After the whole dataset is labeled, it will be splitted in training and testing 
 	- Decision Tree Regression
 	- Naive Bayes Classification (Gaussian, Bernoulli, Multinomial, Complement)
 
+
 Finally, these models will be tested against the testing dataset. The ML model evaluation is shown through the usual ML evaluation metrics:
-	- 1
-	- 2
-	- 3
-	- 4
+	- Accuracy: represents the probability that an occurrence is correctly classified
+	- Recall: represents the TP detection rate
+	- Specificity: represents the TN detection rate
+	- Fallout: represents the FP detection rate
+	- Precision: represents the FN detection rate
+	- F1-Score: represents the harmonic mean of precision and recall
+	- Matthews Correlation Coefficient (MCC): used in machine learning as a measure of quality for classifications in binary classification problems; it fully considers the TP, TN, FP, and FN rates
 
-# Evaluation Phase:
-	- Presenting the results (in the form of evaluation metrics) and identifying the best results;
-	- Presenting the features chosen by the best classifier systems;
-	- Analyse the results and conclude 
+In an evaluation phase, the following activities will be performed:
+	- Identify the best performing classifiers
+	- Determine which features were chosen by the best classifiers
+	- Rank each ML algorithm in botnet detection performance
+	- Rank each feature-aggregation technique
 
-
-
-
-
-
-
-
+In the end of this module, the behavioral analysis module has been completed
 
 
 
-
-
-
-
-
+-------------------------------------------------------------------------------------------------------------------------------------
 
 GLOSSARY:
+Threat - 
+Malware - a malicious computer program
+A Bot is a malware that enables an operator (Bot-master) to remotely control the infected computer system where it is installed (Zombie).
+A Zombie is a computer system infected with a Bot.
+A Bot-master is the remote operator of a Botnet.
+A Botnet is a network of Bots under the remote command of a Bot-master.
+
+Network capture file (PCAP) - 
+Indicator of Compromise (IoC) -
+IoC-filtered PCAP - 
+Command and Control (C&C/C2) - 
+Command source - 
+Peer-to-peer (P2P) - 
+Zero-day - term used to characterize a threat or malware that was not seen before
+Network-object - 
+Packet - 
+Flow -
+Dialogue - 
+Host - 
+Network communication-features - 
+Network behavior is defined as all of the network communication-features relevant for modeling threat behavioral patterns.
+High abstraction level - 
+Intrusion Detection System - 
+Zeek - formerly known as Bro, it is an open-source software framework for analysing network traffic that is most commonly used to detect behavioral anomalies on a network for cybersecurity purposes.
+Suricata -
 Machine Learning (ML) - 
 Regression Algorithm - 
 Classification Algorithm - 
-(https://scikit-learn.org/stable/modules/outlier_detection.html)
 Outlier Detection - "The training data contains outliers which are defined as observations that are far from the others. Outlier detection estimators thus try to fit the regions where the training data is the most concentrated, ignoring the deviant observations."
 Novelty Detection - "The training data is not polluted by outliers and we are interested in detecting whether a new observation is an outlier. In this context an outlier is also called a novelty."
-Regular Traffic - 
-Suspicious Traffic - 
-Malicious Traffic - 
+Regular Traffic (r-traffic) - 
+Suspicious Traffic (s-traffic) - 
+Malicious Traffic (m-traffic) - 
+True Positive (TP) - 
+True Negative (TN) - 
+False Positive (FP) - 
+False Negative (FN) - 
+
+GLOSSARY Refs:
+https://bricata.com/blog/what-is-bro-ids/
+https://scikit-learn.org/stable/modules/outlier_detection.html
+
+
+Tools like Security Information and Emergency Management, Network Threat Hunting Tools, Intrusion Detection and Prevention Systems, and SOCs, are more common than before. Such systems use netflows and system logs to determine if there is an infection, or pcaps.
+
+#Tools:
+##Bricata
+https://bricata.com/
+
+https://www.group-ib.com/tds.html
+##ZEEK
+https://docs.zeek.org/en/stable/intro/
+https://github.com/zeek/zeek
+##Maltrail
+https://github.com/stamparm/maltrail

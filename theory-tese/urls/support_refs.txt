@@ -1,2 +1,15 @@
 https://stats.stackexchange.com/questions/199445/standard-deviation-vs-variance-as-a-feature:
 I should keep statistics on data as indicators: total, max, min, mean, std deviation, variance
+
+http://categitau.com/finding-groups-in-data-clustering-techniques/
+Unsupervised learning: clustering techniques
+
+
+
+
+
+
+TOOLS:
+https://github.com/zeek/zeek
+https://github.com/OISF/suricata
+https://github.com/stamparm/maltrail

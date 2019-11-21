@@ -70,7 +70,7 @@ It is explained that there are some important aspects to take into account in ne
 	- Feature aggregation;
 	- Fine-grained labeling;
 	- Algorithm choice;
-	- Time window choice.
+	- Time-window choice.
 
 The authors tried three different feature-sets, which they call "feature aggregation":
 	- Connection features;
@@ -78,7 +78,22 @@ The authors tried three different feature-sets, which they call "feature aggrega
 	- Traffic and temporal features.
 The authors noted that using feature aggregation was beneficial for the performance of their machine learning models. They grouped network features into these categories.
 
-The authors noted that fine-grained labeling is very beneficial for the performance of machine learning in detecting botnets, although this requires that the labeling is done manually.
+The authors noted that fine-grained labeling was very beneficial for the performance of their machine learning algorithms in detecting botnets, although this required that the labeling was done manually.
 
 The authors do not observe a major difference when they consider both traffic and timing features, in comparison to using only aggregated traffic features, as also mentioned in the paper by (me and Fábio) [?].
+
 -------------------------------------------------------------------------------------------------------------------------------------
+#Paper: "Detecting Botnets Using Command and Control Traffic"
+#Paper no.: 8
+#URL: https://ieeexplore.ieee.org/abstract/document/5190367
+#Authors: Basil AsSadhan, José M.F. Moura, David Lapsley, Christine Jones, W. Timothy Strayer
+#Threat types: Botnets
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#Paper: "Flow-Based Approach on Bro Intrusion Detection"
+#Paper no.: 9
+#URL: https://www.researchgate.net/publication/320948394_Flow-Based_Approach_on_Bro_Intrusion_Detection
+#Authors: Hashem Alaidaros, M. Mahmuddin
+#Threat types: Botnets
+
+

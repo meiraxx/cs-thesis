@@ -50,8 +50,6 @@ That’s why behavioral analysis is virtually always an essential approach to bo
 
 The average interval of time between an endpoint connecting to different outbound servers will generally be low for bots simply because there isn’t a human driving that network activity. There will be more failed connection attempts for the same reason and those connection attempts are more likely to involve numerical IP addresses than server names. And, of course, port-scanning the local network for new infiltration opportunities is classic behavior for a bot. All of these behaviors can be detected with SIEM / Network IDS rules to expand an organizations botnet detection capabilities.
 
-#!Conclusion: behavioral analysis is needed to effectively detect botnets.
-
 ###Botnet Symptoms:
 There are several symptoms which often manifest shortly after botnet infiltration as the compromised machine begins executing its instructions. Awareness of these symptoms can aid in early botnet detection. They include
 	- Linking to established C&C servers for instructions
@@ -82,7 +80,13 @@ One slightly newer wrinkle for botnets is a P2P management architecture. This wo
 
 #Motivation:
 
-#Ref:
-Gross, G. (2019). Botnet Detection and Removal: Methods & Best Practices. Retrieved 12 November 2019, from https://www.alienvault.com/blogs/security-essentials/botnet-detection-and-removal-methods-best-practices
 
 -------------------------------------------------------------------------------------------------------------------------------------
+#URL: http://www.infosecisland.com/blogview/25191-Answering-Tough-Questions-About-Network-Metadata-and-Zeek.html
+#URL no.: 5
+#Author: Kevin Sheu
+#Threat types: ---
+
+#Key Notes:
+NetFlows não têm informação suficiente para analisar tráfego de rede. Guardar todos os PCAPs é demais. Usar metadados formatados pelo Zeek é mais vantajoso devido a diminuir o armazenamento de dados necessário, comparativamente ao PCAP. No entanto, será necessário guardar os PCAPs na mesma, mas poderão ser guardados apenas os pacotes capturados que sejam relevantes para o ataque em questão.
+
