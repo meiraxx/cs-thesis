@@ -90,3 +90,12 @@ One slightly newer wrinkle for botnets is a P2P management architecture. This wo
 #Key Notes:
 NetFlows não têm informação suficiente para analisar tráfego de rede. Guardar todos os PCAPs é demais. Usar metadados formatados pelo Zeek é mais vantajoso devido a diminuir o armazenamento de dados necessário, comparativamente ao PCAP. No entanto, será necessário guardar os PCAPs na mesma, mas poderão ser guardados apenas os pacotes capturados que sejam relevantes para o ataque em questão.
 
+-------------------------------------------------------------------------------------------------------------------------------------
+#URL: https://www.ntop.org/ntopng/how-to-track-an-fight-malware-ransomware-botnets-network-traffic-using-ntopng/
+#URL no.: 6
+#Author: ---
+#Threat types: ---
+
+#Key Notes:
+---
+

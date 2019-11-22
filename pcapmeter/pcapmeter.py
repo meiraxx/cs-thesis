@@ -29,7 +29,6 @@ op.add_argument('-l', '--label', help="label all the flows", dest='label', defau
 op.add_argument('-o', '--out-dir', help="output directory", dest='outdir', default='.' + os.sep)
 op.add_argument('-c', '--check-transport-data-length', action='store_true', help='verbose output', dest='check_transport_data_length')
 op.add_argument('-v', '--verbose', action='store_true', help='verbose output', dest='verbose')
-
 args = op.parse_args()
 
 

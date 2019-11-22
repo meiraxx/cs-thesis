@@ -68,15 +68,13 @@ In an evaluation phase, the following activities will be performed:
 	- Rank each ML algorithm in botnet detection performance
 	- Rank each feature-aggregation technique
 
-In the end of this module, the behavioral analysis module has been completed
-
-
+In the end of this phase, we consider the research phase completed. New communication-features might be added later to PCAP-Meter feature-sets resulting from research, but there will not be a re-evaluation of the system accounting these features after the previous evaluation phase.
 
 -------------------------------------------------------------------------------------------------------------------------------------
 
 GLOSSARY:
-Threat - 
-Malware - a malicious computer program
+Threat is a malicious network or end-point event
+Malware is a malicious computer program
 A Bot is a malware that enables an operator (Bot-master) to remotely control the infected computer system where it is installed (Zombie).
 A Zombie is a computer system infected with a Bot.
 A Bot-master is the remote operator of a Botnet.
@@ -119,14 +117,3 @@ https://scikit-learn.org/stable/modules/outlier_detection.html
 
 
 Tools like Security Information and Emergency Management, Network Threat Hunting Tools, Intrusion Detection and Prevention Systems, and SOCs, are more common than before. Such systems use netflows and system logs to determine if there is an infection, or pcaps.
-
-#Tools:
-##Bricata
-https://bricata.com/
-
-https://www.group-ib.com/tds.html
-##ZEEK
-https://docs.zeek.org/en/stable/intro/
-https://github.com/zeek/zeek
-##Maltrail
-https://github.com/stamparm/maltrail

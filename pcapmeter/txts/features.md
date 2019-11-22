@@ -35,11 +35,12 @@ bwd_diff_port_n_connections_requested
 bwd_diff_port_n_connections_established  
 bwd_diff_port_n_connections_refused  
 bwd_diff_port_n_connections_dropped  
-flow_iat_avg  
-flow_iat_min  
-flow_iat_max  
-flow_iat_var  
-flow_iat_std  
+(flow inter-initiation time)  
+flow_iit_avg  
+flow_iit_min  
+flow_iit_max  
+flow_iit_var  
+flow_iit_std  
 n_unique_dst_ports  
 n_diff_dst_ports  
 >>flow_active  
