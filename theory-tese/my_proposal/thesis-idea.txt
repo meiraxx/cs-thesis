@@ -24,12 +24,6 @@ The blacklist module will detect the presence of C2 servers in a network through
 #############
 # BA MODULE #
 #############
-In paper [7], the authors were successful in the detection of botnets using feature-aggregation techniques and varying time-window techniques applied to Zeek logs. Similarly, we propose to apply the feature-aggregation technique by grouping features by network-object. It will be interesting to directly test flow-features, dialogue-features and host-features as separate feature-sets to build three different classifiers, each one representing a different abstraction level. A feature-set with all of the features in it, with no logical feature aggregation, will also be tested in parallel. This will leave us with four different classifier types:
-	- Flow classifier
-	- Dialogue classifier
-	- Host classifier
-	- Generic classifier
-
 Each one of the four types of classifier will be tested using different ML algorithms. I have contemplated four types of ML algorithms:
 	- Novelty Detection Algorithms
 	- Outlier Detection Algorithms
@@ -66,10 +60,24 @@ In an evaluation phase, the following activities will be performed:
 	- Identify the best performing classifiers
 	- Determine which features were chosen by the best classifiers
 	- Rank each ML algorithm in botnet detection performance
-	- Rank each feature-aggregation technique
 
 In the end of this phase, we consider the research phase completed. New communication-features might be added later to PCAP-Meter feature-sets resulting from research, but there will not be a re-evaluation of the system accounting these features after the previous evaluation phase.
 
+
+
+Thesis Objectives:
+	1. Technical Threat Taxonomy problem:
+		- Propose a comprehensive technical threat taxonomy (botnet, DDoS, portscan, L7protocol-bruteforce, etc.)
+	2. Feature Choice problem:
+		- Study every tool and dataset feature-sets
+		- Build a comprehensive and organized feature-set based on the previously studied feature-sets
+	3. Feature Relevance problem:
+		- Use machine learning to find correlations between threats/threat-classes and communication-features
+		- Study the best identifying features for each threat-class (e.g.: botnet, DDoS, portscan) and/or specific threat (Mirai, 3ve, emotet, nmap, etc.). The focus will be botnets.
+	4. Detection problem:
+		- Test state-of-the-art tools (bro ids, suricata, ossim, maltrail, etc.) and analyze their results
+		- Build a detection system based on the previously studied threat classes
+		- Present our detection results and compare them to the state-of-the-art tools
 -------------------------------------------------------------------------------------------------------------------------------------
 
 GLOSSARY:
@@ -117,3 +125,7 @@ https://scikit-learn.org/stable/modules/outlier_detection.html
 
 
 Tools like Security Information and Emergency Management, Network Threat Hunting Tools, Intrusion Detection and Prevention Systems, and SOCs, are more common than before. Such systems use netflows and system logs to determine if there is an infection, or pcaps.
+
+
+
+

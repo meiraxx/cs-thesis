@@ -65,7 +65,7 @@ Stream features:
 #Paper no.: 7
 #Authors: Talha Ongun, Timothy Sakharaov, Simona Boboila, Alina Oprea, Tina Eliassi-Rad
 #Threat types: ---
-In this paper, the authors worked with Bro logs and the metrics associated with them.
+
 It is explained that there are some important aspects to take into account in network traffic analysis for optimizing the machine learning model's effectiveness:
 	- Feature aggregation;
 	- Fine-grained labeling;
@@ -76,11 +76,10 @@ The authors tried three different feature-sets, which they call "feature aggrega
 	- Connection features;
 	- Traffic features;
 	- Traffic and temporal features.
-The authors noted that using feature aggregation was beneficial for the performance of their machine learning models. They grouped network features into these categories.
+The authors did not observe a major difference when they considered both traffic and timing features, in comparison to using only aggregated traffic features.
+Additionally, the authors noted that using feature aggregation was beneficial for the performance of their machine learning models. They grouped network features into these categories. The authors noted that fine-grained labeling was very beneficial for the performance of their machine learning algorithms in detecting botnets, although this required that the labeling was done manually.
 
-The authors noted that fine-grained labeling was very beneficial for the performance of their machine learning algorithms in detecting botnets, although this required that the labeling was done manually.
 
-The authors do not observe a major difference when they consider both traffic and timing features, in comparison to using only aggregated traffic features, as also mentioned in the paper by (me and Fábio) [?].
 
 -------------------------------------------------------------------------------------------------------------------------------------
 #Paper: "Detecting Botnets Using Command and Control Traffic"
@@ -94,6 +93,14 @@ The authors do not observe a major difference when they consider both traffic an
 #Paper no.: 9
 #URL: https://www.researchgate.net/publication/320948394_Flow-Based_Approach_on_Bro_Intrusion_Detection
 #Authors: Hashem Alaidaros, M. Mahmuddin
-#Threat types: Botnets
+#Threat types: ---
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#Paper: "Statistical network behavior based threat detection"
+#Paper no.: 10
+#URL: https://ieeexplore.ieee.org/document/8116413
+#Authors: Hashem Alaidaros, M. Mahmuddin
+#Threat types: ---
+
 
 

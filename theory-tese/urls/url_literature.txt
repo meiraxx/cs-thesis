@@ -96,6 +96,38 @@ NetFlows não têm informação suficiente para analisar tráfego de rede. Guard
 #Author: ---
 #Threat types: ---
 
-#Key Notes:
----
+#Key Notes: ---
 
+-------------------------------------------------------------------------------------------------------------------------------------
+#URL: https://www.helpnetsecurity.com/2019/03/18/threat-intelligence-driven-network-security/
+#URL no.: 7
+#Author: ---
+#Threat types: ---
+
+#Key Notes: ---
+
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#URL: https://www.dnsstuff.com/ids-vs-ips
+#URL no.: 8
+#Author: ---
+#Threat types: ---
+
+#Key Notes: ---
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#URL: https://www.exabeam.com/ueba/exposing-malicious-insider-threats-the-advantages-of-using-a-behavior-based-approach/
+#URL no.: 9
+#Author: ---
+#Threat types: ---
+
+#Key Notes: ---
+
+
+
+
+
+MORE:
+https://www.fortinet.com/blog/industry-trends/threat-intelligence-at-the-core-ai-machine-learning.html
+https://www.basistech.com/honest-ai/ai-cyber-security/
+https://www.vectra.ai/
