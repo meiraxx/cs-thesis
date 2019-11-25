@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------------------------------------------------------------
 #Powerpoint: "Detecting Stealthy P2P Botnets Using Statistical Traffic Fingerprints"
-#Powerpoint no.: 1
+#Powerpoint no.: 2
 #Authors: Junjie Zhang, Roberto Perdisci, Wenke Lee, Unum Sarfraz, and Xiapu Luo
 #Threat types: P2P Botnet
 
@@ -20,3 +20,9 @@ Phase II: Identify P2P Bots
 RESULTS:
 detection rate of 100%
 false positive rate of 0.2%
+
+-------------------------------------------------------------------------------------------------------------------------------------
+#Powerpoint: "Biting into the Jawbreaker: Pushing the Boundaries of Threat Hunting Automation(#hamm)"
+#Powerpoint no.: 2
+#Authors: Alex Pinto
+#Threat types: Generic
