@@ -1,4 +1,0 @@
-#Book: "Botnet Detection: Countering the Largest Security Threat"
-#Book no.: 1
-#Authors: Sushil Jajodia
-#Threat types: Botnets
