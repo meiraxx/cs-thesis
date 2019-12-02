@@ -63,7 +63,7 @@ flow_iit_max
 flow_iit_var  
 flow_iit_std  
 
-(direction)
+(direction)  
 direction_external_to_internal_total  
 direction_external_to_internal_ratio  
 
