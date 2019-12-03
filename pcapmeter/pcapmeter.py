@@ -673,6 +673,7 @@ def calculate_hosts_features(dialogues):
         dialogue_duration = curr_dialogue["dialogue_duration"]
         total_flow_duration = curr_dialogue["total_flow_duration"]
 
+        # SOURCE
         try:
             hosts[src_ip][dialogue_id] = \
             {
@@ -692,6 +693,7 @@ def calculate_hosts_features(dialogues):
                 "total_flow_duration": total_flow_duration,
             }
 
+        # DESTINATION
         try:
             hosts[dst_ip][dialogue_id] = \
             {
@@ -981,6 +983,9 @@ def print_flows(file):
         flow_start_time = unix_time_millis_to_datetime(flow_start_time)
         flow_end_time = unix_time_millis_to_datetime(flow_end_time)
 
+        # SQL ignores order when Keys are specified... I could have just used this method:
+        # https://stackoverflow.com/questions/9336270/using-a-python-dict-for-a-sql-insert-statement
+        # TODO
         localdbconnector.safe_insert_query(
             "INSERT INTO Flows (transport_protocol, src_ip, dst_ip, src_port, dst_port, sep_counter, dialogue_id," + \
             "flow_start_time, flow_end_time, flow_duration," + \

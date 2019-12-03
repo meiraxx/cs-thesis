@@ -7,7 +7,6 @@ connection_requested
 connection_established  
 connection_refused  
 connection_dropped  
-direction ("external-to-internal", "internal-to-external", "internal-to-internal")  
 flow_active_time_total  
 flow_active_time_mean  
 flow_active_time_min  
@@ -21,6 +20,15 @@ flow_idle_time_min
 flow_idle_time_max  
 flow_idle_time_var  
 flow_idle_time_std  
+
+(layer-7 protocol existence - ftp, ssh, telnet, http, https, irc, etc.; might introduce bias, introduce with care)  
+port-21  
+port-22  
+port-23  
+port-80  
+port-443  
+port-6697  
+
 
 ## Dialogue  
 (tcp-connections)  
@@ -64,14 +72,11 @@ flow_iit_var
 flow_iit_std  
 
 (direction)  
-direction_external_to_internal_total  
-direction_external_to_internal_ratio  
+private_to_public  
+private_to_private  
+public_to_private  
+public_to_public  
 
-direction_internal_to_external_total  
-direction_internal_to_external_ratio  
-
-direction_internal_to_internal_total  
-direction_internal_to_internal_ratio  
 >flow_active  
 >flow_idle  
 
@@ -79,12 +84,25 @@ direction_internal_to_internal_ratio
 Country  
 Operating System  
 Known LAN Host  
+
 dialogue_iat_total  
 dialogue_iat_mean  
 dialogue_iat_min  
 dialogue_iat_max  
 dialogue_iat_var  
 dialogue_iat_std  
->direction ("external-to-internal", "internal-to-external", "internal-to-internal")  
+
+public_address  
+private_address  
+
+dialogue_private_to_public_total  
+dialogue_private_to_public_ratio  
+dialogue_private_to_private_total  
+dialogue_private_to_private_ratio  
+dialogue_public_to_private_total  
+dialogue_public_to_private_ratio  
+dialogue_public_to_public_total  
+dialogue_public_to_public_ratio  
+
 >flow_active  
 >flow_idle  
