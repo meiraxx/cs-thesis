@@ -1,13 +1,26 @@
 #!/usr/bin/env python3
 
 """
-This script is meant to create a json file with a hierarchy "hosts" (ipX), "dialogues" (ipX-ipY) and "flows" (ipX-portA-ipY-portB),
-while at the same time recording flow features, dialogue features and host features
+This script is meant to 
+and to output "hosts" (ipX), "dialogues" (ipX-ipY) and "flows"
+(ipX-portA-ipY-portB-IPprotocol-inflowcounter) and their respective
+conceptual and statistical features
 
 AUTHORSHIP:
 Joao Meira <joao.meira.cs@gmail.com>
 
 """
+
+# ===============================================================
+# OSI-layer protocols: https://en.wikipedia.org/wiki/List_of_network_protocols_(OSI_model)
+# L0 (physical methods of propagation): Copper, Fiber, Wireless
+# PCAP-Meter Protocols
+# L1-protocols: Ethernet (Physical Layer)
+# L2-protocols: Ethernet, MAC, ARP
+# https://en.wikipedia.org/wiki/EtherType; https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers
+# L3-protocols: IPv4 (IP-4), IPv6 (IP-41), ICMP (IP-1), GRE (IP-47)
+# L4-protocols: TCP (IP-6), UDP (IP-17)
+# ===============================================================
 
 import dpkt
 import numpy as np
@@ -34,7 +47,7 @@ args = op.parse_args()
 
 datetime_format1 = "%Y-%m-%d %H:%M:%S.%f"
 datetime_format2 = "%Y-%m-%d %H:%M:%S"
-scale_factor = 0.001    # milliseconds --> seconds
+# ethernet frame minimum size (minimum packet length)
 packet_len_minimum = 64
 
 def flow_id_to_dialogue_id(flow_id):
@@ -48,12 +61,15 @@ def flow_id_to_str(flow_id):
     return '-'.join(map(str,flow_id))
 
 def datetime_to_unix_time_millis(dt):
+    time_scale_factor = 1000.0
     epoch = datetime.datetime.utcfromtimestamp(0)
-    return (dt - epoch).total_seconds() * 1000.0
+    return (dt - epoch).total_seconds() * time_scale_factor
 
 def unix_time_millis_to_datetime(ms_timestamp):
+    time_scale_factor = 1000.0
+    # TODO: eliminate all this trash datetime_format stuff because this was a stupid workaround I did before I'm sure
     #try:
-    dt = datetime.datetime.utcfromtimestamp(ms_timestamp/1000.0).strftime(datetime_format1)
+    dt = datetime.datetime.utcfromtimestamp(ms_timestamp/time_scale_factor).strftime(datetime_format1)
     #except ValueError:
     #    dt = datetime.datetime.utcfromtimestamp(ms_timestamp/1000.0).strftime(datetime_format2)
     return dt
@@ -87,8 +103,13 @@ def process_pcap(file):
     file.seek(0)
     pcap = dpkt.pcap.Reader(file)
     n_pkts=0
-    n_tcp=0
-    n_udp=0
+    n_pkts_tcp=0
+    n_pkts_udp=0
+    n_pkts_icmp=0
+    # TODO: https://dpkt.readthedocs.io/en/latest/print_icmp.html
+    # TODO: find a database and dataset format which accomodates such diverse feature formats (tcp vs udp vs icmp) while maintaining
+    # all the relevant features for each format... maybe there needs to be dataset separation, or maybe it's enough to put a "L3-protocol"
+    # and "L4-protocol" field to separate those formats in the same dataset and zero-out different values
     packet_properties=[]
 
     localdbconnector.delete_all("Flows")
@@ -109,42 +130,43 @@ def process_pcap(file):
         # Pull out fragment information
         do_not_fragment = bool(ip.off & dpkt.ip.IP_DF)
         more_fragments = bool(ip.off & dpkt.ip.IP_MF)
-        # fragment_offset = ip.off & dpkt.ip.IP_OFFMASK
+
+        """
+        # MAC-address, "eth.type" fragment offset and tcp sequence number
+        fragment_offset = ip.off & dpkt.ip.IP_OFFMASK
+        eventually_useful = (mac_addr(eth.src),mac_addr(eth.dst),eth.type,fragment_offset)
+        # tcp seq number: not used to separate/select flows as the implemented rules alone seem to be working really fine
+        tcp_seq = transport_layer.seq
+        """
 
         transport_layer=ip.data
         transport_protocol_name=type(transport_layer).__name__
 
         if transport_protocol_name in ('TCP', 'UDP'):
-            n_pkts+=1
-            if transport_protocol_name=='TCP':
-                n_tcp+=1
-                fin_flag = ( transport_layer.flags & dpkt.tcp.TH_FIN ) != 0
-                syn_flag = ( transport_layer.flags & dpkt.tcp.TH_SYN ) != 0
-                rst_flag = ( transport_layer.flags & dpkt.tcp.TH_RST ) != 0
-                psh_flag = ( transport_layer.flags & dpkt.tcp.TH_PUSH) != 0
-                ack_flag = ( transport_layer.flags & dpkt.tcp.TH_ACK ) != 0
-                urg_flag = ( transport_layer.flags & dpkt.tcp.TH_URG ) != 0
-                ece_flag = ( transport_layer.flags & dpkt.tcp.TH_ECE ) != 0
-                cwr_flag = ( transport_layer.flags & dpkt.tcp.TH_CWR ) != 0
-                # tcp_seq = transport_layer.seq               # tcp seq number: not used to separate/select flows as the implemented rules alone seem to be working really fine
-            elif transport_protocol_name=='UDP':
-                n_udp+=1
+            n_pkts+=1  
+            if transport_protocol_name=='UDP':
+                n_pkts_udp+=1
 
             if transport_protocol_name=='TCP':
                 ip_header_len = (ip.__hdr_len__ + len(ip.opts))
                 transport_header_len = transport_layer.__hdr_len__ + len(transport_layer.opts)
                 header_len = 14 + ip_header_len + transport_header_len    # header definition includes all except tcp.data (ip header, ip options, tcp header, tcp options)
-                pkt_len = len(buf)
+                pkt_len_tmp = len(buf)
 
                 # ethernet zero-byte padding until 64 bytes are reached
-                if pkt_len>=packet_len_minimum:                                       # ethernet frame minimum size (minimum packet length)
-                    pkt_size = pkt_len - header_len                                   # packet size (tcp data length)
+                if pkt_len_tmp>=packet_len_minimum:
+                    pkt_len = pkt_len_tmp
+                    # packet size (tcp data length)
+                    pkt_size = pkt_len - header_len
                 else:
-                    eth_padding_bytes = pkt_len - header_len
+                    eth_padding_bytes = pkt_len_tmp - header_len
                     # header len will ignore eth padding bytes
-                    pkt_len = pkt_len - eth_padding_bytes
-                    pkt_size = pkt_len - header_len                         # ethernet zero-byte padding until 64 bytes are reached
+                    # in this case, pkt_len = header_len
+                    pkt_len = pkt_len_tmp - eth_padding_bytes
+                    # ethernet zero-byte padding until 64 bytes are reached
+                    pkt_size = pkt_len - header_len
 
+                # TODO: re-check this if-statement
                 if pkt_size!=len(transport_layer.data) and args.check_transport_data_length:
                     print("Error on packet no." + str(n_pkts) + ". Packet size should always correspond to tcp data length.", file=sys.stderr)
                     print(len(transport_layer.data),'!=',pkt_size, file=sys.stderr)
@@ -155,21 +177,38 @@ def process_pcap(file):
                 dst_ip = inet_to_str(ip.dst)
                 dst_port = transport_layer.dport
 
-                direction_id = (src_ip, src_port, dst_ip, dst_port, transport_protocol_name, 0)          # src ip, src port, dst ip, dst port, protocol, sep_counter
-                packet_info = (direction_id,str(datetime.datetime.utcfromtimestamp(timestamp)),pkt_len,header_len,pkt_size,do_not_fragment,more_fragments,          \
-                    fin_flag,syn_flag,rst_flag,psh_flag,ack_flag,urg_flag,ece_flag,cwr_flag) if transport_protocol_name=='TCP'\
-                    else (direction_id,str(datetime.datetime.utcfromtimestamp(timestamp)),pkt_len,header_len,pkt_size,do_not_fragment,more_fragments)
+
+                # 6-tuple: src ip, src port, dst ip, dst port, l4-protocol, in-flow-counter
+                # note: in-flow-counter is incremented whenever a flow reaches its end,
+                # independently of the protocol used
+                direction_id = (src_ip, src_port, dst_ip, dst_port, transport_protocol_name, 0)
+                
+                if transport_protocol_name=='TCP':
+                    n_pkts_tcp+=1
+                    fin_flag = ( transport_layer.flags & dpkt.tcp.TH_FIN ) != 0
+                    syn_flag = ( transport_layer.flags & dpkt.tcp.TH_SYN ) != 0
+                    rst_flag = ( transport_layer.flags & dpkt.tcp.TH_RST ) != 0
+                    psh_flag = ( transport_layer.flags & dpkt.tcp.TH_PUSH) != 0
+                    ack_flag = ( transport_layer.flags & dpkt.tcp.TH_ACK ) != 0
+                    urg_flag = ( transport_layer.flags & dpkt.tcp.TH_URG ) != 0
+                    ece_flag = ( transport_layer.flags & dpkt.tcp.TH_ECE ) != 0
+                    cwr_flag = ( transport_layer.flags & dpkt.tcp.TH_CWR ) != 0
+                    packet_info = (direction_id, str(datetime.datetime.utcfromtimestamp(timestamp)), pkt_len, header_len, pkt_size, \
+                        do_not_fragment, more_fragments, fin_flag, syn_flag, rst_flag, psh_flag, ack_flag, urg_flag, ece_flag, cwr_flag)
+                elif transport_protocol_name=='UDP':
+                    packet_info = (direction_id, str(datetime.datetime.utcfromtimestamp(timestamp)), pkt_len, header_len, pkt_size, \
+                        do_not_fragment, more_fragments)
                 packet_properties.append(packet_info)
 
+                # TODO: IPv6 address test and consider database/dataset consequences
                 src_ip_obj = ipaddress.IPv4Address(src_ip)
                 dst_ip_obj = ipaddress.IPv4Address(dst_ip)
                 src_ip_sql_repr = hex(int(src_ip_obj))[2:]
                 dst_ip_sql_repr = hex(int(dst_ip_obj))[2:]
-            # eventually_useful = (mac_addr(eth.src),mac_addr(eth.dst),eth.type,fragment_offset)
 
     if args.verbose:
-        print('Number of UDP packets:',n_udp, file=sys.stderr)
-        print('Number of TCP packets:',n_tcp, file=sys.stderr)
+        print('Number of UDP packets:',n_pkts_udp, file=sys.stderr)
+        print('Number of TCP packets:',n_pkts_tcp, file=sys.stderr)
         print('Total number of packets:',n_pkts, file=sys.stderr)
     return packet_properties
 
@@ -330,7 +369,7 @@ def calculate_flows_features(flows,flow_ids):
                     second_pkt_time = datetime_to_unix_time_millis(datetime.datetime.strptime(flows[flow_id][i][1], datetime_format1))
                 except ValueError:
                     second_pkt_time = datetime_to_unix_time_millis(datetime.datetime.strptime(flows[flow_id][i][1], datetime_format2))
-                current_iat = scale_factor*(second_pkt_time - first_pkt_time)
+                current_iat = (second_pkt_time - first_pkt_time)/time_scale_factor
                 flow_iats.append(current_iat)
                 if flows[flow_id][i-1][0]==direction_id:
                     fwd_iats.append(current_iat)
@@ -377,7 +416,7 @@ def calculate_flows_features(flows,flow_ids):
             last_pkt_time = datetime_to_unix_time_millis(datetime.datetime.strptime(flows[flow_id][flow_n_pkts-1][1], datetime_format1))
         except ValueError:
             last_pkt_time = datetime_to_unix_time_millis(datetime.datetime.strptime(flows[flow_id][flow_n_pkts-1][1], datetime_format2))
-        flow_duration = scale_factor*(last_pkt_time - first_pkt_time)
+        flow_duration = (last_pkt_time - first_pkt_time)/time_scale_factor
 
         fwd_n_pkts = len(fwd_pkt_lens)
         bwd_n_pkts = len(bwd_pkt_lens)

@@ -77,6 +77,19 @@ private_to_private
 public_to_private  
 public_to_public  
 
+(n)
+n_flows  
+
+(type of flow)  
+n_tcp_flows  
+n_udp_flows  
+n_icmp_flows  
+n_fwd_tcp_flows  
+n_fwd_udp_flows  
+n_fwd_icmp_flows  
+n_bwd_tcp_flows  
+n_bwd_udp_flows  
+n_bwd_icmp_flows  
 >flow_active  
 >flow_idle  
 
