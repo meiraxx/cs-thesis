@@ -11,7 +11,7 @@ mydb = mysql.connector.connect(
   user="root",
   password="mySqlPassword123456*",
   host="127.0.0.1",
-  database="tese",
+  #database="tese",
   #auth_plugin='mysql_native_password'
 )
 """
@@ -22,14 +22,15 @@ ip_str_repr = str(ip)
 ip_bin_repr = bin(ip_int_repr)
 ip_sql_repr = hex(int(ip))[2:]
 """
+
 mycursor = mydb.cursor()
+mycursor.execute("CREATE DATABASE tese")
 
 def safe_insert_query(sql_query, val, _print=False):
 	try:
 		mycursor.execute(sql_query, val)
 		mydb.commit()
 		if _print:
-			print(mycursor.rowcount, "record inserted.")
 			print("%s record(s) inserted" %(mycursor.rowcount))
 	except mysql.connector.errors.IntegrityError as e:
 		# constraint not satisfied (example: unique IP)

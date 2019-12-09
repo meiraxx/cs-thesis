@@ -21,30 +21,42 @@ Joao Meira <joao.meira.cs@gmail.com>
 # L3-protocols: IPv4 (IP-4), IPv6 (IP-41), ICMP (IP-1), GRE (IP-47)
 # L4-protocols: TCP (IP-6), UDP (IP-17)
 # ===============================================================
+try:
+    import dpkt
+    import numpy as np
+    import os, sys, time, datetime, socket, argparse
+    import ipaddress
+    import localdbconnector
 
-import dpkt
-import numpy as np
-import os, sys, time, datetime, socket, argparse
-import ipaddress
-import localdbconnector
-
-from dpkt.compat import compat_ord
-from collections import OrderedDict
+    from dpkt.compat import compat_ord
+    from collections import OrderedDict
+except ImportError:
+    raise ImportError("You need to do 'pip3 install -r requirements.txt' to be able to use this program.")
 
 
 # =====================
 #     CLI OPTIONS
 # =====================
 
-op = argparse.ArgumentParser(description='PCAP flow parser')
-op.add_argument('files', metavar='file', nargs='+', help='pcap file to parse flows from')
-op.add_argument('-l', '--label', help="label all the flows", dest='label', default='unknown')
-op.add_argument('-o', '--out-dir', help="output directory", dest='outdir', default='.' + os.sep)
-op.add_argument('-c', '--check-transport-data-length', action='store_true', help='verbose output', dest='check_transport_data_length')
-op.add_argument('-v', '--verbose', action='store_true', help='verbose output', dest='verbose')
-args = op.parse_args()
+oparser = argparse.ArgumentParser(prog='PCAP-Meter',description='PCAP flow parser')
+oparser.add_argument('files', metavar='file', nargs='+', help='pcap file to parse flows from')
+oparser.add_argument('-l', '--label', help="label all the flows", dest='label', default='unknown')
+oparser.add_argument('-o', '--out-dir', help="output directory", dest='outdir', default='.' + os.sep)
+oparser.add_argument('-c', '--check-transport-data-length', action='store_true', help='check transport data length', dest='check_transport_data_length')
+oparser.add_argument('-v', '--verbose', action='store_true', help='verbose output', dest='verbose')
+oparser.add_argument('-h', '--help', action='print_help', help='help message', dest='help')
+args = oparser.parse_args()
+"""
+args_list = [args.register!="", args.login!="",\
+            args.listindividualfiles, args.sendindividualfiles!="", args.fetchindividualfiles!="", args.deleteindividualfiles!="",\
+            args.listallusers, args.share!="", args.fetchshared!="", args.sendshared!="",\
+            args.listmybackups, args.revert, args.revertshared]
 
-
+if True not in args_list:
+    print "[!][" + now() + "] You need to choose an option."
+    oparser.print_help()
+    exit()
+"""
 datetime_format1 = "%Y-%m-%d %H:%M:%S.%f"
 datetime_format2 = "%Y-%m-%d %H:%M:%S"
 # ethernet frame minimum size (minimum packet length)
