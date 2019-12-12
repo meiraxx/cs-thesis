@@ -18,7 +18,7 @@ Joao Meira <joao.meira.cs@gmail.com>
 # L1-protocols: Ethernet (Physical Layer)
 # L2-protocols: Ethernet, MAC, ARP
 # https://en.wikipedia.org/wiki/EtherType; https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers
-# L3-protocols: IPv4 (IP-4), IPv6 (IP-41), ICMP (IP-1), GRE (IP-47)
+# L3-protocols: IPv4 (IP-4), IPv6 (IP-41), ICMPv4 (IP-1), ICMPv6 (IP-58) GRE (IP-47)
 # L4-protocols: TCP (IP-6), UDP (IP-17)
 # ===============================================================
 try:
@@ -320,7 +320,8 @@ def build_tcpflows(nsp_flows,nsp_flow_ids):
                 r4 = rst1 and not rst2
 
                 # consider flow begin or ignore it (considering it is safer, but not considering it will leave out flows that have started before the capture)
-                # the only rule used will be the half-duplex handshake rule because it is inclusive of the full-duplex handshake rule
+                # the only rule used will be the half-duplex handshake rule because it is inclusive of the full-duplex handshake rule,
+                # i.e., (r2 or r1) == r2, for any flow
                 if r2:
                     flow_begin=True
 

@@ -3,10 +3,19 @@
 flag_rate = float(flag_count/n_pkts)  
 fwd_flag_rate = float(fwd_flag_count/fwd_n_pkts)  
 bwd_flag_rate = float(bwd_flag_count/bwd_n_pkts)  
+
+full_duplex_initiation  
+half_duplex_initiation  
+termination_null  
+termination_graceful  
+termination_abort  
+
 connection_requested  
 connection_established  
 connection_refused  
 connection_dropped  
+
+### less probable of adding  
 flow_active_time_total  
 flow_active_time_mean  
 flow_active_time_min  
