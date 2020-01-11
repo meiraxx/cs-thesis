@@ -1,21 +1,30 @@
-# More Features  
-## Flow  
+## More Features  
+IMPORTANT: must consider biflow and uniflow usage advantages
+
+### Flow  
+()
 flag_rate = float(flag_count/n_pkts)  
 fwd_flag_rate = float(fwd_flag_count/fwd_n_pkts)  
 bwd_flag_rate = float(bwd_flag_count/bwd_n_pkts)  
 
-full_duplex_initiation  
-half_duplex_initiation  
-termination_null  
-termination_graceful  
-termination_abort  
-
+(flow connection type)  
 connection_requested  
 connection_established  
 connection_refused  
 connection_dropped  
 
-### less probable of adding  
+(tcp initiation type)  
+full_duplex_initiation  
+half_duplex_initiation  
+
+(tcp termination type)  
+termination_null  
+termination_graceful  
+termination_abort  
+
+**The following flow features have less probability of being added**  
+
+(flow activeness)  
 flow_active_time_total  
 flow_active_time_mean  
 flow_active_time_min  
@@ -30,7 +39,7 @@ flow_idle_time_max
 flow_idle_time_var  
 flow_idle_time_std  
 
-(layer-7 protocol existence - ftp, ssh, telnet, http, https, irc, etc.; might introduce bias, introduce with care)  
+(layer-7 protocol existence - ftp, ssh, telnet, http, https, irc, etc.; might introduce bias, introduce with care, consider protocol fingerprinting... except this might be hard to achieve for too many protocols right now. But we'll see. There are other priorities.)  
 port-21  
 port-22  
 port-23  
@@ -39,7 +48,7 @@ port-443
 port-6697  
 
 
-## Dialogue  
+### Dialogue  
 (tcp-connections)  
 fwd_n_connections_requested  
 fwd_n_connections_established  
@@ -86,7 +95,7 @@ private_to_private
 public_to_private  
 public_to_public  
 
-(n)
+(n)  
 n_flows  
 
 (type of flow)  

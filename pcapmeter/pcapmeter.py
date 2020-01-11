@@ -23,9 +23,11 @@ Joao Meira <joao.meira.cs@gmail.com>
 # ===============================================================
 try:
     import dpkt
+    import socket, ipaddress, datetime
     import numpy as np
-    import os, sys, time, datetime, socket, argparse
-    import ipaddress
+    import time
+    import argparse
+    import os, sys
     import localdbconnector
 
     from dpkt.compat import compat_ord
@@ -38,13 +40,12 @@ except ImportError:
 #     CLI OPTIONS
 # =====================
 
-oparser = argparse.ArgumentParser(prog='PCAP-Meter',description='PCAP flow parser')
-oparser.add_argument('files', metavar='file', nargs='+', help='pcap file to parse flows from')
-oparser.add_argument('-l', '--label', help="label all the flows", dest='label', default='unknown')
+oparser = argparse.ArgumentParser(prog='PCAP-Meter',description='Network-based feature extraction tool')
+oparser.add_argument('files', metavar='file', nargs='+', help='input pcap file')
+oparser.add_argument('-l', '--label', help="label all flows as X", dest='label', default='unknown')
 oparser.add_argument('-o', '--out-dir', help="output directory", dest='outdir', default='.' + os.sep)
 oparser.add_argument('-c', '--check-transport-data-length', action='store_true', help='check transport data length', dest='check_transport_data_length')
 oparser.add_argument('-v', '--verbose', action='store_true', help='verbose output', dest='verbose')
-oparser.add_argument('-h', '--help', action='print_help', help='help message', dest='help')
 args = oparser.parse_args()
 """
 args_list = [args.register!="", args.login!="",\
