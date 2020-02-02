@@ -1,0 +1,7 @@
+Frozen:
+- Maintain BiFlow definition (will be called just flow for now)
+
+TODOS:
+- Rechange bitalker definition to unitalker definition (will be called just talker for now)
+- Equivalently, utilize unihost definition rather than bihost definition (will be called just host for now)
+- Implement ALL the listed network object features without any bugs

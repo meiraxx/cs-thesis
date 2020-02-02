@@ -41,19 +41,23 @@ def select_query(sql_query):
 	myresult = mycursor.fetchall()
 	return myresult
 
-def delete_all(table_name):
+def delete_all(table_name, _print=False):
 	sql = "DELETE FROM %s WHERE \"1\"=\"1\"" %(table_name)
 	mycursor.execute(sql)
 	mydb.commit()
-	print("%s record(s) deleted from table \"%s\"" %(mycursor.rowcount, table_name))
+	if _print:
+		print("%s record(s) deleted from table \"%s\"" %(mycursor.rowcount, table_name))
 
 #safe_insert_query("INSERT INTO Hosts (ip, n_dialogues, rate_dialogues) VALUES (%s, %s, %s)", ("ip_sql_repr placeholder", 2, 0.1))
 #safe_insert_query("INSERT INTO Hosts (ip, n_dialogues, rate_dialogues) VALUES (%s, %s, %s)", ("ip_sql_repr placeholder", 2, 0.1))
 #delete_all("Hosts")
 
+# ========
+# EXAMPLES
+# ========
+
 # CREATE DATABASE
 #mycursor.execute("CREATE DATABASE mydatabase")
-
 
 # CREATE TABLE
 #mycursor.execute("CREATE TABLE customers (name VARCHAR(255), address VARCHAR(255))")
