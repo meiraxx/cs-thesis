@@ -15,10 +15,10 @@ Joao Meira <joao.meira.cs@gmail.com>
 # L0 (physical methods of propagation): Copper, Fiber, Wireless
 # NetMeter Protocols
 # L1-protocols: Ethernet (Physical Layer)
-# L2-protocols: Ethernet, MAC, ARP
+# L2-protocols: **Ethernet**, ??MAC+ARP??
 # https://en.wikipedia.org/wiki/EtherType; https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers
-# L3-protocols: IPv4 (IP-4), IPv6 (IP-41), ICMPv4 (IP-1), ICMPv6 (IP-58) GRE (IP-47)
-# L4-protocols: TCP (IP-6), UDP (IP-17)
+# L3-protocols: **IPv4 (IP-4)**, ??ICMPv4 (IP-1)??, IPv6 (IP-41),  ICMPv6 (IP-58), GRE (IP-47)
+# L4-protocols: **TCP (IP-6)**, ??UDP (IP-17)??
 # ===============================================================
 
 try:
@@ -28,7 +28,6 @@ try:
     import time
     import argparse
     import os, sys
-    #import localdbconnector
 
     from dpkt.compat import compat_ord
     from collections import OrderedDict
@@ -611,196 +610,6 @@ def calculate_tcpflow_features(flows, flow_ids):
 
         yield tcp_flow_features_generator
 
-'''
-def calculate_talkers_features(flows, flow_ids):
-    """Calculate and output talker features"""
-    talker_ids = list()
-    talkers = OrderedDict()
-    for flow_id in flow_ids:
-        curr_flow = flows[flow_id]
-        src_ip = flow_id[0]
-        dst_ip = flow_id[2]
-
-        talker_id = (src_ip, dst_ip)
-
-        # start and end times
-        flow_start_time = curr_flow["flow_start_time"]
-        flow_end_time = curr_flow["flow_end_time"]
-        flow_duration = curr_flow["flow_duration"]
-
-        try:
-            talkers[talker_id][flow_id] = \
-            {
-                "flow_start_time": flow_start_time,
-                "flow_end_time": flow_end_time,
-                "flow_duration": flow_duration,
-            }
-        except KeyError:
-            # talker_ids mantain the same order as flow_ids
-            talker_ids.append(talker_id)
-            talkers[talker_id] = OrderedDict()
-            talkers[talker_id][flow_id] = \
-            {
-                "flow_start_time": flow_start_time,
-                "flow_end_time": flow_end_time,
-                "flow_duration": flow_duration,
-            }
-
-
-    for i, talker_id in enumerate(talker_ids):
-        bwd_talker_id = (talker_id[1], talker_id[0])
-
-        n_fwd_flows = len(talkers[talker_id])
-
-        try:
-            n_bwd_flows = len(talkers[bwd_talker_id])
-        except KeyError:
-            n_bwd_flows = 0
-
-        #print("Talker %s ::: %s ::: %s" %(i,talker_id,talkers[talker_id]))
-
-        # all flow durations of current talker
-        flow_durations = []
-        # first timestamps from forward and backward initiated talkers
-        talker_first_times = []
-        # last timestamps from forward and backward initiated talkers
-        talker_last_times = []
-
-        # FORWARDS
-        for i, flow_id in enumerate(talkers[talker_id]):
-            # flow durations
-            curr_flow_duration = talkers[talker_id][flow_id]["flow_duration"]
-            flow_durations.append(curr_flow_duration)
-            # talker times
-            # first flow
-            if i==0:
-                first_fwd_flow_start_time = talkers[talker_id][flow_id]["flow_start_time"]
-                talker_first_times.append(first_fwd_flow_start_time)
-            # last flow
-            if i==n_fwd_flows-1:
-                last_fwd_flow_start_time = talkers[talker_id][flow_id]["flow_end_time"]
-                talker_last_times.append(last_fwd_flow_start_time)
-
-        # BACKWARDS
-        if bwd_talker_id in talkers:
-            for i, flow_id in enumerate(talkers[bwd_talker_id]):
-                # flow durations
-                curr_flow_duration = talkers[bwd_talker_id][flow_id]["flow_duration"]
-                flow_durations.append(curr_flow_duration)
-                # talker times
-                # first flow
-                if i==0:
-                    first_bwd_flow_start_time = talkers[bwd_talker_id][flow_id]["flow_start_time"]
-                    talker_first_times.append(first_bwd_flow_start_time)
-                # last flow
-                if i==n_bwd_flows-1:
-                    last_bwd_flow_start_time = talkers[bwd_talker_id][flow_id]["flow_end_time"]
-                    talker_last_times.append(last_bwd_flow_start_time)
-
-        talker_start_time = float(np.max(talker_first_times))
-        talker_end_time = float(np.max(talker_last_times))
-        talker_duration = talker_end_time - talker_start_time
-
-        total_flow_duration = float(np.sum(flow_durations))
-        mean_flow_duration = float(np.mean(flow_durations))
-        std_flow_duration = float(np.std(flow_durations))
-        var_flow_duration = float(np.var(flow_durations))
-        max_flow_duration = float(np.max(flow_durations))
-        min_flow_duration = float(np.min(flow_durations))
-
-        fwd_flows_rate = 0 if total_flow_duration==0 else float(n_fwd_flows/total_flow_duration)
-        bwd_flows_rate = 0 if total_flow_duration==0 else float(n_bwd_flows/total_flow_duration)
-
-        talker_features_header = "talker_id,talker_start_time,talker_end_time,talker_duration,n_fwd_flows,n_bwd_flows,fwd_flows_rate,bwd_flows_rate," +\
-        "total_flow_duration,mean_flow_duration,std_flow_duration,var_flow_duration,max_flow_duration,min_flow_duration," +\
-        "label"
-        talker_keys = talker_features_header.split(",")
-        talker_values = \
-            [talker_id, talker_start_time, talker_end_time, talker_duration, n_fwd_flows, n_bwd_flows, fwd_flows_rate, bwd_flows_rate,\
-            total_flow_duration, mean_flow_duration, std_flow_duration, var_flow_duration, max_flow_duration, min_flow_duration,\
-            args.label]
-
-        talker_features_generator = dict(zip(talker_keys, talker_values))
-        
-        yield talker_features_generator
-
-'''
-
-'''
-def calculate_hosts_features(talkers):
-    """Calculate and output host features"""
-    host_ids = list()
-    hosts = OrderedDict()
-    for talker_id in talkers:
-        curr_talker = talkers[talker_id]
-        src_ip = talker_id[0]
-        dst_ip = talker_id[1]
-        
-        # start and end times
-        #host_active_start_time = curr_talker["talker_start_time"]
-        #host_active_end_time = curr_talker["talker_end_time"]
-        talker_start_time = curr_talker["talker_start_time"]
-        talker_end_time = curr_talker["talker_end_time"]
-        talker_duration = curr_talker["talker_duration"]
-        total_flow_duration = curr_talker["total_flow_duration"]
-
-        # SOURCE
-        try:
-            hosts[src_ip][talker_id] = \
-            {
-                "talker_start_time": talker_start_time,
-                "talker_end_time": talker_end_time,
-                "talker_duration": talker_duration,
-                "total_flow_duration": total_flow_duration,
-            }
-        except KeyError:
-            host_ids.append(src_ip)
-            hosts[src_ip] = OrderedDict()
-            hosts[src_ip][talker_id] = \
-            {
-                "talker_start_time": talker_start_time,
-                "talker_end_time": talker_end_time,
-                "talker_duration": talker_duration,
-                "total_flow_duration": total_flow_duration,
-            }
-
-        # DESTINATION
-        try:
-            hosts[dst_ip][talker_id] = \
-            {
-                "talker_start_time": talker_start_time,
-                "talker_end_time": talker_end_time,
-                "talker_duration": talker_duration,
-                "total_flow_duration": total_flow_duration,
-            }
-        except KeyError:
-            host_ids.append(dst_ip)
-            hosts[dst_ip] = OrderedDict()
-            hosts[dst_ip][talker_id] = \
-            {
-                "talker_start_time": talker_start_time,
-                "talker_end_time": talker_end_time,
-                "talker_duration": talker_duration,
-                "total_flow_duration": total_flow_duration,
-            }
-
-    for i, host_id in enumerate(host_ids):
-        n_talkers = len(hosts[host_id])
-        rate_talkers = 0.01
-
-        host_features_header = "host_id,n_talkers,rate_talkers,"+\
-        "label"
-
-        host_keys = host_features_header.split(",")
-        host_values = \
-            [host_id, n_talkers, rate_talkers,\
-            args.label]
-
-        host_features_generator = dict(zip(host_keys, host_values))
-        
-        yield host_features_generator
-'''
-
 def generate_network_objets(file):
     """
     Build all network objects: flows, talkers and hosts
@@ -862,98 +671,9 @@ def generate_network_objets(file):
         flows[curr_flow_id] = flow_features_dict
         print("Flow %s ::: %s" %(i, curr_flow_id))
 
-    # Calculate Talker features
-    """
-    talker_features_generator = calculate_talkers_features(flows, flow_ids)
-    # PARSE Flows to create Talkers
-    talkers = OrderedDict()
-    for i, talker_features_dict in enumerate(talker_features_generator):
-        curr_talker_id = talker_features_dict["talker_id"]
-        talker_features_dict.pop(curr_talker_id, None)
-        talkers[curr_talker_id] = talker_features_dict
-    """
-
-    """
-    # CALCULATE Host features
-    host_features_generator = calculate_hosts_features(talkers)
-    # PARSE Talkers to create Hosts
-    hosts = OrderedDict()
-    for i, host_features_dict in enumerate(host_features_generator):
-        curr_host_id = host_features_dict["host_id"]
-        host_features_dict.pop(curr_host_id, None)
-        hosts[curr_host_id] = host_features_dict
-    """
-
     # ---------------------------------------
-    # INSERT hosts, talkers and hosts in DB
+    # INSERT flows, talkers and hosts in DB
     # ---------------------------------------
-
-    # HOSTS
-    """
-    hostid_sqlhostid = dict()
-    for host_id in hosts:
-        # host features
-        n_talkers = hosts[host_id]["n_talkers"]
-        rate_talkers = hosts[host_id]["rate_talkers"]
-
-        ip_sql_repr = ipv4_octal_to_int(host_id)
-
-        localdbconnector.safe_insert_query(
-            "INSERT INTO Hosts (ip, n_talkers, rate_talkers) VALUES (%s, %s, %s)",
-            (host_id, n_talkers, rate_talkers)
-        )
-
-        myresult = localdbconnector.select_query("SELECT id FROM Hosts WHERE ip = \"%s\"" %(host_id))
-        sql_host_id = myresult[0][0]
-        hostid_sqlhostid[host_id] = sql_host_id
-    """
-
-    # TALKERS
-    """
-    talkerid_sqltalkerid = dict()
-    for talker_id in talkers:
-        src_ip = talker_id[0]
-        dst_ip = talker_id[1]
-
-        # SQL Ids - Foreign Key Relations
-        src_sql_host_id = hostid_sqlhostid[src_ip]
-        dst_sql_host_id = hostid_sqlhostid[dst_ip]
-
-        # talker features
-        talker_start_time = talkers[talker_id]["talker_start_time"]
-        talker_end_time = talkers[talker_id]["talker_end_time"]
-        talker_duration = talkers[talker_id]["talker_duration"]
-        n_fwd_flows = talkers[talker_id]["n_fwd_flows"]
-        n_bwd_flows = talkers[talker_id]["n_bwd_flows"]
-        fwd_flows_rate = talkers[talker_id]["fwd_flows_rate"]
-        bwd_flows_rate = talkers[talker_id]["bwd_flows_rate"]
-        total_flow_duration = talkers[talker_id]["total_flow_duration"]
-        mean_flow_duration = talkers[talker_id]["mean_flow_duration"]
-        std_flow_duration = talkers[talker_id]["std_flow_duration"]
-        var_flow_duration = talkers[talker_id]["var_flow_duration"]
-        max_flow_duration = talkers[talker_id]["max_flow_duration"]
-        min_flow_duration = talkers[talker_id]["min_flow_duration"]
-
-        src_ip_sql_repr = ipv4_octal_to_int(src_ip)
-        dst_ip_sql_repr = ipv4_octal_to_int(dst_ip)
-        talker_start_time = unix_time_millis_to_datetime(talker_start_time)
-        talker_end_time = unix_time_millis_to_datetime(talker_end_time)
-
-        localdbconnector.safe_insert_query(
-            "INSERT INTO Talkers (src_ip, dst_ip, src_host_id, dst_host_id," + \
-            "talker_start_time, talker_end_time, talker_duration, n_fwd_flows, n_bwd_flows, fwd_flows_rate, bwd_flows_rate, total_flow_duration," + \
-            "mean_flow_duration, std_flow_duration, var_flow_duration, max_flow_duration, min_flow_duration)" + \
-            " VALUES (%s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s)",
-            (src_ip, dst_ip, src_sql_host_id, dst_sql_host_id, talker_start_time, talker_end_time, talker_duration, n_fwd_flows, n_bwd_flows, fwd_flows_rate, bwd_flows_rate,\
-            total_flow_duration, mean_flow_duration, std_flow_duration, var_flow_duration, max_flow_duration, min_flow_duration)
-        )
-
-        myresult = localdbconnector.select_query("SELECT id FROM Talkers WHERE src_ip = \"%s\" AND dst_ip = \"%s\"" %(src_ip, dst_ip))
-        sql_talker_id = myresult[0][0]
-        talkerid_sqltalkerid[talker_id] = sql_talker_id
-    """
 
     # FLOWS
     for flow_id in flows:
@@ -1081,77 +801,8 @@ def generate_network_objets(file):
         bwd_ece_count = curr_flow["bwd_ece_count"]
         bwd_cwr_count = curr_flow["bwd_cwr_count"]
 
-        #src_ip_sql_repr = ipv4_octal_to_int(src_ip)
-        #dst_ip_sql_repr = ipv4_octal_to_int(dst_ip)
         flow_start_time = unix_time_millis_to_datetime(flow_start_time)
         flow_end_time = unix_time_millis_to_datetime(flow_end_time)
-
-        """
-        # TODO: SQL ignores order when Keys are specified... I could have just used this method:
-        # https://stackoverflow.com/questions/9336270/using-a-python-dict-for-a-sql-insert-statement
-        localdbconnector.safe_insert_query(
-            "INSERT INTO Flows (transport_protocol, src_ip, dst_ip, src_port, dst_port, sep_counter, talker_id," + \
-            "flow_start_time, flow_end_time, flow_duration," + \
-            "flow_n_packets,fwd_n_packets,bwd_n_packets," + \
-            "flow_n_data_packets,fwd_n_data_packets,bwd_n_data_packets," + \
-            "flow_header_len_total, fwd_header_len_total, bwd_header_len_total," + \
-            "flow_packet_size_mean, flow_packet_size_std,flow_packet_size_max, flow_packet_size_min," + \
-            "fwd_packet_size_mean, fwd_packet_size_std, fwd_packet_size_max, fwd_packet_size_min," + \
-            "bwd_packet_size_mean, bwd_packet_size_std, bwd_packet_size_max, bwd_packet_size_min," + \
-            "flow_packets_per_sec,fwd_packets_per_sec,bwd_packets_per_sec," + \
-            "flow_bytes_per_sec,fwd_bytes_per_sec,bwd_bytes_per_sec," + \
-            "flow_packet_len_total,flow_packet_len_mean,flow_packet_len_std,flow_packet_len_var,flow_packet_len_max,flow_packet_len_min," + \
-            "fwd_packet_len_total,fwd_packet_len_mean,fwd_packet_len_std,fwd_packet_len_var,fwd_packet_len_max,fwd_packet_len_min," + \
-            "bwd_packet_len_total,bwd_packet_len_mean,bwd_packet_len_std,bwd_packet_len_var,bwd_packet_len_max,bwd_packet_len_min," + \
-            "flow_iat_total,flow_iat_mean,flow_iat_std,flow_iat_max,flow_iat_min," + \
-            "fwd_iat_total,fwd_iat_mean,fwd_iat_std,fwd_iat_max,fwd_iat_min," + \
-            "bwd_iat_total,bwd_iat_mean,bwd_iat_std,bwd_iat_max,bwd_iat_min," + \
-            "flow_df_count,flow_mf_count,flow_fin_count,flow_syn_count,flow_rst_count,flow_psh_count,flow_ack_count,flow_urg_count,flow_ece_count,flow_cwr_count," + \
-            "fwd_df_count,fwd_mf_count,fwd_fin_count,fwd_syn_count,fwd_rst_count,fwd_psh_count,fwd_ack_count,fwd_urg_count,fwd_ece_count,fwd_cwr_count," + \
-            "bwd_df_count,bwd_mf_count,bwd_fin_count,bwd_syn_count,bwd_rst_count,bwd_psh_count,bwd_ack_count,bwd_urg_count,bwd_ece_count,bwd_cwr_count)" + \
-            " VALUES (" + \
-            "%s, %s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s," + \
-            "%s, %s, %s," + \
-            "%s, %s, %s," + \
-            "%s, %s, %s," + \
-            "%s, %s, %s, %s," + \
-            "%s, %s, %s, %s," + \
-            "%s, %s, %s, %s," + \
-            "%s, %s, %s," + \
-            "%s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s," + \
-            "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s" + \
-            ")",
-            (transport_protocol, src_ip, dst_ip, src_port, dst_port, sep_counter, sql_talker_id,\
-            flow_start_time, flow_end_time, flow_duration,\
-            flow_n_packets,fwd_n_packets,bwd_n_packets,\
-            flow_n_data_packets,fwd_n_data_packets,bwd_n_data_packets,\
-            flow_header_len_total, fwd_header_len_total, bwd_header_len_total,\
-            flow_packet_size_mean, flow_packet_size_std,flow_packet_size_max, flow_packet_size_min,\
-            fwd_packet_size_mean, fwd_packet_size_std, fwd_packet_size_max, fwd_packet_size_min,\
-            bwd_packet_size_mean, bwd_packet_size_std, bwd_packet_size_max, bwd_packet_size_min,\
-            flow_packets_per_sec,fwd_packets_per_sec,bwd_packets_per_sec,\
-            flow_bytes_per_sec,fwd_bytes_per_sec,bwd_bytes_per_sec,\
-            flow_packet_len_total,flow_packet_len_mean,flow_packet_len_std,flow_packet_len_var,flow_packet_len_max,flow_packet_len_min,\
-            fwd_packet_len_total,fwd_packet_len_mean,fwd_packet_len_std,fwd_packet_len_var,fwd_packet_len_max,fwd_packet_len_min,\
-            bwd_packet_len_total,bwd_packet_len_mean,bwd_packet_len_std,bwd_packet_len_var,bwd_packet_len_max,bwd_packet_len_min,\
-            flow_iat_total,flow_iat_mean,flow_iat_std,flow_iat_max,flow_iat_min,\
-            fwd_iat_total,fwd_iat_mean,fwd_iat_std,fwd_iat_max,fwd_iat_min,\
-            bwd_iat_total,bwd_iat_mean,bwd_iat_std,bwd_iat_max,bwd_iat_min,\
-            flow_df_count,flow_mf_count,flow_fin_count,flow_syn_count,flow_rst_count,flow_psh_count,flow_ack_count,flow_urg_count,flow_ece_count,flow_cwr_count,\
-            fwd_df_count,fwd_mf_count,fwd_fin_count,fwd_syn_count,fwd_rst_count,fwd_psh_count,fwd_ack_count,fwd_urg_count,fwd_ece_count,fwd_cwr_count,\
-            bwd_df_count,bwd_mf_count,bwd_fin_count,bwd_syn_count,bwd_rst_count,bwd_psh_count,bwd_ack_count,bwd_urg_count,bwd_ece_count,bwd_cwr_count,
-            )
-        )
-        """
 
     print("Dataset generated in \033[34m" + str(time.time() - start_time) + "\033[m seconds", file=sys.stderr)
 
