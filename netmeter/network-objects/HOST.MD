@@ -1,11 +1,13 @@
 # HOST
 ## CURRENT NUMBER OF FEATURES
-N Host Features  
+**140 Host Features:**  
+- 14 Conceptual Features
+- 126 Statistical Features
 
 ## IDENTIFIER
-talker_id (joined 2-tuple):  
-- (**source_ip**, destination_ip)  
-- (source_ip, **destination_ip**)  
+host_id (joined 1-tuple):  
+- (**source_ip**)  
+- (**destination_ip**)  
 
 ## ADDITIONAL INFORMATION
 first_talker_time  

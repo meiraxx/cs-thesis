@@ -1,11 +1,11 @@
 # TALKER
 ## CURRENT NUMBER OF FEATURES
-**136 Talker Features:**
-- 10 Conceptual Features
+**140 Talker Features:**  
+- 14 Conceptual Features
 - 126 Statistical Features
 
 ## IDENTIFIER
-talker_id (joined 2-tuple):  
+**talker_id (joined 2-tuple):**  
 - (**source_ip**, destination_ip)
 - (source_ip, **destination_ip**)
 
@@ -29,9 +29,17 @@ talker_n_any_flows
 talker_n_fwd_flows  
 talker_n_bwd_flows  
 
+**TCP Flow Number Features**  
+talker_n_any_tcp_flows  
+talker_n_fwd_tcp_flows  
+talker_n_bwd_tcp_flows  
+
+**Destination Port Features**  
+talker_n_unique_dst_ports  
+
 ### Statistical Features
 **Data Features**  
-Not listed yet  
+None yet  
 
 **Time Features**  
 *Flow Durations*  
@@ -176,4 +184,4 @@ talker_tcpflow_termination_abort_max
 talker_tcpflow_termination_abort_min  
 
 *TCP Flow Flags*  
-Not listed yet
+None yet
