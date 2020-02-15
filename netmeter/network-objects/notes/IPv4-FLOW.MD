@@ -1,4 +1,4 @@
-# FLOW
+# IPv4-FLOW
 ## Extended by: TCP-FLOW
 ## CURRENT NUMBER OF FEATURES
 **121 Flow Features:**

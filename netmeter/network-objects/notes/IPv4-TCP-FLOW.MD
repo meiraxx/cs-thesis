@@ -1,6 +1,6 @@
-# TCP FLOW
+# IPv4-TCP FLOW
 ## CURRENT NUMBER OF FEATURES
-**153 TCP-Flow Features:**
+**153 Flow Features:**
 - 9 Conceptual Flow Features
 - 144 Statistical Flow Features
 

@@ -1,6 +1,10 @@
 src_ip_sql_repr = ipv4_octal_to_int(src_ip)
 dst_ip_sql_repr = ipv4_octal_to_int(dst_ip)
 
+#localdbconnector.delete_all("Flows")
+#localdbconnector.delete_all("Talker")
+#localdbconnector.delete_all("Hosts")
+    
 # TODO: SQL ignores order when Keys are specified... I could have just used this method:
 # https://stackoverflow.com/questions/9336270/using-a-python-dict-for-a-sql-insert-statement
 localdbconnector.safe_insert_query(

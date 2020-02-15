@@ -1,8 +1,8 @@
 # TALKER
 ## CURRENT NUMBER OF FEATURES
-**140 Talker Features:**  
+**176 Talker Features:**  
 - 14 Conceptual Features
-- 126 Statistical Features
+- 162 Statistical Features
 
 ## IDENTIFIER
 **talker_id (joined 2-tuple):**  
@@ -39,7 +39,47 @@ talker_n_unique_dst_ports
 
 ### Statistical Features
 **Data Features**  
-None yet  
+talker_n_packets_per_any_flow_total  
+talker_n_packets_per_any_flow_mean  
+talker_n_packets_per_any_flow_max  
+talker_n_packets_per_any_flow_min  
+talker_n_packets_per_any_flow_var  
+talker_n_packets_per_any_flow_std  
+
+talker_n_packets_per_fwd_flow_total  
+talker_n_packets_per_fwd_flow_mean  
+talker_n_packets_per_fwd_flow_max  
+talker_n_packets_per_fwd_flow_min  
+talker_n_packets_per_fwd_flow_var  
+talker_n_packets_per_fwd_flow_std  
+
+talker_n_packets_per_bwd_flow_total  
+talker_n_packets_per_bwd_flow_mean  
+talker_n_packets_per_bwd_flow_max  
+talker_n_packets_per_bwd_flow_min  
+talker_n_packets_per_bwd_flow_var  
+talker_n_packets_per_bwd_flow_std  
+
+talker_n_data_packets_per_any_flow_total  
+talker_n_data_packets_per_any_flow_mean  
+talker_n_data_packets_per_any_flow_max  
+talker_n_data_packets_per_any_flow_min  
+talker_n_data_packets_per_any_flow_var  
+talker_n_data_packets_per_any_flow_std  
+
+talker_n_data_packets_per_fwd_flow_total  
+talker_n_data_packets_per_fwd_flow_mean  
+talker_n_data_packets_per_fwd_flow_max  
+talker_n_data_packets_per_fwd_flow_min  
+talker_n_data_packets_per_fwd_flow_var  
+talker_n_data_packets_per_fwd_flow_std  
+
+talker_n_data_packets_per_bwd_flow_total  
+talker_n_data_packets_per_bwd_flow_mean  
+talker_n_data_packets_per_bwd_flow_max  
+talker_n_data_packets_per_bwd_flow_min  
+talker_n_data_packets_per_bwd_flow_var  
+talker_n_data_packets_per_bwd_flow_std  
 
 **Time Features**  
 *Flow Durations*  
