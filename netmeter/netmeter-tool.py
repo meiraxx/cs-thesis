@@ -41,17 +41,24 @@ try:
     import cterminal
 except ImportError:
     raise ImportError("You need to do 'pip3 install -r requirements.txt' to be able to use this program.")
-# =====================
-#     CLI OPTIONS
-# =====================
+
+
+# ===============
+# ARGUMENT PARSER
+# ===============
 
 oparser = argparse.ArgumentParser(prog="NetMeter", description="Network-based feature extraction tool")
-oparser.add_argument("files", metavar="file", nargs="+", help="input pcap file")
+oparser.add_argument("pcap_path", metavar="pcap_path", help="Input PCAP file")
 #oparser.add_argument("-l", "--flow-label", help="label all flows as X", dest="flow_label", default="unknown")
-#oparser.add_argument("-o", "--out-dir", help="output directory", dest="outdir", default="." + os.sep)
-oparser.add_argument("-c", "--check-transport-data-length", action="store_true", help="check transport data length", dest="check_transport_data_length")
-oparser.add_argument("-v", "--verbose", action="store_true", help="verbose output", dest="verbose")
+oparser.add_argument("-d", "--data-dir", help="Data directory", dest="data_dir", default="data-files")
+oparser.add_argument("-c", "--check-transport-data-length", action="store_true", help="Check transport data length", dest="check_transport_data_length")
+oparser.add_argument("-v", "--verbose", action="store_true", help="Verbose output", dest="verbose")
 args = oparser.parse_args()
+
+# ==================
+# VALIDATE ARGUMENTS
+# ==================
+
 """
 args_list = [args.register != "", args.login != "",\
             args.listindividualfiles, args.sendindividualfiles != "", args.fetchindividualfiles != "", args.deleteindividualfiles != "",\
@@ -63,9 +70,8 @@ if True not in args_list:
     oparser.print_help()
     exit()
 """
-datetime_format1 = "%Y-%m-%d %H:%M:%S.%f"
-datetime_format2 = "%Y-%m-%d %H:%M:%S"
-time_scale_factor = 1000.0
+
+csv_files_dir = args.data_dir + os.sep + "csv"
 
 # ==========================
 # START: Auxiliary Functions
@@ -84,19 +90,26 @@ def generate_flow_line(flow_features):
 def flow_id_to_str(flow_id):
     return "-".join(map(str,flow_id))
 
-def datetime_to_unix_time_millis(dt):
+def datetime_to_unixtime(datetime_str):
     time_scale_factor = 1000.0
+    datetime_format1 = "%Y-%m-%d %H:%M:%S.%f"
+    datetime_format2 = "%Y-%m-%d %H:%M:%S"
+    try:
+        datetime_obj = datetime.datetime.strptime(datetime_str, datetime_format1)
+    except ValueError:
+        datetime_obj = datetime.datetime.strptime(datetime_str, datetime_format2)
     epoch = datetime.datetime.utcfromtimestamp(0)
-    return (dt - epoch).total_seconds() * time_scale_factor
+    return (datetime_obj - epoch).total_seconds() * time_scale_factor
 
-def unix_time_millis_to_datetime(ms_timestamp):
+def unixtime_to_datetime(ms_timestamp):
     time_scale_factor = 1000.0
-    # NOTE: I think I put it here in case there was a "perfect" timestamp, in which case the %f wouldn't work out 
-    #try:
-    dt = datetime.datetime.utcfromtimestamp(ms_timestamp/time_scale_factor).strftime(datetime_format1)
-    #except ValueError:
-    #    dt = datetime.datetime.utcfromtimestamp(ms_timestamp/1000.0).strftime(datetime_format2)
-    return dt
+    datetime_format1 = "%Y-%m-%d %H:%M:%S.%f"
+    datetime_format2 = "%Y-%m-%d %H:%M:%S"
+    try:
+        datetime_obj = datetime.datetime.utcfromtimestamp(ms_timestamp/time_scale_factor).strftime(datetime_format1)
+    except ValueError:
+        datetime_obj = datetime.datetime.utcfromtimestamp(ms_timestamp/1000.0).strftime(datetime_format2)
+    return datetime_obj
 
 def mac_addr(address):
     """Convert a MAC address to a readable/printable string
@@ -129,6 +142,12 @@ def ipv4_dotted_to_int(ipv4_dotted):
     ipv4_int = hex(int(ipv4_obj))[2:]
     return ipv4_int
 
+def make_header_string(string, separator="#"):
+    """Transforms a string into an header"""
+    separator_line = separator*len(string)
+    header_string = cterminal.colors.BOLD + separator_line + "\n" + string + "\n" + separator_line + cterminal.colors.ENDC
+    return header_string
+
 # ========================
 # END: Auxiliary Functions
 # ========================
@@ -138,14 +157,23 @@ def build_packets(file):
     """
     Process PCAP and build packets
     """
-    #total_n_packets = sum(1 for packet in dpkt.pcap.Reader(file))
+
+    if args.verbose:
+        print(make_header_string("SUPPORTED PROTOCOLS"), flush=True)
+        print("Layer 1: Ethernet", flush=True)
+        print("Layer 2: Ethernet", flush=True)
+        print("Layer 3: IPv4", flush=True)
+        print("Layer 3+: ICMPv4", flush=True)
+        print("Layer 4: TCP, UDP", flush=True, end="\n\n")
+
     file.seek(0)
     pcap = dpkt.pcap.Reader(file)
-    n_packets = 0
-    n_packets_tcp = 0
-    n_packets_udp = 0
-    #n_packets_icmp = 0
-
+    n_packets_ipv4 = 0
+    n_packets_ipv4_tcp = 0
+    n_packets_ipv4_udp = 0
+    n_packets_ipv4_icmp = 0
+    n_packets_ipv4_others = 0
+    n_packets_others = 0
     # ethernet frame minimum size (minimum packet length)
     packet_len_minimum = 64
 
@@ -158,23 +186,24 @@ def build_packets(file):
     # [+] PARSE ALL PACKETS
     for timestamp, buf in pcap:
         # ================
-        # LAYER1: ETHERNET
+        # LAYER1/LAYER2: ETHERNET
         # ================
+        # FUTURE-TODO: implement handlers for other L1/L2 protocols
+
         # Unpack the Ethernet frame (mac src, mac dst, ether type)
         eth = dpkt.ethernet.Ethernet(buf)
-
-        # ================
-        # LAYER2: ETHERNET
-        # ================
-        # Check if the Ethernet data contains an IP packet. If it doesn't, ignore it.
-        if not isinstance(eth.data, dpkt.ip.IP):
-            # FUTURE-TODO: implement handlers for other L3 protocols
-            continue
 
         # ============
         # LAYER3: IPv4
         # ============
-        # Unpack the data within the Ethernet frame (the IP packet)
+        # FUTURE-TODO: implement handlers for other L3 protocols
+
+        # Check if the Ethernet data contains an IPv4 packet. If it doesn't, ignore it.
+        if not isinstance(eth.data, dpkt.ip.IP):
+            n_packets_others += 1
+            continue
+
+        # Unpack the data within the Ethernet frame: the IPv4 packet, confirmed
         ip = eth.data
 
         # Pull out fragment information
@@ -184,10 +213,12 @@ def build_packets(file):
         transport_layer = ip.data
         transport_protocol_name = type(transport_layer).__name__
 
-        if transport_protocol_name in ("TCP", "UDP"):
-            n_packets += 1  
+        if transport_protocol_name in ("TCP", "UDP", "ICMP"):
+            n_packets_ipv4 += 1  
             if transport_protocol_name == "UDP":
-                n_packets_udp += 1
+                n_packets_ipv4_udp += 1
+            if transport_protocol_name == "ICMP":
+                n_packets_ipv4_icmp += 1
 
             if transport_protocol_name == "TCP":
                 ip_header_len = ip.__hdr_len__ + len(ip.opts)
@@ -210,7 +241,7 @@ def build_packets(file):
 
                 # TODO: re-check this if-statement
                 if packet_size != len(transport_layer.data) and args.check_transport_data_length:
-                    print("Error on packet no." + str(n_packets) + ". Packet size should always correspond to tcp data length.", flush=True)
+                    print("Error on packet no." + str(n_packets_ipv4) + ". Packet size should always correspond to tcp data length.", flush=True)
                     print(len(transport_layer.data), "!=", packet_size, flush=True)
                     exit()
 
@@ -225,32 +256,30 @@ def build_packets(file):
                 # independently of the protocol used
                 flow_id = (src_ip, src_port, dst_ip, dst_port, transport_protocol_name, 0)
                 
-                if transport_protocol_name == "TCP":
-                    n_packets_tcp += 1
-                    fin_flag = ( transport_layer.flags & dpkt.tcp.TH_FIN ) != 0
-                    syn_flag = ( transport_layer.flags & dpkt.tcp.TH_SYN ) != 0
-                    rst_flag = ( transport_layer.flags & dpkt.tcp.TH_RST ) != 0
-                    psh_flag = ( transport_layer.flags & dpkt.tcp.TH_PUSH) != 0
-                    ack_flag = ( transport_layer.flags & dpkt.tcp.TH_ACK ) != 0
-                    urg_flag = ( transport_layer.flags & dpkt.tcp.TH_URG ) != 0
-                    ece_flag = ( transport_layer.flags & dpkt.tcp.TH_ECE ) != 0
-                    cwr_flag = ( transport_layer.flags & dpkt.tcp.TH_CWR ) != 0
+                n_packets_ipv4_tcp += 1
+                fin_flag = ( transport_layer.flags & dpkt.tcp.TH_FIN ) != 0
+                syn_flag = ( transport_layer.flags & dpkt.tcp.TH_SYN ) != 0
+                rst_flag = ( transport_layer.flags & dpkt.tcp.TH_RST ) != 0
+                psh_flag = ( transport_layer.flags & dpkt.tcp.TH_PUSH) != 0
+                ack_flag = ( transport_layer.flags & dpkt.tcp.TH_ACK ) != 0
+                urg_flag = ( transport_layer.flags & dpkt.tcp.TH_URG ) != 0
+                ece_flag = ( transport_layer.flags & dpkt.tcp.TH_ECE ) != 0
+                cwr_flag = ( transport_layer.flags & dpkt.tcp.TH_CWR ) != 0
 
-                    packet_features = (flow_id, str(datetime.datetime.utcfromtimestamp(timestamp)), packet_len, header_len, packet_size, \
-                        df_flag, mf_flag, fin_flag, syn_flag, rst_flag, psh_flag, ack_flag, urg_flag, ece_flag, cwr_flag)
+                packet_features = (flow_id, str(datetime.datetime.utcfromtimestamp(timestamp)), packet_len, header_len, packet_size, \
+                    df_flag, mf_flag, fin_flag, syn_flag, rst_flag, psh_flag, ack_flag, urg_flag, ece_flag, cwr_flag)
                 packets.append(packet_features)
-
-                # FUTURE-TODO: IPv6 address test and consider database/dataset consequences
-                src_ip_obj = ipaddress.IPv4Address(src_ip)
-                dst_ip_obj = ipaddress.IPv4Address(dst_ip)
-                #src_ip_sql_repr = hex(int(src_ip_obj))[2:]
-                #dst_ip_sql_repr = hex(int(dst_ip_obj))[2:]
+        else:
+            n_packets_ipv4_others += 1
 
     if args.verbose:
-        print("########## PACKETS ##########", flush=True)
-        print("Total number of packets:",n_packets, flush=True)
-        print("Number of UDP packets:",n_packets_udp, flush=True)
-        print("Number of TCP packets:",n_packets_tcp, flush=True)
+        print(make_header_string("NETWORK PACKETS"), flush=True)
+        print("Number of IPv4 packets:",n_packets_ipv4, flush=True)
+        print("Number of IPv4-TCP packets:",n_packets_ipv4_tcp, flush=True)
+        print("Number of IPv4-UDP packets:",n_packets_ipv4_udp, flush=True)
+        print("Number of IPv4-ICMP packets:",n_packets_ipv4_icmp, flush=True)
+        print("Number of IPv4-<Other> packets:",n_packets_ipv4_others, flush=True)
+        print("Number of <Other> packets:",n_packets_others, flush=True, end="\n\n")
     return packets
 
 def build_uniflows(packets):
@@ -281,9 +310,9 @@ def join_duplicate_uniflows(uniflow_ids):
             unique_uniflow_ids.append((uniflow_id[2],uniflow_id[3],uniflow_id[0],uniflow_id[1],uniflow_id[4],uniflow_id[5]))
     return list(OrderedDict.fromkeys(unique_uniflow_ids))
 
-def build_flows(uniflows, unique_uniflow_ids):
+def build_ipv4_flows(uniflows, unique_uniflow_ids):
     """Join unidirectional flow information into its bidirectional flow equivalent"""
-    flows=dict()
+    flows = dict()
     #non-separated flow ids (flows that haven't yet taken into account the begin/end flow flags)
     flow_ids=[]
     j=0
@@ -301,7 +330,7 @@ def build_flows(uniflows, unique_uniflow_ids):
         j+=2
     return flows, flow_ids
 
-def build_tcpflows(flows, flow_ids):
+def build_tcp_flows(flows, flow_ids):
     """Separate bidirectional flows using TCP's RFC rules"""
     # FUTURE-TODO: validate using tcp_seq
     # fin,syn,rst,psh,ack,urg,ece,cwr (2,...,9)
@@ -313,13 +342,6 @@ def build_tcpflows(flows, flow_ids):
     for flow_id in flow_ids:
         curr_flow = flows[flow_id]
         curr_flow.sort(key=lambda x: x[1])       # sorting the packets in each flow by date-and-time
-        """
-        if flow_id[4] == "UDP": #udp flow
-            tcp_flows[flow_id] = curr_flow
-            tcp_flow_ids.append(flow_id)
-            print("udp")
-            continue
-        """
         flow_any_n_packets = len(curr_flow)
 
         if flow_any_n_packets == 0:
@@ -405,27 +427,29 @@ def build_tcpflows(flows, flow_ids):
     return tcp_flows,tcp_flow_ids
 
 def get_network_object_header(protocol_stack):
-    flow_features_header_str = ""
+    features_dir = "network-objects" + os.sep + "features"
+    features_header_str = ""
     if protocol_stack == "ipv4":
-        f = open("network-objects" + os.sep + "features" + os.sep + "ipv4-flow-header.txt", "r")
-        flow_features_header_str = f.read().replace("\n", "|")
-        f.close()
+        features_file = features_dir + os.sep + "ipv4-flow-header.txt"
     else:
         raise ValueError("Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4")
-    return flow_features_header_str
+
+    f = open(features_file, "r")
+    features_header_str = f.read().replace("\n", "|")
+    f.close()
+
+    return features_header_str
 
 def calculate_ipv4_flow_features(flows, flow_ids):
     """Calculate and output IPv4 flow features"""
-    #"flow_fin_count,flow_syn_count,flow_rst_count,flow_psh_count,flow_ack_count,flow_urg_count,flow_ece_count,flow_cwr_count,"+\
-    #"flow_fwd_fin_count,flow_fwd_syn_count,flow_fwd_rst_count,flow_fwd_psh_count,flow_fwd_ack_count,flow_fwd_urg_count,flow_fwd_ece_count,flow_fwd_cwr_count,"+\
-    #"flow_bwd_fin_count,flow_bwd_syn_count,flow_bwd_rst_count,flow_bwd_psh_count,flow_bwd_ack_count,flow_bwd_urg_count,flow_bwd_ece_count,flow_bwd_cwr_count,"+\
-
+    time_scale_factor = 1000.0
     ipv4_flow_features_header_str = get_network_object_header("ipv4")
     ipv4_flow_features_header_list = ipv4_flow_features_header_str.split("|")
 
     for flow_id in flow_ids:
         curr_flow = flows[flow_id]
-        # NOTE: curr_flow[packet_index][packet_feature_index]
+        # DEV-NOTE: curr_flow[packet_index][packet_feature_index]
+        # NOTE: backward packets may not exist
 
         # =========================
         # PREPARE DATA STRUCTURES |
@@ -493,24 +517,16 @@ def calculate_ipv4_flow_features(flows, flow_ids):
             curr_packet_df_flag = curr_packet[5]
             curr_packet_mf_flag = curr_packet[6]
 
-            curr_tcp_flags = curr_packet[-8:]
-
-            # start on second packet
+            # IAT requires that there's at least two packets.
             if i >= 1:
-                try:
-                    flow_any_first_packet_time = datetime_to_unix_time_millis(datetime.datetime.strptime(previous_packet_timestamp, datetime_format1))
-                except ValueError:
-                    flow_any_first_packet_time = datetime_to_unix_time_millis(datetime.datetime.strptime(previous_packet_timestamp, datetime_format2))
-                try:
-                    second_packet_time = datetime_to_unix_time_millis(datetime.datetime.strptime(curr_packet_timestamp, datetime_format1))
-                except ValueError:
-                    second_packet_time = datetime_to_unix_time_millis(datetime.datetime.strptime(curr_packet_timestamp, datetime_format2))
-                curr_iat = (second_packet_time - flow_any_first_packet_time)/time_scale_factor
-                flow_any_iats.append(curr_iat)
+                curr_packet_time = datetime_to_unixtime(previous_packet_timestamp)
+                next_packet_time = datetime_to_unixtime(curr_packet_timestamp)
+                curr_packet_iat = (next_packet_time - curr_packet_time)/time_scale_factor
+                flow_any_iats.append(curr_packet_iat)
                 if previous_packet_flow_id == flow_id:
-                    flow_fwd_iats.append(curr_iat)
+                    flow_fwd_iats.append(curr_packet_iat)
                 else:
-                    flow_bwd_iats.append(curr_iat)
+                    flow_bwd_iats.append(curr_packet_iat)
 
             flow_any_packet_lens.append(curr_packet_len)
             flow_any_header_lens.append(curr_packet_header_len)
@@ -546,31 +562,19 @@ def calculate_ipv4_flow_features(flows, flow_ids):
         # ENRICH AND EXTRACT INFORMATION |
         # ================================
 
-        # ========================================
-        # number of packets (all times in seconds)
-        # ========================================
-        # [first packet][timestamp_index]
-        try:
-            flow_any_first_packet_time = datetime_to_unix_time_millis(datetime.datetime.strptime(curr_flow[0][1], datetime_format1))
-        except ValueError:
-            flow_any_first_packet_time = datetime_to_unix_time_millis(datetime.datetime.strptime(curr_flow[0][1], datetime_format2))
+        # ======================
+        # ADDITIONAL INFORMATION
+        # ======================
+        first_packet = curr_flow[0]
+        last_packet = curr_flow[flow_any_n_packets-1]
+        first_packet_timestamp = first_packet[1]
+        last_packet_timestamp = last_packet[1]
 
-        # [last packet][timestamp_index]
-        try:
-            flow_any_last_packet_time = datetime_to_unix_time_millis(datetime.datetime.strptime(curr_flow[flow_any_n_packets-1][1], datetime_format1))
-        except ValueError:
-            flow_any_last_packet_time = datetime_to_unix_time_millis(datetime.datetime.strptime(curr_flow[flow_any_n_packets-1][1], datetime_format2))
-
-        flow_any_duration = (flow_any_last_packet_time - flow_any_first_packet_time)/time_scale_factor
-        if flow_any_duration == 0:
-            flow_any_packets_per_sec = flow_fwd_packets_per_sec = flow_bwd_packets_per_sec = 0
-        else:
-            flow_any_packets_per_sec = flow_any_n_packets/flow_any_duration
-            flow_fwd_packets_per_sec = flow_fwd_n_packets/flow_any_duration
-            flow_bwd_packets_per_sec = flow_bwd_n_packets/flow_any_duration
+        flow_any_first_packet_time = datetime_to_unixtime(first_packet_timestamp)
+        flow_any_last_packet_time = datetime_to_unixtime(last_packet_timestamp)
 
         # ==============
-        # packet lengths
+        # Packet Lengths
         # ==============
         flow_any_packet_len_total = float(np.sum(flow_any_packet_lens))
         flow_any_packet_len_mean = float(np.mean(flow_any_packet_lens))
@@ -586,85 +590,133 @@ def calculate_ipv4_flow_features(flows, flow_ids):
         flow_fwd_packet_len_max = float(np.max(flow_fwd_packet_lens))
         flow_fwd_packet_len_min = float(np.min(flow_fwd_packet_lens))
 
-        if len(flow_bwd_packet_lens) != 0:
+        if len(flow_bwd_packet_lens) == 0:
+            flow_bwd_packet_len_total = flow_bwd_packet_len_mean = flow_bwd_packet_len_std \
+            = flow_bwd_packet_len_var = flow_bwd_packet_len_max = flow_bwd_packet_len_min = 0
+        else:
             flow_bwd_packet_len_total = float(np.sum(flow_bwd_packet_lens))
             flow_bwd_packet_len_mean = float(np.mean(flow_bwd_packet_lens))
             flow_bwd_packet_len_std = float(np.std(flow_bwd_packet_lens))
             flow_bwd_packet_len_var = float(np.var(flow_bwd_packet_lens))
             flow_bwd_packet_len_max = float(np.max(flow_bwd_packet_lens))
             flow_bwd_packet_len_min = float(np.min(flow_bwd_packet_lens))
+
+        # =============
+        # TIME FEATURES
+        # =============
+        flow_any_duration = (flow_any_last_packet_time - flow_any_first_packet_time)/time_scale_factor
+        flow_any_first_packet_time = unixtime_to_datetime(flow_any_first_packet_time)
+        flow_any_last_packet_time = unixtime_to_datetime(flow_any_last_packet_time)
+        if flow_any_duration == 0:
+            flow_any_packets_per_sec = flow_fwd_packets_per_sec = flow_bwd_packets_per_sec = 0
+            flow_any_bytes_per_sec = flow_fwd_bytes_per_sec = flow_bwd_bytes_per_sec = 0
         else:
-            flow_bwd_packet_len_total = flow_bwd_packet_len_mean = flow_bwd_packet_len_std = flow_bwd_packet_len_var = flow_bwd_packet_len_max = flow_bwd_packet_len_min = 0
+            flow_any_packets_per_sec = float(flow_any_n_packets/flow_any_duration)
+            flow_fwd_packets_per_sec = float(flow_fwd_n_packets/flow_any_duration)
+            flow_bwd_packets_per_sec = float(flow_bwd_n_packets/flow_any_duration)
+            flow_any_bytes_per_sec = float(flow_any_packet_len_total/flow_any_duration)
+            flow_fwd_bytes_per_sec = float(flow_fwd_packet_len_total/flow_any_duration)
+            flow_bwd_bytes_per_sec = float(flow_bwd_packet_len_total/flow_any_duration)
 
-        # =============
-        # bytes per sec
-        # =============
-        flow_any_bytes_per_sec = 0 if flow_any_duration == 0 else float(flow_any_packet_len_total/flow_any_duration)
-        flow_fwd_bytes_per_sec = 0 if flow_any_duration == 0 else float(flow_fwd_packet_len_total/flow_any_duration)
-        flow_bwd_bytes_per_sec = 0 if flow_any_duration == 0 else float(flow_bwd_packet_len_total/flow_any_duration)
+        # =========================================================================
+        # Packet Header Lengths (14 byte Ether header + ip header + tcp/udp header)
+        # =========================================================================
 
-        # ==================================================================
-        # header lengths (14 byte Ether header + ip header + tcp/udp header)
-        # ==================================================================
         flow_any_header_len_total = float(np.sum(flow_any_header_lens))
+        flow_any_header_len_mean = float(np.mean(flow_any_header_lens))
+        flow_any_header_len_std = float(np.std(flow_any_header_lens))
+        flow_any_header_len_var = float(np.var(flow_any_header_lens))
+        flow_any_header_len_max = float(np.max(flow_any_header_lens))
+        flow_any_header_len_min = float(np.min(flow_any_header_lens))
+
         flow_fwd_header_len_total = float(np.sum(flow_fwd_header_lens))
-        flow_bwd_header_len_total = float(np.sum(flow_bwd_header_lens)) if len(flow_bwd_header_lens)!=0 else 0
+        flow_fwd_header_len_mean = float(np.mean(flow_fwd_header_lens))
+        flow_fwd_header_len_std = float(np.std(flow_fwd_header_lens))
+        flow_fwd_header_len_var = float(np.var(flow_fwd_header_lens))
+        flow_fwd_header_len_max = float(np.max(flow_fwd_header_lens))
+        flow_fwd_header_len_min = float(np.min(flow_fwd_header_lens))
 
-        # ===========
-        # packet size
-        # ===========
+        if len(flow_bwd_header_lens) == 0:
+            flow_bwd_header_len_total = flow_bwd_header_len_mean = flow_bwd_header_len_std \
+            = flow_bwd_header_len_var = flow_bwd_header_len_max = flow_bwd_header_len_min = 0
+        else:
+            flow_bwd_header_len_total = float(np.sum(flow_bwd_header_lens))
+            flow_bwd_header_len_mean = float(np.mean(flow_bwd_header_lens))
+            flow_bwd_header_len_std = float(np.std(flow_bwd_header_lens))
+            flow_bwd_header_len_var = float(np.var(flow_bwd_header_lens))
+            flow_bwd_header_len_max = float(np.max(flow_bwd_header_lens))
+            flow_bwd_header_len_min = float(np.min(flow_bwd_header_lens))
 
+        # ============
+        # Packet Sizes
+        # ============
+
+        flow_any_packet_size_total = float(np.sum(flow_any_packet_sizes))
         flow_any_packet_size_mean = float(np.mean(flow_any_packet_sizes))
         flow_any_packet_size_std = float(np.std(flow_any_packet_sizes))
+        flow_any_packet_size_var = float(np.var(flow_any_packet_sizes))
         flow_any_packet_size_max = float(np.max(flow_any_packet_sizes))
         flow_any_packet_size_min = float(np.min(flow_any_packet_sizes))
 
+        flow_fwd_packet_size_total = float(np.sum(flow_fwd_packet_sizes))
         flow_fwd_packet_size_mean = float(np.mean(flow_fwd_packet_sizes))
         flow_fwd_packet_size_std = float(np.std(flow_fwd_packet_sizes))
+        flow_fwd_packet_size_var = float(np.var(flow_fwd_packet_sizes))
         flow_fwd_packet_size_max = float(np.max(flow_fwd_packet_sizes))
         flow_fwd_packet_size_min = float(np.min(flow_fwd_packet_sizes))
 
-        if len(flow_bwd_packet_sizes) != 0:
+        if len(flow_bwd_packet_sizes) == 0:
+            flow_bwd_packet_size_total = flow_bwd_packet_size_mean = flow_bwd_packet_size_std \
+            = flow_bwd_packet_size_var = flow_bwd_packet_size_max = flow_bwd_packet_size_min = 0
+        else:
+            flow_bwd_packet_size_total = float(np.sum(flow_bwd_packet_sizes))
             flow_bwd_packet_size_mean = float(np.mean(flow_bwd_packet_sizes))
             flow_bwd_packet_size_std = float(np.std(flow_bwd_packet_sizes))
+            flow_bwd_packet_size_var = float(np.var(flow_bwd_packet_sizes))
             flow_bwd_packet_size_max = float(np.max(flow_bwd_packet_sizes))
             flow_bwd_packet_size_min = float(np.min(flow_bwd_packet_sizes))
-        else:
-            flow_bwd_packet_size_mean = flow_bwd_packet_size_std = flow_bwd_packet_size_max = flow_bwd_packet_size_min = 0
+            
 
         # ==========================
-        # packet inter-arrival times
+        # Packet Inter-arrival Times
         # ==========================
-        if len(flow_any_iats) != 0:
+
+        # Packet IATs need at least 2 packets to be properly populated
+        if len(flow_any_iats) == 0:
+            flow_any_iat_total = flow_any_iat_mean = flow_any_iat_std = flow_any_iat_var = flow_any_iat_max = flow_any_iat_min = 0
+        else:
             flow_any_iat_total = float(np.sum(flow_any_iats))
             flow_any_iat_mean = float(np.mean(flow_any_iats))
             flow_any_iat_std = float(np.std(flow_any_iats))
+            flow_any_iat_var = float(np.var(flow_any_iats))
             flow_any_iat_max = float(np.max(flow_any_iats))
             flow_any_iat_min = float(np.min(flow_any_iats))
-        else:
-            flow_any_iat_total = flow_any_iat_mean = flow_any_iat_std = flow_any_iat_max = flow_any_iat_min = 0
 
-        if len(flow_fwd_iats) != 0:
+        # Packet IATs need at least 2 packets to be properly populated
+        if len(flow_fwd_iats) == 0:
+            flow_fwd_iat_total = flow_fwd_iat_mean = flow_fwd_iat_std = flow_fwd_iat_var =flow_fwd_iat_max = flow_fwd_iat_min = 0
+        else:
             flow_fwd_iat_total = float(np.sum(flow_fwd_iats))
             flow_fwd_iat_mean = float(np.mean(flow_fwd_iats))
             flow_fwd_iat_std = float(np.std(flow_fwd_iats))
+            flow_fwd_iat_var = float(np.var(flow_fwd_iats))
             flow_fwd_iat_max = float(np.max(flow_fwd_iats))
             flow_fwd_iat_min = float(np.min(flow_fwd_iats))
-        else:
-            flow_fwd_iat_total = flow_fwd_iat_mean = flow_fwd_iat_std = flow_fwd_iat_max = flow_fwd_iat_min = 0
 
-        if len(flow_bwd_iats) != 0:
+        # Packet IATs need at least 2 packets to be properly populated
+        if len(flow_bwd_iats) == 0:
+            flow_bwd_iat_total = flow_bwd_iat_mean = flow_bwd_iat_std = flow_bwd_iat_var = flow_bwd_iat_max = flow_bwd_iat_min = 0
+        else:
             flow_bwd_iat_total = float(np.sum(flow_bwd_iats))
             flow_bwd_iat_mean = float(np.mean(flow_bwd_iats))
             flow_bwd_iat_std = float(np.std(flow_bwd_iats))
+            flow_bwd_iat_var = float(np.var(flow_bwd_iats))
             flow_bwd_iat_max = float(np.max(flow_bwd_iats))
             flow_bwd_iat_min = float(np.min(flow_bwd_iats))
-        else:
-            flow_bwd_iat_total = flow_bwd_iat_mean = flow_bwd_iat_std = flow_bwd_iat_max = flow_bwd_iat_min = 0
 
-        # ==============
-        # IP Flag Counts
-        # ==============
+        # ======================
+        # IP Fragmentation Flags
+        # ======================
         flow_any_df_flags_total = float(np.sum(flow_any_df_flags))
         flow_any_df_flags_mean = float(np.mean(flow_any_df_flags))
         flow_any_df_flags_std = float(np.std(flow_any_df_flags))
@@ -707,47 +759,11 @@ def calculate_ipv4_flow_features(flows, flow_ids):
         flow_bwd_mf_flags_max = float(np.max(flow_bwd_mf_flags))
         flow_bwd_mf_flags_min = float(np.min(flow_bwd_mf_flags))
 
-        """
-        flow_flag_counts = [0]*10
-        for flags in flow_any_flags:
-            for i,flag in enumerate(flags):
-                if flag:
-                    flow_flag_counts[i] += 1
-
-        flow_fwd_flag_counts = [0]*10
-        for flags in flow_fwd_flags:
-            for i,flag in enumerate(flags):
-                if flag:
-                    flow_fwd_flag_counts[i] += 1
-
-        flow_bwd_flag_counts = [0]*10
-        for flags in flow_bwd_flags:
-            for i,flag in enumerate(flags):
-                if flag:
-                    flow_bwd_flag_counts[i] += 1
-        """
-        ipv4_flow_feature_values_list = \
-            [flow_id,flow_any_first_packet_time,flow_any_last_packet_time,flow_any_duration,\
-            flow_any_n_packets,flow_fwd_n_packets,flow_bwd_n_packets,\
-            flow_any_n_data_packets,flow_fwd_n_data_packets,flow_bwd_n_data_packets,\
-            flow_any_header_len_total,flow_fwd_header_len_total,flow_bwd_header_len_total,\
-            flow_any_packet_size_mean,flow_any_packet_size_std,flow_any_packet_size_max,\
-            flow_any_packet_size_min,flow_fwd_packet_size_mean,flow_fwd_packet_size_std,flow_fwd_packet_size_max,flow_fwd_packet_size_min,flow_bwd_packet_size_mean,flow_bwd_packet_size_std,flow_bwd_packet_size_max,flow_bwd_packet_size_min,\
-            flow_any_packets_per_sec,flow_fwd_packets_per_sec,flow_bwd_packets_per_sec,\
-            flow_any_bytes_per_sec,flow_fwd_bytes_per_sec,flow_bwd_bytes_per_sec,\
-            flow_any_packet_len_total,flow_any_packet_len_mean,flow_any_packet_len_std,flow_any_packet_len_var,flow_any_packet_len_max,flow_any_packet_len_min,\
-            flow_fwd_packet_len_total,flow_fwd_packet_len_mean,flow_fwd_packet_len_std,flow_fwd_packet_len_var,flow_fwd_packet_len_max,flow_fwd_packet_len_min,\
-            flow_bwd_packet_len_total,flow_bwd_packet_len_mean,flow_bwd_packet_len_std,flow_bwd_packet_len_var,flow_bwd_packet_len_max,flow_bwd_packet_len_min,\
-            flow_any_iat_total,flow_any_iat_mean,flow_any_iat_std,flow_any_iat_max,flow_any_iat_min,\
-            flow_fwd_iat_total,flow_fwd_iat_mean,flow_fwd_iat_std,flow_fwd_iat_max,flow_fwd_iat_min,\
-            flow_bwd_iat_total,flow_bwd_iat_mean,flow_bwd_iat_std,flow_bwd_iat_max,flow_bwd_iat_min,\
-            flow_any_df_flags_total,flow_any_df_flags_mean,flow_any_df_flags_std,flow_any_df_flags_var,flow_any_df_flags_max,flow_any_df_flags_min,\
-            flow_fwd_df_flags_total,flow_fwd_df_flags_mean,flow_fwd_df_flags_std,flow_fwd_df_flags_var,flow_fwd_df_flags_max,flow_fwd_df_flags_min,\
-            flow_bwd_df_flags_total,flow_bwd_df_flags_mean,flow_bwd_df_flags_std,flow_bwd_df_flags_var,flow_bwd_df_flags_max,flow_bwd_df_flags_min,\
-            flow_any_mf_flags_total,flow_any_mf_flags_mean,flow_any_mf_flags_std,flow_any_mf_flags_var,flow_any_mf_flags_max,flow_any_mf_flags_min,\
-            flow_fwd_mf_flags_total,flow_fwd_mf_flags_mean,flow_fwd_mf_flags_std,flow_fwd_mf_flags_var,flow_fwd_mf_flags_max,flow_fwd_mf_flags_min,\
-            flow_bwd_mf_flags_total,flow_bwd_mf_flags_mean,flow_bwd_mf_flags_std,flow_bwd_mf_flags_var,flow_bwd_mf_flags_max,flow_bwd_mf_flags_min]
-
+        # ===============
+        # WRAP-UP RESULTS
+        # ===============
+        ipv4_flow_local_vars = locals()
+        ipv4_flow_feature_values_list = [ipv4_flow_local_vars[var_name] for var_name in ipv4_flow_features_header_list]
         ipv4_flow_features_generator = dict(zip(ipv4_flow_features_header_list, ipv4_flow_feature_values_list))
 
         yield ipv4_flow_features_generator
@@ -767,7 +783,9 @@ def output_ipv4_flow_features(ipv4_flow_features_generator, mode, over_ipv4=Fals
         for ipv4_flow_features_dict in ipv4_flow_features_generator:
             ipv4_flow_features_list = list(ipv4_flow_features_dict.values())
             ipv4_flow_features_csv += generate_flow_line(ipv4_flow_features_list) + "\n"
-        f = open("data-files" + os.sep + "csv" + os.sep +  "flows.csv", "w")
+        output_dir = csv_files_dir + os.sep + os.path.splitext(os.path.basename(args.pcap_path))[0]
+        os.makedirs(output_dir, exist_ok=True)
+        f = open(output_dir + os.sep + "ipv4-flows.csv", "w")
         f.write(ipv4_flow_features_csv)
         f.close()
 
@@ -777,14 +795,14 @@ def generate_network_objets(file):
     """
     start_time = time.time()
 
-    # =======
-    # PACKETS
-    # =======
+    # ============
+    # IPv4 PACKETS
+    # ============
     packet_features = build_packets(file)
 
-    # ========
-    # UNIFLOWS
-    # ========
+    # =============
+    # IPv4 UNIFLOWS
+    # ============
     uniflows,uniflow_ids = build_uniflows(packet_features)
     del(packet_features)
     unique_uniflow_ids = join_duplicate_uniflows(uniflow_ids)
@@ -794,26 +812,36 @@ def generate_network_objets(file):
         n_preserved_packets = 0
         for unique_uniflow_id in unique_uniflow_ids:
             n_preserved_packets += len(uniflows[unique_uniflow_id])
-        print("########## FLOWS (Unidirectional; no in-flow separation) ##########", flush=True)
-        print("Number of unidirectional flows:", len(unique_uniflow_ids), flush=True)
-        print("Number of packets preserved in these flows:", n_preserved_packets, flush=True)
+        print(make_header_string("IPv4 FLOWS (Unidirectional; no in-flow separation)"), flush=True)
+        print("Number of packets preserved:", n_preserved_packets, flush=True)
+        print("Number of flows:", len(unique_uniflow_ids), flush=True, end="\n\n")
     
 
-    # =====
-    # FLOWS
-    # =====
-    flows,flow_ids = build_flows(uniflows, unique_uniflow_ids)
+    # ===================
+    # DIDIRECTIONAL FLOWS
+    # ===================
+
+    # ==========
+    # IPv4 FLOWS
+    # ==========
+    ipv4_flows,ipv4_flow_ids = build_ipv4_flows(uniflows, unique_uniflow_ids)
     del(uniflows)
     del(unique_uniflow_ids)
 
+    ipv4_flow_n_features = get_network_object_header("ipv4").count("|") - 2
+    ipv4_flow_features_generator = calculate_ipv4_flow_features(ipv4_flows, ipv4_flow_ids)
+    output_ipv4_flow_features(ipv4_flow_features_generator, "csv")
+
     if args.verbose:
         n_preserved_packets = 0
-        for flow_id in flow_ids:
-            n_preserved_packets += len(flows[flow_id])
-        print("########## FLOWS (Bidirectional; no in-flow separation) ##########", flush=True)
-        print("Number of bidirectional flows:", len(flows), flush=True)
-        print("Number of packets preserved in these flows:", n_preserved_packets, flush=True)
+        for ipv4_flow_id in ipv4_flow_ids:
+            n_preserved_packets += len(ipv4_flows[ipv4_flow_id])
+        print(make_header_string("IPv4 FLOWS (Bidirectional; no in-flow separation)"), flush=True)
+        print("Number of data features:" + cterminal.colors.GREEN, str(ipv4_flow_n_features) + cterminal.colors.ENDC, flush=True)
+        print("Number of packets preserved:", n_preserved_packets, flush=True)
+        print("Number of flows:" + cterminal.colors.GREEN, str(len(ipv4_flows)) + cterminal.colors.ENDC, flush=True, end="\n\n")
 
+    """
     # =======================
     # PLACEHOLDER: ICMP FLOWS
     # =======================
@@ -827,15 +855,14 @@ def generate_network_objets(file):
     # ===============================
     # TCP FLOWS (TCP Flag separation)
     # ===============================
-    tcp_flows, tcp_flow_ids = build_tcpflows(flows, flow_ids)
+    tcp_flows, tcp_flow_ids = build_tcp_flows(flows, flow_ids)
     del(flows)
     del(flow_ids)
-    # Note: At this point, tcp_flow_ids are ordered by the flow start time and the packets in each flow are internally ordered by their timestamp
+    # NOTE: At this point, tcp_flow_ids are ordered by the flow start time and the packets in each flow are internally ordered by their timestamp
     # Error case
     if len(tcp_flows) == 0:
         print("This pcap doesn't have any communication that satisfies our TCP flow definition. Abort.", flush=True)
         exit()
-
     # Print some information about the built TCP flows
     if args.verbose:
         n_preserved_packets = 0
@@ -844,20 +871,20 @@ def generate_network_objets(file):
         print("########## IPv4-TCP FLOWS (Bidirectional; TCP flag separation) ##########", flush=True)
         print("Number of IPv4-TCP flows:" + cterminal.colors.GREEN, str(len(tcp_flows)) + cterminal.colors.ENDC, flush=True)
         print("Number of packets preserved in these flows:" + cterminal.colors.GREEN, str(n_preserved_packets) + cterminal.colors.ENDC, flush=True)
-
+    """
     # this should be done before... need to refactor all this into smaller classes
-    tcp_flow_features_generator = calculate_ipv4_flow_features(tcp_flows, tcp_flow_ids)
-    del(tcp_flows)
-
-    output_ipv4_flow_features(tcp_flow_features_generator, "csv")
+    #tcp_flow_features_generator = calculate_ipv4_flow_features(tcp_flows, tcp_flow_ids)
+    #del(tcp_flows)
+    #output_ipv4_flow_features(tcp_flow_features_generator, "csv")
 
     rounded_elapsed_time = round(time.time() - start_time, 2)
-    print("########## Elapsed Time ##########", flush=True)
-    print("Dataset generated in" + cterminal.colors.GREEN, str(rounded_elapsed_time), cterminal.colors.ENDC + "seconds", flush=True)
+    print(make_header_string("Elapsed Time"), flush=True)
+    print("Dataset generated in" + cterminal.colors.BLUE, str(rounded_elapsed_time), cterminal.colors.ENDC + "seconds", flush=True)
+
+def run():
+    print("Parsing"  + cterminal.colors.BLUE, args.pcap_path + cterminal.colors.ENDC + "...", flush=True)
+    with open(args.pcap_path, "rb") as f:
+        generate_network_objets(f)
 
 if __name__ == "__main__":
-    filenames = args.files
-    for filename in filenames:
-        print("Parsing"  + cterminal.colors.GREEN, filename + cterminal.colors.ENDC + "...", flush=True)
-        with open(filename, "rb") as f:
-            generate_network_objets(f)
+    run()
