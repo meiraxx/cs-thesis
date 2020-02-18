@@ -1,9 +1,9 @@
 # IPv4-FLOW
 ## Extended by: TCP-FLOW
 ## CURRENT NUMBER OF FEATURES
-**121 Flow Features:**
+**103 Flow Features:**
 - 13 Conceptual Features
-- 108 Statistical Features
+- 90 Statistical Features
 
 ## IDENTIFIER
 **flow_id (joined 6-tuple):**  
@@ -34,66 +34,46 @@ flow_fwd_n_data_packets
 flow_bwd_n_data_packets  
 
 ### Statistical Features
-**Joined IPv4 and L4 (TCP/UDP) Metadata Features**  
-*Packet Header Lengths*  
-flow_any_header_len_total  
-flow_any_header_len_mean  
-flow_any_header_len_std  
-flow_any_header_len_var  
-flow_any_header_len_max  
-flow_any_header_len_min  
-flow_fwd_header_len_total  
-flow_fwd_header_len_mean  
-flow_fwd_header_len_std  
-flow_fwd_header_len_var  
-flow_fwd_header_len_max  
-flow_fwd_header_len_min  
-flow_bwd_header_len_total  
-flow_bwd_header_len_mean  
-flow_bwd_header_len_std  
-flow_bwd_header_len_var  
-flow_bwd_header_len_max  
-flow_bwd_header_len_min  
+**IPv4 Metadata Features**  
+*Packet IPv4 Header Lengths*  
+flow_any_ipv4_header_len_total  
+flow_any_ipv4_header_len_mean  
+flow_any_ipv4_header_len_std  
+flow_any_ipv4_header_len_var  
+flow_any_ipv4_header_len_max  
+flow_any_ipv4_header_len_min  
+flow_fwd_ipv4_header_len_total  
+flow_fwd_ipv4_header_len_mean  
+flow_fwd_ipv4_header_len_std  
+flow_fwd_ipv4_header_len_var  
+flow_fwd_ipv4_header_len_max  
+flow_fwd_ipv4_header_len_min  
+flow_bwd_ipv4_header_len_total  
+flow_bwd_ipv4_header_len_mean  
+flow_bwd_ipv4_header_len_std  
+flow_bwd_ipv4_header_len_var  
+flow_bwd_ipv4_header_len_max  
+flow_bwd_ipv4_header_len_min  
 
-*Packet Sizes*  
-flow_any_packet_size_total  
-flow_any_packet_size_mean  
-flow_any_packet_size_std  
-flow_any_packet_size_var  
-flow_any_packet_size_max  
-flow_any_packet_size_min  
-flow_fwd_packet_size_total  
-flow_fwd_packet_size_mean  
-flow_fwd_packet_size_std  
-flow_fwd_packet_size_var  
-flow_fwd_packet_size_max  
-flow_fwd_packet_size_min  
-flow_fwd_packet_size_total  
-flow_bwd_packet_size_mean  
-flow_bwd_packet_size_var  
-flow_bwd_packet_size_std  
-flow_bwd_packet_size_max  
-flow_bwd_packet_size_min  
-
-*Packet Lengths*  
-flow_any_packet_len_total  
-flow_any_packet_len_mean  
-flow_any_packet_len_std  
-flow_any_packet_len_var  
-flow_any_packet_len_max  
-flow_any_packet_len_min  
-flow_fwd_packet_len_total  
-flow_fwd_packet_len_mean  
-flow_fwd_packet_len_std  
-flow_fwd_packet_len_var  
-flow_fwd_packet_len_max  
-flow_fwd_packet_len_min  
-flow_bwd_packet_len_total  
-flow_bwd_packet_len_mean  
-flow_bwd_packet_len_std  
-flow_bwd_packet_len_var  
-flow_bwd_packet_len_max  
-flow_bwd_packet_len_min  
+*Packet IPv4 Lengths*  
+flow_any_ipv4_data_len_total  
+flow_any_ipv4_data_len_mean  
+flow_any_ipv4_data_len_std  
+flow_any_ipv4_data_len_var  
+flow_any_ipv4_data_len_max  
+flow_any_ipv4_data_len_min  
+flow_fwd_ipv4_data_len_total  
+flow_fwd_ipv4_data_len_mean  
+flow_fwd_ipv4_data_len_std  
+flow_fwd_ipv4_data_len_var  
+flow_fwd_ipv4_data_len_max  
+flow_fwd_ipv4_data_len_min  
+flow_bwd_ipv4_data_len_total  
+flow_bwd_ipv4_data_len_mean  
+flow_bwd_ipv4_data_len_std  
+flow_bwd_ipv4_data_len_var  
+flow_bwd_ipv4_data_len_max  
+flow_bwd_ipv4_data_len_min  
 
 *IP Fragmentation Flags*  
 flow_any_df_flags_total  

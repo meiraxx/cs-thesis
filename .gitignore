@@ -1,2 +1,3 @@
-netmeter/__pycache__/
+#netmeter/__pycache__/
+netmeter/auxiliary-python-modules/__pycache__/
 netmeter/data-files/
