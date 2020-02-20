@@ -2,9 +2,10 @@
 
 """
 This script is meant to output "hosts" (ipX), "talkers" (ipX-ipY) and "flows"
-(ipX-portA-ipY-portB-protocol_stack-inner_sep_counter) and their respective
-conceptual and statistical features to build a dataset. It's one of the three
-main tasks of my thesis.
+(ipX-portA-ipY-portB-protocol_stack-inner_sep_counter), which are network objects,
+and their respective conceptual and statistical features to build a dataset.
+This conceptual and statistical features are called, in their combination, genes.
+NetMeter is the first of the three main tasks of my thesis.
 
 AUTHORSHIP:
 Joao Meira <joao.meira.cs@gmail.com>
@@ -16,11 +17,19 @@ Joao Meira <joao.meira.cs@gmail.com>
 # L0 (physical methods of propagation): Copper, Fiber, Wireless
 # NetMeter Protocols
 # L1-protocols: Ethernet (Physical Layer)
-# L2-protocols: **Ethernet**, ??MAC+ARP??
-# https://en.wikipedia.org/wiki/EtherType; https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers
+# L2-protocols: **Ethernet**, ++ARP++
+# L2plus-protocols: ++LLC++
 # L3-protocols: **IPv4 (IP-4)**, IPv6 (IP-41)
-# L3plus-protocols: ??ICMPv4 (IP-1)??, ICMPv6 (IP-58), GRE (IP-47)
-# L4-protocols: **TCP (IP-6)**, ??UDP (IP-17)??
+# L3plus-protocols: ++ICMPv4 (IP-1)++, ++IGMPv4 (IP-2)++, ICMPv6 (IP-58), GRE (IP-47)
+# L4-protocols: **TCP (IP-6)**, ++UDP (IP-17)++
+# SOME REFS:
+# https://en.wikipedia.org/wiki/EtherType; https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers
+# [L2] ARP: https://tools.ietf.org/html/rfc826
+# [L2plus] LLC: https://tools.ietf.org/html/rfc1103
+# [L3plus] ICMP: https://tools.ietf.org/html/rfc792
+# [L3plus] IGMP: https://tools.ietf.org/html/rfc1112
+# [L4] UDP https://tools.ietf.org/html/rfc768
+# [L4] TCP: https://tools.ietf.org/html/rfc793
 # ===============================================================
 
 try:
@@ -48,7 +57,7 @@ except ImportError:
 # ARGUMENT PARSER
 # ===============
 
-oparser = argparse.ArgumentParser(prog="NetMeter", description="Network-based feature extraction tool")
+oparser = argparse.ArgumentParser(prog="NetMeter", description="Network object gene extraction tool")
 oparser.add_argument("pcap_path", metavar="pcap_path", help="Input PCAP file")
 #oparser.add_argument("-l", "--flow-label", help="label all flows as X", dest="flow_label", default="unknown")
 oparser.add_argument("-D", "--data-dir", help="Data directory", dest="data_dir", default="data-files")
@@ -91,8 +100,8 @@ def flow_id_to_talker_id(flow_id):
     splitted_flow_id = flow_id.split("-")
     return splitted_flow_id[0] + "-" + splitted_flow_id[2]
 
-def generate_flow_line(flow_features):
-    return flow_id_to_str(flow_features[0]) + "|" + "|".join(map(str,flow_features[1:]))
+def generate_flow_line(flow_genes):
+    return flow_id_to_str(flow_genes[0]) + "|" + "|".join(map(str,flow_genes[1:]))
 
 def flow_id_to_str(flow_id):
     return "-".join(map(str,flow_id))
@@ -170,170 +179,217 @@ def build_packets(file):
 
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("NETWORK PACKETS"), flush=True)
+        print(make_header_string("1.1. Packets"), flush=True)
     file.seek(0)
     pcap = dpkt.pcap.Reader(file)
-    n_packets_ipv4 = 0
-    n_packets_ipv4_tcp = 0
-    n_packets_ipv4_udp = 0
-    n_packets_ipv4_icmp = 0
-    n_packets_ipv4_others = 0
+    packet_no = 0
+    n_packets_eth_ipv4_igmp = 0
+    n_packets_eth_ipv4_icmp = 0
+    n_packets_eth_ipv4_tcp = 0
+    n_packets_eth_ipv4_udp = 0
+    n_packets_eth_ipv4_others = 0
+    n_packets_eth_ipv6 = 0
+    n_packets_arp = 0
+    n_packets_llc = 0
     n_packets_others = 0
-
-    # supported protocols above IPv4
-    supported_l3plus_protocols = ("ICMP")
-    supported_l4_protocols = ("TCP", "UDP")
 
     # TODO: https://dpkt.readthedocs.io/en/latest/print_icmp.html
     # TODO: find a database and dataset format which accomodates such diverse feature formats (tcp vs udp vs icmp) while maintaining
-    # all the relevant features for each format... maybe there needs to be dataset separation, or maybe it's enough to put a "L3-protocol"
+    # all the relevant genes for each format... maybe there needs to be dataset separation, or maybe it's enough to put a "L3-protocol"
     # and "L4-protocol" field to separate those formats in the same dataset and zero-out different values
     packets = []
     
     # [+] PARSE ALL PACKETS
     for timestamp, buf in pcap:
-        # =======================
-        # LAYER1/LAYER2: ETHERNET
-        # =======================
-        # FUTURE-TODO: implement handlers for other L1/L2 protocols
-
+        # ================
+        # LAYER1: ETHERNET
+        # ================
+        # FUTURE-TODO: implement handlers for other L1 protocols that dpkt doesn't support
+        # buf contains the L1 data
         frame_len = len(buf)
 
-        # Unpack the Ethernet frame (mac src, mac dst, ether type). Buf must be of the expected format: L1 Ethernet and L2 Ethernet.
+        # ================
+        # LAYER2: ETHERNET
+        # ================
+        # FUTURE-TODO: implement handlers for more L2 protocols
+
+        # unpack the Ethernet frame (mac src, mac dst, ether type). Buf must be of the expected format: L1 Ethernet.
         eth = dpkt.ethernet.Ethernet(buf)
+        packet_no += 1
+
+        # check if frame is an EthL1-ARP packet
+        if isinstance(eth.data, dpkt.arp.ARP):
+            n_packets_arp += 1
+            continue
+
+        # check if frame is an EthL1-LLC packet
+        if isinstance(eth.data, dpkt.llc.LLC):
+            n_packets_llc += 1
+            continue
 
         # ============
         # LAYER3: IPv4
         # ============
-        # FUTURE-TODO: implement handlers for other L3 protocols
+        # FUTURE-TODO: implement handlers for more L3 protocols
 
-        # Check if the Ethernet data contains an IPv4 packet. If it doesn't, ignore it.
+        # check if the Ethernet data contains an EthL1-EthL2-IPv6 packet
+        if isinstance(eth.data, dpkt.ip6.IP6):
+            n_packets_eth_ipv6 += 1
+            continue
+
+        # check if the Ethernet data contains an EthL1-EthL2-IPv4 packet. If it doesn't, ignore it.
         if not isinstance(eth.data, dpkt.ip.IP):
             n_packets_others += 1
             continue
 
-        # Unpack the data within the Ethernet frame: the confirmed IPv4 packet
-        ip = eth.data
+        # unpack the data within the Ethernet frame: the confirmed EthL1-EthL2-IPv4 packet
+        ipv4 = eth.data
 
-        # =========================
-        # IPv4-only packet features
-        # =========================
+        # -------------------------
+        # IPv4-only packet genes
+        # -------------------------
         #https://en.wikipedia.org/wiki/IPv4
-
         # Source and destination IP
-        src_ip = inet_to_str(ip.src)
-        dst_ip = inet_to_str(ip.dst)
+        src_ip = inet_to_str(ipv4.src)
+        dst_ip = inet_to_str(ipv4.dst)
 
-        # IP lengths
-        ipv4_options_len = len(ip.opts)
-        ipv4_header_len = ip.__hdr_len__ + ipv4_options_len
-        ipv4_data_len = len(ip.data)
+        # IPv4 lengths
+        ipv4_options_len = len(ipv4.opts)
+        ipv4_header_len = ipv4.__hdr_len__ + ipv4_options_len
+        ipv4_data_len = len(ipv4.data)
 
-        # Fragment information
-        ipv4_df_flag = int(ip.off & dpkt.ip.IP_DF)
-        ipv4_mf_flag = int(ip.off & dpkt.ip.IP_MF)
+        # IPv4 Fragment information
+        ipv4_df_flag = int(ipv4.off & dpkt.ip.IP_DF)
+        ipv4_mf_flag = int(ipv4.off & dpkt.ip.IP_MF)
 
-        # Unpack the data within the IPv4 frame: any protocol which acts above IPv4, even in the same layer
-        transport_layer = ip.data
+        print(ipv4.off)
+        print(dpkt.ip.IP_DF)
+        print(ipv4.off & dpkt.ip.IP_DF)
+        exit()
+        # IPv4 Packet Genes
+        ipv4_packet_genes = [str(datetime.datetime.utcfromtimestamp(timestamp)), ipv4_header_len, ipv4_data_len, ipv4_df_flag, ipv4_mf_flag]
 
-        # Extracting layer 4 (transport) protocol name, in case it exists
+        # ===========================================
+        # LAYER3plus and LAYER4: Protocols above IPv4
+        # ===========================================
+        # FUTURE-TODO: implement handlers for more L3plus and L4 protocols
+
+        # check if the Ethernet data contains an Eth-IPv4-ICMP packet
+        if isinstance(ipv4.data, dpkt.icmp.ICMP):
+            n_packets_eth_ipv4_icmp += 1
+            continue
+        # check if the Ethernet data contains an Eth-IPv4-IGMP packet
+        elif isinstance(ipv4.data, dpkt.igmp.IGMP):
+            n_packets_eth_ipv4_igmp += 1
+            continue
+        # check if the Ethernet data contains an Eth-IPv4-TCP packet
+        elif isinstance(ipv4.data, dpkt.tcp.TCP):
+            n_packets_eth_ipv4_tcp += 1
+        # check if the Ethernet data contains an Eth-IPv4-UDP packet
+        elif isinstance(ipv4.data, dpkt.udp.UDP):
+            n_packets_eth_ipv4_udp += 1
+        else:
+            n_packets_eth_ipv4_others += 1
+            continue
+
+        # ===================
+        # LAYER4: TCP and UDP
+        # ===================
+        # TCP and UDP are the most relevant protocols, so we focus on layer 4 (transport layer)
+
+        # Unpack the data within the IPv4 frame: either TCP or UDP data
+        transport_layer = ipv4.data
+
+        # -----------------------
+        # TCP/UDP packet genes
+        # -----------------------
+        # Extracting l4 protocol name
         transport_protocol_name = type(transport_layer).__name__
 
-        if transport_protocol_name in supported_l3plus_protocols:
-            if transport_protocol_name == "ICMP":
-                n_packets_ipv4_icmp += 1
-            else:
-                n_packets_ipv4_others += 1
-        elif transport_protocol_name in supported_l4_protocols:
-            n_packets_ipv4 += 1
-            # ==================
-            # L4 packet features
-            # ==================
-            src_port = transport_layer.sport
-            dst_port = transport_layer.dport
+        # TCP/UDP source and destination ports
+        src_port = transport_layer.sport
+        dst_port = transport_layer.dport
 
-            # check if this transport protocol has options and use it
-            transport_options_len = len(transport_layer.opts) if hasattr(transport_layer, "opts") else 0
-            transport_header_len = transport_layer.__hdr_len__
-            transport_data_len = len(transport_layer.data)
+        # TCP/UDP lengths
+        transport_options_len = len(transport_layer.opts) if hasattr(transport_layer, "opts") else 0
+        transport_header_len = transport_layer.__hdr_len__
+        transport_data_len = len(transport_layer.data)
 
-            if args.debug:
-                print(make_header_string("SINGLE PACKETS INFO"), flush=True)
-                print("Packet no.:", n_packets_ipv4 + n_packets_others, flush=True)
-                print("IPv4 header length:", ipv4_header_len, flush=True)
-                print("IPv4 options length:", ipv4_options_len, flush=True)
-                print("IPv4 data length:", ipv4_data_len, flush=True)
-                print("Transport header length:", transport_header_len, flush=True)
-                print("Transport options length:", transport_options_len, flush=True)
-                print("Transport data length:", transport_data_len, flush=True)
+        # IPv4-L4 Flow Identifier: 6-tuple -> (src ip, src port, dst ip, dst port, protocol_stack, inner_sep_counter)
+        # note: inner_sep_counter is incremented whenever a flow reaches its end, which is defined by the protocol used
+        flow_id = (src_ip, src_port, dst_ip, dst_port, transport_protocol_name, 0)
 
-            # 6-tuple: src ip, src port, dst ip, dst port, protocol_stack, inner_sep_counter
-            # note: inner_sep_counter is incremented whenever a flow reaches its end,
-            # independently of the protocol used
-            flow_id = (src_ip, src_port, dst_ip, dst_port, transport_protocol_name, 0)
-            ipv4_packet_features = [flow_id, str(datetime.datetime.utcfromtimestamp(timestamp)), ipv4_header_len, ipv4_data_len, ipv4_df_flag, ipv4_mf_flag]
-            packet_features = ipv4_packet_features
-            if transport_protocol_name == "TCP":
-                n_packets_ipv4_tcp += 1
-                # ===================
-                # TCP packet features
-                # ===================
-                #https://en.wikipedia.org/wiki/Transmission_Control_Protocol
-                #https://tools.ietf.org/html/rfc793
+        # Packet-level debug Info
+        if args.debug:
+            print(make_header_string("SINGLE PACKETS INFO"), flush=True)
+            print("Packet no.:", packet_no, flush=True)
+            print("IPv4 header length:", ipv4_header_len, flush=True)
+            print("IPv4 options length:", ipv4_options_len, flush=True)
+            print("IPv4 data length:", ipv4_data_len, flush=True)
+            print("Transport header length:", transport_header_len, flush=True)
+            print("Transport options length:", transport_options_len, flush=True)
+            print("Transport data length:", transport_data_len, flush=True)
 
-                tcp_fin_flag = ( transport_layer.flags & dpkt.tcp.TH_FIN ) != 0
-                tcp_syn_flag = ( transport_layer.flags & dpkt.tcp.TH_SYN ) != 0
-                tcp_rst_flag = ( transport_layer.flags & dpkt.tcp.TH_RST ) != 0
-                tcp_psh_flag = ( transport_layer.flags & dpkt.tcp.TH_PUSH) != 0
-                tcp_ack_flag = ( transport_layer.flags & dpkt.tcp.TH_ACK ) != 0
-                tcp_urg_flag = ( transport_layer.flags & dpkt.tcp.TH_URG ) != 0
-                tcp_ece_flag = ( transport_layer.flags & dpkt.tcp.TH_ECE ) != 0
-                tcp_cwr_flag = ( transport_layer.flags & dpkt.tcp.TH_CWR ) != 0
-                #tcp_packet_features = [tcp_fin_flag, tcp_syn_flag, tcp_rst_flag, tcp_psh_flag, tcp_ack_flag, tcp_urg_flag, tcp_ece_flag, tcp_cwr_flag]
-                #packet_features += tcp_packet_features
-                packets.append(packet_features)
-            elif transport_protocol_name == "UDP":
-                n_packets_ipv4_udp += 1
-                # ===================
-                # UDP packet features
-                # ===================
-                # TODO: in case it applies, do udp packet features
-                #udp_packet_features = []
-                #packet_features += udp_packet_features
-            
-        else:
-            n_packets_ipv4_others += 1
+        packet_genes = [flow_id,] + ipv4_packet_genes
+        if transport_protocol_name == "TCP":
+            # ===================
+            # TCP packet genes
+            # ===================
+            #https://en.wikipedia.org/wiki/Transmission_Control_Protocol
+            #https://tools.ietf.org/html/rfc793
+
+            tcp_fin_flag = ( transport_layer.flags & dpkt.tcp.TH_FIN ) != 0
+            tcp_syn_flag = ( transport_layer.flags & dpkt.tcp.TH_SYN ) != 0
+            tcp_rst_flag = ( transport_layer.flags & dpkt.tcp.TH_RST ) != 0
+            tcp_psh_flag = ( transport_layer.flags & dpkt.tcp.TH_PUSH) != 0
+            tcp_ack_flag = ( transport_layer.flags & dpkt.tcp.TH_ACK ) != 0
+            tcp_urg_flag = ( transport_layer.flags & dpkt.tcp.TH_URG ) != 0
+            tcp_ece_flag = ( transport_layer.flags & dpkt.tcp.TH_ECE ) != 0
+            tcp_cwr_flag = ( transport_layer.flags & dpkt.tcp.TH_CWR ) != 0
+            tcp_packet_genes = [tcp_fin_flag, tcp_syn_flag, tcp_rst_flag, tcp_psh_flag, tcp_ack_flag, tcp_urg_flag, tcp_ece_flag, tcp_cwr_flag]
+            packet_genes += tcp_packet_genes
+            packets.append(packet_genes)
+        elif transport_protocol_name == "UDP":
+            # ================
+            # UDP packet genes
+            # ================
+            #https://pdfs.semanticscholar.org/3648/75dcf14e886a9f9fa9310bb6fd9c8a4f4105.pdf
+            # TODO: in case it applies, do udp packet genes
+            udp_packet_genes = []
+            #packet_genes += udp_packet_genes
 
     if args.verbose:
-        print("Number of IPv4 packets:", n_packets_ipv4, "packets", flush=True)
-        print("Number of IPv4-TCP packets:", n_packets_ipv4_tcp, "packets", flush=True)
-        print("Number of IPv4-UDP packets:", n_packets_ipv4_udp, "packets", flush=True)
-        print("Number of IPv4-ICMP packets:", n_packets_ipv4_icmp, "packets", flush=True)
-        print("Number of IPv4-<Other> packets:", n_packets_ipv4_others, "packets", flush=True)
-        print("Number of <Other> packets:", n_packets_others, "packets", flush=True)
+        print("EthL1-ARP packets:" + cterminal.colors.RED, n_packets_arp, "packets" + cterminal.colors.ENDC, flush=True)
+        print("EthL1-LLC packets:" + cterminal.colors.RED, n_packets_llc, "packets" + cterminal.colors.ENDC, flush=True)
+        print("EthL1-EthL2-IPv4-ICMP packets:" + cterminal.colors.RED, n_packets_eth_ipv4_icmp, "packets" + cterminal.colors.ENDC, flush=True)
+        print("EthL1-EthL2-IPv4-IGMP packets:" + cterminal.colors.RED, n_packets_eth_ipv4_igmp, "packets" + cterminal.colors.ENDC, flush=True)
+        print("EthL1-EthL2-IPv4-TCP packets:" + cterminal.colors.GREEN, n_packets_eth_ipv4_tcp, "packets" + cterminal.colors.ENDC, flush=True)
+        print("EthL1-EthL2-IPv4-UDP packets:" + cterminal.colors.GREEN, n_packets_eth_ipv4_udp, "packets" + cterminal.colors.ENDC, flush=True)
+        print("EthL1-EthL2-IPv4-<Other L4> packets:" + cterminal.colors.RED, n_packets_eth_ipv4_others, "packets" + cterminal.colors.ENDC, flush=True)
+        print("EthL1-EthL2-IPv6 packets:" + cterminal.colors.RED, n_packets_eth_ipv6, "packets" + cterminal.colors.ENDC, flush=True)
+        print("<Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets:" + cterminal.colors.RED, n_packets_others, "packets" + cterminal.colors.ENDC, flush=True)
         print("Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
     # Verify some safe conditions
     if args.safe_check:
-        packet_no = n_packets_ipv4 + n_packets_others
         if ipv4_header_len < 20 or ipv4_header_len > 60:
             raise ValueError("Invalid IPv4 header length in packet no.", packet_no)
 
     return packets
 
-def build_uniflows(packets):
-    """Associate uniflow_ids to packets"""
-    uniflows = dict()
-    uniflow_ids = list()
+def build_l3_uniflows(packets):
+    """Associate layer-3 uniflow ids to packets"""
+    l3_uniflows = dict()
+    l3_uniflow_ids = list()
     for packet in packets:
         flow_id = packet[0]
-        uniflow_ids.append(flow_id)
+        l3_uniflow_ids.append(flow_id)
         try:
-            uniflows[flow_id].append(packet)
+            l3_uniflows[flow_id].append(packet)
         except KeyError:
-            uniflows[flow_id] = [packet]
+            l3_uniflows[flow_id] = [packet]
     #remove duplicates mantaining order
-    uniflow_ids = list(OrderedDict.fromkeys(uniflow_ids))
-    return uniflows, uniflow_ids
+    l3_uniflow_ids = list(OrderedDict.fromkeys(l3_uniflow_ids))
+    return l3_uniflows, l3_uniflow_ids
 
 def get_unique_matching_uniflow_ids(uniflow_ids):
     """Return matching unidirectional flow ids, with fwd_flow_id as key and bwd_flow_id as value, and not vice-versa"""
@@ -352,7 +408,7 @@ def get_unique_matching_uniflow_ids(uniflow_ids):
 
     return matching_uniflow_ids_dict, fwd_flow_ids
 
-def build_biflows(uniflows, uniflow_ids):
+def build_l3_biflows(uniflows, uniflow_ids):
     """Join unidirectional flow information into its bidirectional flow equivalent"""
     matching_uniflow_ids_dict, fwd_flow_ids = get_unique_matching_uniflow_ids(uniflow_ids)
     flows = dict()
@@ -369,8 +425,32 @@ def build_biflows(uniflows, uniflow_ids):
             flows[fwd_flow_id] = uniflows[fwd_flow_id]
     return flows, flow_ids
 
+def build_l4_biflows(l3_biflows, l3_biflow_ids):
+    """Separate layer-3 bidirectional flows by layer-4 protocol and
+    build layer-4 bidirectional flows according to TCP and UDP RFCs"""
+
+    # ==================================
+    # Separate L3 BiFlows by L4 protocol
+    # ==================================
+    udp_biflows, udp_biflow_ids = dict(), list()
+    tcp_biflows, tcp_biflow_ids = dict(), list()
+    for l3_biflow_id in l3_biflow_ids:
+        biflow = l3_biflows[l3_biflow_id]
+        transport_protocol_name = l3_biflow_id[4]
+        if transport_protocol_name=="UDP":
+            udp_biflows[l3_biflow_id] = biflow
+            udp_biflow_ids.append(l3_biflow_id)
+        elif transport_protocol_name=="TCP":
+            tcp_biflows[l3_biflow_id] = biflow
+            tcp_biflow_ids.append(l3_biflow_id)
+        else:
+            print("ERROR: Run-time should never reach this branch, but in case it does, it means that another protocol was let through in an earlier stage.")
+            exit()
+
+    return udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids
+
 def build_tcp_flows(flows, flow_ids):
-    """Separate bidirectional flows using TCP's RFC rules"""
+    """Separate BiFlows using TCP's RFC rules"""
     # FUTURE-TODO: validate using tcp_seq
     # fin,syn,rst,psh,ack,urg,ece,cwr (2,...,9)
     tcp_flows = dict()
@@ -380,12 +460,14 @@ def build_tcp_flows(flows, flow_ids):
     # create conventionally correct flows
     for flow_id in flow_ids:
         curr_flow = flows[flow_id]
-        curr_flow.sort(key=lambda x: x[1])       # sorting the packets in each flow by date-and-time
+        # sorting the packets in each flow by timestamp
+        curr_flow.sort(key=lambda x: x[1])
         flow_any_n_packets = len(curr_flow)
 
         if flow_any_n_packets == 0:
             raise ValueError("A flow can't have 0 packets.")
-        elif flow_any_n_packets in (1,2,3):     #1/2/3 pacotes num so flow_id perfazem no maximo 1 e 1 so tcp flow
+        # 1, 2 or 3 packets on a single biflow_id, in any circumstance, represents at most only one tcp flow
+        elif flow_any_n_packets in (1,2,3):
             tcp_flows[flow_id] = curr_flow
             tcp_flow_ids.append(flow_id)
         else:
@@ -465,29 +547,30 @@ def build_tcp_flows(flows, flow_ids):
                 curr_packet_index+=1
     return tcp_flows,tcp_flow_ids
 
-def get_flow_header_by_type(protocol_stack):
-    features_dir = "network-objects" + os.sep + "features"
-    features_header_str = ""
+def get_biflow_header_by_type(protocol_stack):
+    genes_dir = "network-objects" + os.sep + "genes"
+    genes_header_str = ""
     if protocol_stack == "ipv4":
-        features_file = features_dir + os.sep + "ipv4-flow-header.txt"
+        genes_file = genes_dir + os.sep + "ipv4-biflow-header.txt"
     else:
         raise ValueError("Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4")
 
-    f = open(features_file, "r")
-    features_header_str = f.read().replace("\n", "|")
+    f = open(genes_file, "r")
+    genes_header_str = f.read().replace("\n", "|")
     f.close()
 
-    return features_header_str
+    return genes_header_str
 
-def calculate_ipv4_flow_features(flows, flow_ids):
-    """Calculate and output IPv4 flow features"""
+def calculate_l3_l4_biflow_genes(biflows, biflow_ids):
+    """Calculate and output IPv4 biflow genes"""
     time_scale_factor = 1000.0
-    ipv4_flow_features_header_str = get_flow_header_by_type("ipv4")
-    ipv4_flow_features_header_list = ipv4_flow_features_header_str.split("|")
+    ipv4_biflow_genes_header_str = get_biflow_header_by_type("ipv4")
+    ipv4_biflow_genes_header_list = ipv4_biflow_genes_header_str.split("|")
 
-    for flow_id in flow_ids:
-        curr_flow = flows[flow_id]
-        # DEV-NOTE: curr_flow[packet_index][packet_feature_index]
+    # Note: in case of a bug, use "biflow_no" to debug
+    for biflow_no, biflow_id in enumerate(biflow_ids):
+        curr_biflow = biflows[biflow_id]
+        # DEV-NOTE: curr_biflow[packet_index][packet_gene_index]
         # NOTE: backward packets may not exist
 
         # =========================
@@ -497,57 +580,57 @@ def calculate_ipv4_flow_features(flows, flow_ids):
         # ======================
         # Packet Number Features
         # ======================
-        flow_any_n_packets = len(curr_flow)
-        flow_fwd_n_packets = 0
-        flow_bwd_n_packets = 0
+        biflow_any_n_packets = len(curr_biflow)
+        biflow_fwd_n_packets = 0
+        biflow_bwd_n_packets = 0
 
-        flow_any_n_data_packets = 0
-        flow_fwd_n_data_packets = 0
-        flow_bwd_n_data_packets = 0
-
-        # =============
-        # Time Features
-        # =============
-        flow_any_iats = list()
-        flow_fwd_iats = list()
-        flow_bwd_iats = list()
+        biflow_any_n_data_packets = 0
+        biflow_fwd_n_data_packets = 0
+        biflow_bwd_n_data_packets = 0
 
         # ===============
         # Length Features
         # ===============
-        flow_any_ipv4_data_lens = list()
-        flow_fwd_ipv4_data_lens = list()
-        flow_bwd_ipv4_data_lens = list()
+        biflow_any_eth_ipv4_data_lens = list()
+        biflow_fwd_eth_ipv4_data_lens = list()
+        biflow_bwd_eth_ipv4_data_lens = list()
 
-        flow_any_ipv4_header_lens = list()
-        flow_fwd_ipv4_header_lens = list()
-        flow_bwd_ipv4_header_lens = list()
+        biflow_any_eth_ipv4_header_lens = list()
+        biflow_fwd_eth_ipv4_header_lens = list()
+        biflow_bwd_eth_ipv4_header_lens = list()
 
         # ======================
         # IP Fragmentation Flags
         # ======================
-        flow_any_df_flags = list()
-        flow_fwd_df_flags = list()
-        flow_bwd_df_flags = list()
+        biflow_any_eth_ipv4_df_flags = list()
+        biflow_fwd_eth_ipv4_df_flags = list()
+        biflow_bwd_eth_ipv4_df_flags = list()
 
-        flow_any_mf_flags = list()
-        flow_fwd_mf_flags = list()
-        flow_bwd_mf_flags = list()
+        biflow_any_eth_ipv4_mf_flags = list()
+        biflow_fwd_eth_ipv4_mf_flags = list()
+        biflow_bwd_eth_ipv4_mf_flags = list()
+
+        # =============
+        # Time Features
+        # =============
+        biflow_any_iats = list()
+        biflow_fwd_iats = list()
+        biflow_bwd_iats = list()
 
         # ==========================
         # POPULATE DATA STRUCTURES |
         # ==========================
         curr_packet_index = 0
-        while curr_packet_index < flow_any_n_packets:
-            previous_packet = curr_flow[curr_packet_index-1]
-            previous_packet_flow_id = previous_packet[0]
+        while curr_packet_index < biflow_any_n_packets:
+            previous_packet = curr_biflow[curr_packet_index-1]
+            previous_packet_biflow_id = previous_packet[0]
             previous_packet_timestamp = previous_packet[1]
 
-            curr_packet = curr_flow[curr_packet_index]
-            curr_packet_flow_id = curr_packet[0]
+            curr_packet = curr_biflow[curr_packet_index]
+            curr_packet_biflow_id = curr_packet[0]
             curr_packet_timestamp = curr_packet[1]
-            curr_packet_ipv4_header_len = curr_packet[2]
-            curr_packet_ipv4_data_len = curr_packet[3]
+            curr_packet_eth_ipv4_header_len = curr_packet[2]
+            curr_packet_eth_ipv4_data_len = curr_packet[3]
             curr_packet_df_flag = curr_packet[4]
             curr_packet_mf_flag = curr_packet[5]
 
@@ -556,37 +639,37 @@ def calculate_ipv4_flow_features(flows, flow_ids):
                 curr_packet_time = datetime_to_unixtime(previous_packet_timestamp)
                 next_packet_time = datetime_to_unixtime(curr_packet_timestamp)
                 curr_packet_iat = (next_packet_time - curr_packet_time)/time_scale_factor
-                flow_any_iats.append(curr_packet_iat)
-                if previous_packet_flow_id == flow_id:
-                    flow_fwd_iats.append(curr_packet_iat)
+                biflow_any_iats.append(curr_packet_iat)
+                if previous_packet_biflow_id == biflow_id:
+                    biflow_fwd_iats.append(curr_packet_iat)
                 else:
-                    flow_bwd_iats.append(curr_packet_iat)
+                    biflow_bwd_iats.append(curr_packet_iat)
 
-            flow_any_ipv4_data_lens.append(curr_packet_ipv4_data_len)
-            flow_any_ipv4_header_lens.append(curr_packet_ipv4_header_len)
-            flow_any_df_flags.append(curr_packet_df_flag)
-            flow_any_mf_flags.append(curr_packet_mf_flag)
+            biflow_any_eth_ipv4_data_lens.append(curr_packet_eth_ipv4_data_len)
+            biflow_any_eth_ipv4_header_lens.append(curr_packet_eth_ipv4_header_len)
+            biflow_any_eth_ipv4_df_flags.append(curr_packet_df_flag)
+            biflow_any_eth_ipv4_mf_flags.append(curr_packet_mf_flag)
 
-            if curr_packet_flow_id == flow_id:
-                flow_fwd_ipv4_data_lens.append(curr_packet_ipv4_data_len)
-                flow_fwd_ipv4_header_lens.append(curr_packet_ipv4_header_len)
-                flow_fwd_df_flags.append(curr_packet_df_flag)
-                flow_fwd_mf_flags.append(curr_packet_mf_flag)
+            if curr_packet_biflow_id == biflow_id:
+                biflow_fwd_eth_ipv4_data_lens.append(curr_packet_eth_ipv4_data_len)
+                biflow_fwd_eth_ipv4_header_lens.append(curr_packet_eth_ipv4_header_len)
+                biflow_fwd_eth_ipv4_df_flags.append(curr_packet_df_flag)
+                biflow_fwd_eth_ipv4_mf_flags.append(curr_packet_mf_flag)
 
-                flow_fwd_n_packets += 1
-                if curr_packet_ipv4_header_len != curr_packet_ipv4_data_len:
-                    flow_any_n_data_packets += 1
-                    flow_fwd_n_data_packets += 1
+                biflow_fwd_n_packets += 1
+                if curr_packet_eth_ipv4_header_len != curr_packet_eth_ipv4_data_len:
+                    biflow_any_n_data_packets += 1
+                    biflow_fwd_n_data_packets += 1
             else:
-                flow_bwd_ipv4_data_lens.append(curr_packet_ipv4_data_len)
-                flow_bwd_ipv4_header_lens.append(curr_packet_ipv4_header_len)
-                flow_bwd_df_flags.append(curr_packet_df_flag)
-                flow_bwd_mf_flags.append(curr_packet_mf_flag)
+                biflow_bwd_eth_ipv4_data_lens.append(curr_packet_eth_ipv4_data_len)
+                biflow_bwd_eth_ipv4_header_lens.append(curr_packet_eth_ipv4_header_len)
+                biflow_bwd_eth_ipv4_df_flags.append(curr_packet_df_flag)
+                biflow_bwd_eth_ipv4_mf_flags.append(curr_packet_mf_flag)
 
-                flow_bwd_n_packets += 1
-                if curr_packet_ipv4_header_len != curr_packet_ipv4_data_len:
-                    flow_any_n_data_packets += 1
-                    flow_bwd_n_data_packets += 1
+                biflow_bwd_n_packets += 1
+                if curr_packet_eth_ipv4_header_len != curr_packet_eth_ipv4_data_len:
+                    biflow_any_n_data_packets += 1
+                    biflow_bwd_n_data_packets += 1
 
             curr_packet_index+=1
 
@@ -597,87 +680,88 @@ def calculate_ipv4_flow_features(flows, flow_ids):
         # ======================
         # ADDITIONAL INFORMATION
         # ======================
-        first_packet = curr_flow[0]
-        last_packet = curr_flow[flow_any_n_packets-1]
+        first_packet = curr_biflow[0]
+        last_packet = curr_biflow[biflow_any_n_packets-1]
         first_packet_timestamp = first_packet[1]
         last_packet_timestamp = last_packet[1]
 
-        flow_any_first_packet_time = datetime_to_unixtime(first_packet_timestamp)
-        flow_any_last_packet_time = datetime_to_unixtime(last_packet_timestamp)
+        biflow_any_first_packet_time = datetime_to_unixtime(first_packet_timestamp)
+        biflow_any_last_packet_time = datetime_to_unixtime(last_packet_timestamp)
 
         # ==============
         # Packet Lengths
         # ==============
-        flow_any_ipv4_data_len_total = float(np.sum(flow_any_ipv4_data_lens))
-        flow_any_ipv4_data_len_mean = float(np.mean(flow_any_ipv4_data_lens))
-        flow_any_ipv4_data_len_std = float(np.std(flow_any_ipv4_data_lens))
-        flow_any_ipv4_data_len_var = float(np.var(flow_any_ipv4_data_lens))
-        flow_any_ipv4_data_len_max = float(np.max(flow_any_ipv4_data_lens))
-        flow_any_ipv4_data_len_min = float(np.min(flow_any_ipv4_data_lens))
+        biflow_any_eth_ipv4_data_len_total = round(np.sum(biflow_any_eth_ipv4_data_lens), 3)
+        print(biflow_any_eth_ipv4_df_flags)
+        biflow_any_eth_ipv4_data_len_mean = round(np.mean(biflow_any_eth_ipv4_data_lens), 3)
+        biflow_any_eth_ipv4_data_len_std = round(np.std(biflow_any_eth_ipv4_data_lens), 3)
+        biflow_any_eth_ipv4_data_len_var = round(np.var(biflow_any_eth_ipv4_data_lens), 3)
+        biflow_any_eth_ipv4_data_len_max = round(np.max(biflow_any_eth_ipv4_data_lens), 3)
+        biflow_any_eth_ipv4_data_len_min = round(np.min(biflow_any_eth_ipv4_data_lens), 3)
 
-        flow_fwd_ipv4_data_len_total = float(np.sum(flow_fwd_ipv4_data_lens))
-        flow_fwd_ipv4_data_len_mean = float(np.mean(flow_fwd_ipv4_data_lens))
-        flow_fwd_ipv4_data_len_std = float(np.std(flow_fwd_ipv4_data_lens))
-        flow_fwd_ipv4_data_len_var = float(np.var(flow_fwd_ipv4_data_lens))
-        flow_fwd_ipv4_data_len_max = float(np.max(flow_fwd_ipv4_data_lens))
-        flow_fwd_ipv4_data_len_min = float(np.min(flow_fwd_ipv4_data_lens))
+        biflow_fwd_eth_ipv4_data_len_total = round(np.sum(biflow_fwd_eth_ipv4_data_lens), 3)
+        biflow_fwd_eth_ipv4_data_len_mean = round(np.mean(biflow_fwd_eth_ipv4_data_lens), 3)
+        biflow_fwd_eth_ipv4_data_len_std = round(np.std(biflow_fwd_eth_ipv4_data_lens), 3)
+        biflow_fwd_eth_ipv4_data_len_var = round(np.var(biflow_fwd_eth_ipv4_data_lens), 3)
+        biflow_fwd_eth_ipv4_data_len_max = round(np.max(biflow_fwd_eth_ipv4_data_lens), 3)
+        biflow_fwd_eth_ipv4_data_len_min = round(np.min(biflow_fwd_eth_ipv4_data_lens), 3)
 
-        if len(flow_bwd_ipv4_data_lens) == 0:
-            flow_bwd_ipv4_data_len_total = flow_bwd_ipv4_data_len_mean = flow_bwd_ipv4_data_len_std \
-            = flow_bwd_ipv4_data_len_var = flow_bwd_ipv4_data_len_max = flow_bwd_ipv4_data_len_min = 0.0
+        if len(biflow_bwd_eth_ipv4_data_lens) == 0:
+            biflow_bwd_eth_ipv4_data_len_total = biflow_bwd_eth_ipv4_data_len_mean = biflow_bwd_eth_ipv4_data_len_std \
+            = biflow_bwd_eth_ipv4_data_len_var = biflow_bwd_eth_ipv4_data_len_max = biflow_bwd_eth_ipv4_data_len_min = 0.0
         else:
-            flow_bwd_ipv4_data_len_total = float(np.sum(flow_bwd_ipv4_data_lens))
-            flow_bwd_ipv4_data_len_mean = float(np.mean(flow_bwd_ipv4_data_lens))
-            flow_bwd_ipv4_data_len_std = float(np.std(flow_bwd_ipv4_data_lens))
-            flow_bwd_ipv4_data_len_var = float(np.var(flow_bwd_ipv4_data_lens))
-            flow_bwd_ipv4_data_len_max = float(np.max(flow_bwd_ipv4_data_lens))
-            flow_bwd_ipv4_data_len_min = float(np.min(flow_bwd_ipv4_data_lens))
+            biflow_bwd_eth_ipv4_data_len_total = round(np.sum(biflow_bwd_eth_ipv4_data_lens), 3)
+            biflow_bwd_eth_ipv4_data_len_mean = round(np.mean(biflow_bwd_eth_ipv4_data_lens), 3)
+            biflow_bwd_eth_ipv4_data_len_std = round(np.std(biflow_bwd_eth_ipv4_data_lens), 3)
+            biflow_bwd_eth_ipv4_data_len_var = round(np.var(biflow_bwd_eth_ipv4_data_lens), 3)
+            biflow_bwd_eth_ipv4_data_len_max = round(np.max(biflow_bwd_eth_ipv4_data_lens), 3)
+            biflow_bwd_eth_ipv4_data_len_min = round(np.min(biflow_bwd_eth_ipv4_data_lens), 3)
 
         # =============
         # TIME FEATURES
         # =============
-        flow_any_duration = (flow_any_last_packet_time - flow_any_first_packet_time)/time_scale_factor
-        flow_any_first_packet_time = unixtime_to_datetime(flow_any_first_packet_time)
-        flow_any_last_packet_time = unixtime_to_datetime(flow_any_last_packet_time)
-        if flow_any_duration == 0:
-            flow_any_packets_per_sec = flow_fwd_packets_per_sec = flow_bwd_packets_per_sec = 0.0
-            flow_any_bytes_per_sec = flow_fwd_bytes_per_sec = flow_bwd_bytes_per_sec = 0.0
+        biflow_any_duration = round((biflow_any_last_packet_time - biflow_any_first_packet_time)/time_scale_factor, 3)
+        biflow_any_first_packet_time = unixtime_to_datetime(biflow_any_first_packet_time)
+        biflow_any_last_packet_time = unixtime_to_datetime(biflow_any_last_packet_time)
+        if biflow_any_duration == 0:
+            biflow_any_packets_per_sec = biflow_fwd_packets_per_sec = biflow_bwd_packets_per_sec = 0.0
+            biflow_any_bytes_per_sec = biflow_fwd_bytes_per_sec = biflow_bwd_bytes_per_sec = 0.0
         else:
-            flow_any_packets_per_sec = float(flow_any_n_packets/flow_any_duration)
-            flow_fwd_packets_per_sec = float(flow_fwd_n_packets/flow_any_duration)
-            flow_bwd_packets_per_sec = float(flow_bwd_n_packets/flow_any_duration)
-            flow_any_bytes_per_sec = float(flow_any_ipv4_data_len_total/flow_any_duration)
-            flow_fwd_bytes_per_sec = float(flow_fwd_ipv4_data_len_total/flow_any_duration)
-            flow_bwd_bytes_per_sec = float(flow_bwd_ipv4_data_len_total/flow_any_duration)
+            biflow_any_packets_per_sec = round(biflow_any_n_packets/biflow_any_duration, 3)
+            biflow_fwd_packets_per_sec = round(biflow_fwd_n_packets/biflow_any_duration, 3)
+            biflow_bwd_packets_per_sec = round(biflow_bwd_n_packets/biflow_any_duration,3 )
+            biflow_any_bytes_per_sec = round(biflow_any_eth_ipv4_data_len_total/biflow_any_duration, 3)
+            biflow_fwd_bytes_per_sec = round(biflow_fwd_eth_ipv4_data_len_total/biflow_any_duration, 3)
+            biflow_bwd_bytes_per_sec = round(biflow_bwd_eth_ipv4_data_len_total/biflow_any_duration, 3)
 
         # =========================================================================
         # Packet Header Lengths (14 byte Ether header + ip header + tcp/udp header)
         # =========================================================================
 
-        flow_any_ipv4_header_len_total = float(np.sum(flow_any_ipv4_header_lens))
-        flow_any_ipv4_header_len_mean = float(np.mean(flow_any_ipv4_header_lens))
-        flow_any_ipv4_header_len_std = float(np.std(flow_any_ipv4_header_lens))
-        flow_any_ipv4_header_len_var = float(np.var(flow_any_ipv4_header_lens))
-        flow_any_ipv4_header_len_max = float(np.max(flow_any_ipv4_header_lens))
-        flow_any_ipv4_header_len_min = float(np.min(flow_any_ipv4_header_lens))
+        biflow_any_eth_ipv4_header_len_total = round(np.sum(biflow_any_eth_ipv4_header_lens), 3)
+        biflow_any_eth_ipv4_header_len_mean = round(np.mean(biflow_any_eth_ipv4_header_lens), 3)
+        biflow_any_eth_ipv4_header_len_std = round(np.std(biflow_any_eth_ipv4_header_lens), 3)
+        biflow_any_eth_ipv4_header_len_var = round(np.var(biflow_any_eth_ipv4_header_lens), 3)
+        biflow_any_eth_ipv4_header_len_max = round(np.max(biflow_any_eth_ipv4_header_lens), 3)
+        biflow_any_eth_ipv4_header_len_min = round(np.min(biflow_any_eth_ipv4_header_lens), 3)
 
-        flow_fwd_ipv4_header_len_total = float(np.sum(flow_fwd_ipv4_header_lens))
-        flow_fwd_ipv4_header_len_mean = float(np.mean(flow_fwd_ipv4_header_lens))
-        flow_fwd_ipv4_header_len_std = float(np.std(flow_fwd_ipv4_header_lens))
-        flow_fwd_ipv4_header_len_var = float(np.var(flow_fwd_ipv4_header_lens))
-        flow_fwd_ipv4_header_len_max = float(np.max(flow_fwd_ipv4_header_lens))
-        flow_fwd_ipv4_header_len_min = float(np.min(flow_fwd_ipv4_header_lens))
+        biflow_fwd_eth_ipv4_header_len_total = round(np.sum(biflow_fwd_eth_ipv4_header_lens), 3)
+        biflow_fwd_eth_ipv4_header_len_mean = round(np.mean(biflow_fwd_eth_ipv4_header_lens), 3)
+        biflow_fwd_eth_ipv4_header_len_std = round(np.std(biflow_fwd_eth_ipv4_header_lens), 3)
+        biflow_fwd_eth_ipv4_header_len_var = round(np.var(biflow_fwd_eth_ipv4_header_lens), 3)
+        biflow_fwd_eth_ipv4_header_len_max = round(np.max(biflow_fwd_eth_ipv4_header_lens), 3)
+        biflow_fwd_eth_ipv4_header_len_min = round(np.min(biflow_fwd_eth_ipv4_header_lens), 3)
 
-        if len(flow_bwd_ipv4_header_lens) == 0:
-            flow_bwd_ipv4_header_len_total = flow_bwd_ipv4_header_len_mean = flow_bwd_ipv4_header_len_std \
-            = flow_bwd_ipv4_header_len_var = flow_bwd_ipv4_header_len_max = flow_bwd_ipv4_header_len_min = 0.0
+        if len(biflow_bwd_eth_ipv4_header_lens) == 0:
+            biflow_bwd_eth_ipv4_header_len_total = biflow_bwd_eth_ipv4_header_len_mean = biflow_bwd_eth_ipv4_header_len_std \
+            = biflow_bwd_eth_ipv4_header_len_var = biflow_bwd_eth_ipv4_header_len_max = biflow_bwd_eth_ipv4_header_len_min = 0.0
         else:
-            flow_bwd_ipv4_header_len_total = float(np.sum(flow_bwd_ipv4_header_lens))
-            flow_bwd_ipv4_header_len_mean = float(np.mean(flow_bwd_ipv4_header_lens))
-            flow_bwd_ipv4_header_len_std = float(np.std(flow_bwd_ipv4_header_lens))
-            flow_bwd_ipv4_header_len_var = float(np.var(flow_bwd_ipv4_header_lens))
-            flow_bwd_ipv4_header_len_max = float(np.max(flow_bwd_ipv4_header_lens))
-            flow_bwd_ipv4_header_len_min = float(np.min(flow_bwd_ipv4_header_lens))
+            biflow_bwd_eth_ipv4_header_len_total = round(np.sum(biflow_bwd_eth_ipv4_header_lens), 3)
+            biflow_bwd_eth_ipv4_header_len_mean = round(np.mean(biflow_bwd_eth_ipv4_header_lens), 3)
+            biflow_bwd_eth_ipv4_header_len_std = round(np.std(biflow_bwd_eth_ipv4_header_lens), 3)
+            biflow_bwd_eth_ipv4_header_len_var = round(np.var(biflow_bwd_eth_ipv4_header_lens), 3)
+            biflow_bwd_eth_ipv4_header_len_max = round(np.max(biflow_bwd_eth_ipv4_header_lens), 3)
+            biflow_bwd_eth_ipv4_header_len_min = round(np.min(biflow_bwd_eth_ipv4_header_lens), 3)
             
 
         # ==========================
@@ -685,204 +769,229 @@ def calculate_ipv4_flow_features(flows, flow_ids):
         # ==========================
 
         # Packet IATs need at least 2 packets to be properly populated
-        if len(flow_any_iats) == 0:
-            flow_any_iat_total = flow_any_iat_mean = flow_any_iat_std = flow_any_iat_var = flow_any_iat_max = flow_any_iat_min = 0.0
+        if len(biflow_any_iats) == 0:
+            biflow_any_iat_total = biflow_any_iat_mean = biflow_any_iat_std = biflow_any_iat_var = biflow_any_iat_max = biflow_any_iat_min = 0.0
         else:
-            flow_any_iat_total = float(np.sum(flow_any_iats))
-            flow_any_iat_mean = float(np.mean(flow_any_iats))
-            flow_any_iat_std = float(np.std(flow_any_iats))
-            flow_any_iat_var = float(np.var(flow_any_iats))
-            flow_any_iat_max = float(np.max(flow_any_iats))
-            flow_any_iat_min = float(np.min(flow_any_iats))
+            biflow_any_iat_total = round(np.sum(biflow_any_iats), 3)
+            biflow_any_iat_mean = round(np.mean(biflow_any_iats), 3)
+            biflow_any_iat_std = round(np.std(biflow_any_iats), 3)
+            biflow_any_iat_var = round(np.var(biflow_any_iats), 3)
+            biflow_any_iat_max = round(np.max(biflow_any_iats), 3)
+            biflow_any_iat_min = round(np.min(biflow_any_iats), 3)
 
         # Packet IATs need at least 2 packets to be properly populated
-        if len(flow_fwd_iats) == 0:
-            flow_fwd_iat_total = flow_fwd_iat_mean = flow_fwd_iat_std = flow_fwd_iat_var =flow_fwd_iat_max = flow_fwd_iat_min = 0.0
+        if len(biflow_fwd_iats) == 0:
+            biflow_fwd_iat_total = biflow_fwd_iat_mean = biflow_fwd_iat_std = biflow_fwd_iat_var =biflow_fwd_iat_max = biflow_fwd_iat_min = 0.0
         else:
-            flow_fwd_iat_total = float(np.sum(flow_fwd_iats))
-            flow_fwd_iat_mean = float(np.mean(flow_fwd_iats))
-            flow_fwd_iat_std = float(np.std(flow_fwd_iats))
-            flow_fwd_iat_var = float(np.var(flow_fwd_iats))
-            flow_fwd_iat_max = float(np.max(flow_fwd_iats))
-            flow_fwd_iat_min = float(np.min(flow_fwd_iats))
-
-        # Packet IATs need at least 2 packets to be properly populated
-        if len(flow_bwd_iats) == 0:
-            flow_bwd_iat_total = flow_bwd_iat_mean = flow_bwd_iat_std = flow_bwd_iat_var = flow_bwd_iat_max = flow_bwd_iat_min = 0.0
-        else:
-            flow_bwd_iat_total = float(np.sum(flow_bwd_iats))
-            flow_bwd_iat_mean = float(np.mean(flow_bwd_iats))
-            flow_bwd_iat_std = float(np.std(flow_bwd_iats))
-            flow_bwd_iat_var = float(np.var(flow_bwd_iats))
-            flow_bwd_iat_max = float(np.max(flow_bwd_iats))
-            flow_bwd_iat_min = float(np.min(flow_bwd_iats))
+            biflow_fwd_iat_total = round(np.sum(biflow_fwd_iats), 3)
+            biflow_fwd_iat_mean = round(np.mean(biflow_fwd_iats), 3)
+            biflow_fwd_iat_std = round(np.std(biflow_fwd_iats), 3)
+            biflow_fwd_iat_var = round(np.var(biflow_fwd_iats), 3)
+            biflow_fwd_iat_max = round(np.max(biflow_fwd_iats), 3)
+            biflow_fwd_iat_min = round(np.min(biflow_fwd_iats), 3)
 
         # ======================
         # IP Fragmentation Flags
         # ======================
-        flow_any_df_flags_total = float(np.sum(flow_any_df_flags))
-        flow_any_df_flags_mean = float(np.mean(flow_any_df_flags))
-        flow_any_df_flags_std = float(np.std(flow_any_df_flags))
-        flow_any_df_flags_var = float(np.var(flow_any_df_flags))
-        flow_any_df_flags_max = float(np.max(flow_any_df_flags))
-        flow_any_df_flags_min = float(np.min(flow_any_df_flags))
+        biflow_any_eth_ipv4_df_flags_total = round(np.sum(biflow_any_eth_ipv4_df_flags), 3)
+        biflow_any_eth_ipv4_df_flags_mean = round(np.mean(biflow_any_eth_ipv4_df_flags), 3)
+        biflow_any_eth_ipv4_df_flags_std = round(np.std(biflow_any_eth_ipv4_df_flags), 3)
+        biflow_any_eth_ipv4_df_flags_var = round(np.var(biflow_any_eth_ipv4_df_flags), 3)
+        biflow_any_eth_ipv4_df_flags_max = round(np.max(biflow_any_eth_ipv4_df_flags), 3)
+        biflow_any_eth_ipv4_df_flags_min = round(np.min(biflow_any_eth_ipv4_df_flags), 3)
 
-        flow_fwd_df_flags_total = float(np.sum(flow_fwd_df_flags))
-        flow_fwd_df_flags_mean = float(np.mean(flow_fwd_df_flags))
-        flow_fwd_df_flags_std = float(np.std(flow_fwd_df_flags))
-        flow_fwd_df_flags_var = float(np.var(flow_fwd_df_flags))
-        flow_fwd_df_flags_max = float(np.max(flow_fwd_df_flags))
-        flow_fwd_df_flags_min = float(np.min(flow_fwd_df_flags))
+        biflow_fwd_eth_ipv4_df_flags_total = round(np.sum(biflow_fwd_eth_ipv4_df_flags), 3)
+        biflow_fwd_eth_ipv4_df_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_df_flags), 3)
+        biflow_fwd_eth_ipv4_df_flags_std = round(np.std(biflow_fwd_eth_ipv4_df_flags), 3)
+        biflow_fwd_eth_ipv4_df_flags_var = round(np.var(biflow_fwd_eth_ipv4_df_flags), 3)
+        biflow_fwd_eth_ipv4_df_flags_max = round(np.max(biflow_fwd_eth_ipv4_df_flags), 3)
+        biflow_fwd_eth_ipv4_df_flags_min = round(np.min(biflow_fwd_eth_ipv4_df_flags), 3)
 
-        flow_bwd_df_flags_total = float(np.sum(flow_bwd_df_flags))
-        flow_bwd_df_flags_mean = float(np.mean(flow_bwd_df_flags))
-        flow_bwd_df_flags_std = float(np.std(flow_bwd_df_flags))
-        flow_bwd_df_flags_var = float(np.var(flow_bwd_df_flags))
-        flow_bwd_df_flags_max = float(np.max(flow_bwd_df_flags))
-        flow_bwd_df_flags_min = float(np.min(flow_bwd_df_flags))
+        biflow_bwd_eth_ipv4_df_flags_total = round(np.sum(biflow_bwd_eth_ipv4_df_flags), 3)
+        biflow_bwd_eth_ipv4_df_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_df_flags), 3)
+        biflow_bwd_eth_ipv4_df_flags_std = round(np.std(biflow_bwd_eth_ipv4_df_flags), 3)
+        biflow_bwd_eth_ipv4_df_flags_var = round(np.var(biflow_bwd_eth_ipv4_df_flags), 3)
+        biflow_bwd_eth_ipv4_df_flags_max = round(np.max(biflow_bwd_eth_ipv4_df_flags), 3)
+        biflow_bwd_eth_ipv4_df_flags_min = round(np.min(biflow_bwd_eth_ipv4_df_flags), 3)
 
-        flow_any_mf_flags_total = float(np.sum(flow_any_mf_flags))
-        flow_any_mf_flags_mean = float(np.mean(flow_any_mf_flags))
-        flow_any_mf_flags_std = float(np.std(flow_any_mf_flags))
-        flow_any_mf_flags_var = float(np.var(flow_any_mf_flags))
-        flow_any_mf_flags_max = float(np.max(flow_any_mf_flags))
-        flow_any_mf_flags_min = float(np.min(flow_any_mf_flags))
+        biflow_any_eth_ipv4_mf_flags_total = round(np.sum(biflow_any_eth_ipv4_mf_flags), 3)
+        biflow_any_eth_ipv4_mf_flags_mean = round(np.mean(biflow_any_eth_ipv4_mf_flags), 3)
+        biflow_any_eth_ipv4_mf_flags_std = round(np.std(biflow_any_eth_ipv4_mf_flags), 3)
+        biflow_any_eth_ipv4_mf_flags_var = round(np.var(biflow_any_eth_ipv4_mf_flags), 3)
+        biflow_any_eth_ipv4_mf_flags_max = round(np.max(biflow_any_eth_ipv4_mf_flags), 3)
+        biflow_any_eth_ipv4_mf_flags_min = round(np.min(biflow_any_eth_ipv4_mf_flags), 3)
 
-        flow_fwd_mf_flags_total = float(np.sum(flow_fwd_mf_flags))
-        flow_fwd_mf_flags_mean = float(np.mean(flow_fwd_mf_flags))
-        flow_fwd_mf_flags_std = float(np.std(flow_fwd_mf_flags))
-        flow_fwd_mf_flags_var = float(np.var(flow_fwd_mf_flags))
-        flow_fwd_mf_flags_max = float(np.max(flow_fwd_mf_flags))
-        flow_fwd_mf_flags_min = float(np.min(flow_fwd_mf_flags))
+        biflow_fwd_eth_ipv4_mf_flags_total = round(np.sum(biflow_fwd_eth_ipv4_mf_flags), 3)
+        biflow_fwd_eth_ipv4_mf_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_mf_flags), 3)
+        biflow_fwd_eth_ipv4_mf_flags_std = round(np.std(biflow_fwd_eth_ipv4_mf_flags), 3)
+        biflow_fwd_eth_ipv4_mf_flags_var = round(np.var(biflow_fwd_eth_ipv4_mf_flags), 3)
+        biflow_fwd_eth_ipv4_mf_flags_max = round(np.max(biflow_fwd_eth_ipv4_mf_flags), 3)
+        biflow_fwd_eth_ipv4_mf_flags_min = round(np.min(biflow_fwd_eth_ipv4_mf_flags), 3)
 
-        flow_bwd_mf_flags_total = float(np.sum(flow_bwd_mf_flags))
-        flow_bwd_mf_flags_mean = float(np.mean(flow_bwd_mf_flags))
-        flow_bwd_mf_flags_std = float(np.std(flow_bwd_mf_flags))
-        flow_bwd_mf_flags_var = float(np.var(flow_bwd_mf_flags))
-        flow_bwd_mf_flags_max = float(np.max(flow_bwd_mf_flags))
-        flow_bwd_mf_flags_min = float(np.min(flow_bwd_mf_flags))
+        biflow_bwd_eth_ipv4_mf_flags_total = round(np.sum(biflow_bwd_eth_ipv4_mf_flags), 3)
+        biflow_bwd_eth_ipv4_mf_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_mf_flags), 3)
+        biflow_bwd_eth_ipv4_mf_flags_std = round(np.std(biflow_bwd_eth_ipv4_mf_flags), 3)
+        biflow_bwd_eth_ipv4_mf_flags_var = round(np.var(biflow_bwd_eth_ipv4_mf_flags), 3)
+        biflow_bwd_eth_ipv4_mf_flags_max = round(np.max(biflow_bwd_eth_ipv4_mf_flags), 3)
+        biflow_bwd_eth_ipv4_mf_flags_min = round(np.min(biflow_bwd_eth_ipv4_mf_flags), 3)
+
+        # Packet IATs need at least 2 packets to be properly populated
+        if len(biflow_bwd_iats) == 0:
+            biflow_bwd_iat_total = biflow_bwd_iat_mean = biflow_bwd_iat_std = biflow_bwd_iat_var = biflow_bwd_iat_max = biflow_bwd_iat_min = 0.0
+        else:
+            biflow_bwd_iat_total = round(np.sum(biflow_bwd_iats), 3)
+            biflow_bwd_iat_mean = round(np.mean(biflow_bwd_iats), 3)
+            biflow_bwd_iat_std = round(np.std(biflow_bwd_iats), 3)
+            biflow_bwd_iat_var = round(np.var(biflow_bwd_iats), 3)
+            biflow_bwd_iat_max = round(np.max(biflow_bwd_iats), 3)
+            biflow_bwd_iat_min = round(np.min(biflow_bwd_iats), 3)
 
         # ===============
         # WRAP-UP RESULTS
         # ===============
-        ipv4_flow_local_vars = locals()
-        ipv4_flow_feature_values_list = [ipv4_flow_local_vars[var_name] for var_name in ipv4_flow_features_header_list]
-        ipv4_flow_features_generator = dict(zip(ipv4_flow_features_header_list, ipv4_flow_feature_values_list))
+        biflow_local_vars = locals()
+        biflow_gene_values_list = [biflow_local_vars[var_name] for var_name in ipv4_biflow_genes_header_list]
+        biflow_genes_generator = dict(zip(ipv4_biflow_genes_header_list, biflow_gene_values_list))
 
-        yield ipv4_flow_features_generator
+        yield biflow_genes_generator
 
-def output_ipv4_flow_features(ipv4_flow_features_generator, output_type, over_ipv4=False):
+def output_biflow_genes(ipv4_flow_genes_generator, output_type, over_ipv4=False):
     """
-    Output all flows and their features with the following supported criteria:
+    Output all flows and their genes with the following supported protocols, where important in:
         - L1: Ethernet
         - L2: Ethernet
         - L3: IPv4
-        - L3plus: ICMP
         - L4: UDP, TCP
     """
     if output_type=="csv":
-        ipv4_flow_features_header_str = get_flow_header_by_type("ipv4")
-        ipv4_flow_features_csv = ipv4_flow_features_header_str + "\n"
-        for ipv4_flow_features_dict in ipv4_flow_features_generator:
-            ipv4_flow_features_list = list(ipv4_flow_features_dict.values())
-            ipv4_flow_features_csv += generate_flow_line(ipv4_flow_features_list) + "\n"
+        ipv4_flow_genes_header_str = get_biflow_header_by_type("ipv4")
+        ipv4_flow_genes_csv = ipv4_flow_genes_header_str + "\n"
+        for ipv4_flow_genes_dict in ipv4_flow_genes_generator:
+            ipv4_flow_genes_list = list(ipv4_flow_genes_dict.values())
+            ipv4_flow_genes_csv += generate_flow_line(ipv4_flow_genes_list) + "\n"
         os.makedirs(csv_output_dir, exist_ok=True)
-        f = open(csv_output_dir + os.sep + "ipv4-flows2.csv", "w")
-        f.write(ipv4_flow_features_csv)
+        f = open(csv_output_dir + os.sep + "ipv4-biflows.csv", "w")
+        f.write(ipv4_flow_genes_csv)
         f.close()
 
 def generate_network_objets(file):
     """
-    Build all network objects: flows, talkers and hosts
+    Build all network objects: packets, flows, talkers and hosts
     """
     if args.verbose:
         run_init_time = time.time()
+        print(make_header_string("1. Network Object Construction", separator="=", big_header=True), flush=True)
 
     # =======
-    # PACKETS
+    # Packets
     # =======
-    packet_features = build_packets(file)
+    packet_genes = build_packets(file)
 
     # ====================
-    # UNIDIRECTIONAL FLOWS
+    # Unidirectional Flows
     # ====================
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("Unidirectional Layer3 Flows (IPv4)"), flush=True)
+        print(make_header_string("1.2. Layer-3 Unidirectional Flows: IPv4"), flush=True)
 
-    uniflows, uniflow_ids = build_uniflows(packet_features)
-    del(packet_features)
+    l3_uniflows, l3_uniflow_ids = build_l3_uniflows(packet_genes)
+    del(packet_genes)
 
     if args.verbose:
         n_preserved_packets = 0
-        for uniflow_id in uniflow_ids:
-            n_preserved_packets += len(uniflows[uniflow_id])
-        print("Number of packets preserved:", n_preserved_packets, "packets", flush=True)
-        print("Number of flows detected:" + cterminal.colors.GREEN, len(uniflow_ids), "unidirectional flows" + cterminal.colors.ENDC, flush=True)
+        for l3_uniflow_id in l3_uniflow_ids:
+            n_preserved_packets += len(l3_uniflows[l3_uniflow_id])
+        print("Packets preserved:", n_preserved_packets, "IPv4 Packets", flush=True)
+        print("Flows detected:" + cterminal.colors.GREEN, len(l3_uniflow_ids), "IPv4 UniFlows" + cterminal.colors.ENDC, flush=True)
         print("Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
 
     # ===================
-    # BIDIRECTIONAL FLOWS
+    # Bidirectional Flows
     # ===================
+
+    # -------
+    # Layer 3
+    # -------
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("Bidirectional Layer3 Flows (IPv4)"), flush=True)
+        print(make_header_string("1.3. Layer-3 Bidirectional Flows: IPv4"), flush=True)
 
-    biflows, biflow_ids = build_biflows(uniflows, uniflow_ids)
-    del(uniflows)
-    del(uniflow_ids)
+    l3_biflows, l3_biflow_ids = build_l3_biflows(l3_uniflows, l3_uniflow_ids)
+    del(l3_uniflows)
+    del(l3_uniflow_ids)
 
     if args.verbose:
         n_preserved_packets = 0
-        for biflow_id in biflow_ids:
-            n_preserved_packets += len(biflows[biflow_id])
-        print("Number of packets preserved:", n_preserved_packets, "packets", flush=True)
-        print("Number of flows detected:" + cterminal.colors.GREEN, len(biflows), "bidirectional flows" + cterminal.colors.ENDC, flush=True)
+        for l3_biflow_id in l3_biflow_ids:
+            n_preserved_packets += len(l3_biflows[l3_biflow_id])
+        print("IPv4 Packets preserved:", n_preserved_packets, "IPv4 Packets", flush=True)
+        print("IPv4 BiFlows detected:" + cterminal.colors.GREEN, len(l3_biflows), "IPv4 BiFlows" + cterminal.colors.ENDC, flush=True)
         print("Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
 
-    # ==================
-    # IPv4 Flow Features
-    # ==================
+    # -------
+    # Layer 4
+    # -------
+    if args.verbose:
+        module_init_time = time.time()
+        print(make_header_string("1.4. Layer-4 Bidirectional Flows: UDP and TCP"), flush=True)
 
-    # ==============================
+    udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids = build_l4_biflows(l3_biflows, l3_biflow_ids)
+    """
+    if args.verbose:
+        n_preserved_packets = 0
+        for l3_biflow_id in l3_biflow_ids:
+            n_preserved_packets += len(l3_biflows[l3_biflow_id])
+        print("IPv4-TCP packets preserved:", n_preserved_packets, "packets", flush=True)
+        print("IPv4-TCP flows detected:" + cterminal.colors.GREEN, len(l3_biflows), "IPv4-TCP BiFlows" + cterminal.colors.ENDC, flush=True)
+        print("Flows detected:" + cterminal.colors.GREEN, len(l3_biflows), "IPv4-TCP BiFlows" + cterminal.colors.ENDC, flush=True)
+        print("Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+    """
+
+    # =================
+    # IPv4 BiFlow Genes
+    # =================
+    if args.verbose:
+        print(make_header_string("2. Layer-3 and Layer-4 Bidirectional Flow Genes", separator="=", big_header=True), flush=True)
+    # ------------------------------
     # IPv4 Flow Feature Calculations
-    # ==============================
+    # ------------------------------
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("IPv4 Flow Feature Calculations"), flush=True)
+        print(make_header_string("2.1. IPv4 & (TCP|UDP) BiFlow Genes"), flush=True)
 
-    ipv4_flow_features_generator = calculate_ipv4_flow_features(biflows, biflow_ids)
+    l3_l4_flow_genes_generator = calculate_l3_l4_biflow_genes(l3_biflows, l3_biflow_ids)
 
     if args.verbose:
-        ipv4_n_flow_features = get_flow_header_by_type("ipv4").count("|") - 2
-        print("Number of calculated IPv4 flow features:" + cterminal.colors.GREEN, ipv4_n_flow_features, "L3 flow features" + cterminal.colors.ENDC, flush=True)
+        l3_n_flow_genes = get_biflow_header_by_type("ipv4").count("|") - 2
+        print("Calculated IPv4 & (TCP|UDP) BiFlow Genes:" + cterminal.colors.GREEN,
+            l3_n_flow_genes, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
         print("Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
 
-    # ========================
+    # ------------------------
     # IPv4 Flow Feature Output
-    # ========================
+    # ------------------------
     if args.verbose:
         module_init_time = time.time()
 
-    output_ipv4_flow_features(ipv4_flow_features_generator, args.output_type)
+    output_biflow_genes(l3_l4_flow_genes_generator, args.output_type)
 
     if args.verbose:
         print("Saved in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
 
     """
-    # =======================
-    # PLACEHOLDER: ICMP FLOWS
-    # =======================
-    # TODO: ICMP FLOWS
-
     # ======================
     # PLACEHOLDER: UDP FLOWS
     # ======================
     # TODO: UDP FLOWS
+    """
+    """
+    # =========
+    # TCP Flows
+    # =========
 
-    # ===============================
-    # TCP FLOWS (TCP Flag separation)
-    # ===============================
+    # ===================
+    # TCP Flag Separation
+    # ===================
     tcp_flows, tcp_flow_ids = build_tcp_flows(flows, flow_ids)
     del(flows)
     del(flow_ids)
@@ -897,37 +1006,44 @@ def generate_network_objets(file):
         for tcp_flow_id in tcp_flow_ids:
             n_preserved_packets += len(tcp_flows[tcp_flow_id])
         print("########## IPv4-TCP FLOWS (Bidirectional; TCP flag separation) ##########", flush=True)
-        print("Number of IPv4-TCP flows:" + cterminal.colors.GREEN, str(len(tcp_flows)) + cterminal.colors.ENDC, flush=True)
-        print("Number of packets preserved in these flows:" + cterminal.colors.GREEN, str(n_preserved_packets) + cterminal.colors.ENDC, flush=True)
-    """
-    # this should be done before... need to refactor all this into smaller classes
-    #tcp_flow_features_generator = calculate_ipv4_flow_features(tcp_flows, tcp_flow_ids)
-    #del(tcp_flows)
-    #output_ipv4_flow_features(tcp_flow_features_generator, "csv")
+        print("IPv4-TCP flows:" + cterminal.colors.GREEN, str(len(tcp_flows)) + cterminal.colors.ENDC, flush=True)
+        print("packets preserved in these flows:" + cterminal.colors.GREEN, str(n_preserved_packets) + cterminal.colors.ENDC, flush=True)
 
+    # this should be done before... need to refactor all this into smaller classes
+    #tcp_flow_genes_generator = calculate_eth_l3_flow_genes(tcp_flows, tcp_flow_ids)
+    #del(tcp_flows)
+    #output_eth_l3_flow_genes(tcp_flow_genes_generator, "csv")
+    """
     if args.verbose:
-        print(make_header_string("Total Extraction Time"), flush=True)
-        print("Script took" + cterminal.colors.YELLOW, round(time.time() - run_init_time, 3), "seconds" + cterminal.colors.ENDC, "to run", flush=True)
+        print(make_header_string("Total Extraction Time", separator="=", big_header=True), flush=True)
+        print("Script took" + cterminal.colors.YELLOW, round(time.time() - run_init_time, 3), "seconds" + cterminal.colors.ENDC, "to complete", flush=True)
 
 def run():
-    print("Input PCAP file:"  + cterminal.colors.BLUE, args.pcap_path + cterminal.colors.ENDC, flush=True)
     supported_output_types = ("csv",)
     if args.output_type not in supported_output_types:
         print("Specified output type", cterminal.colors.BLUE + args.output_type + cterminal.colors.ENDC, "is not a valid output type.", flush=True)
         print("Valid output types:" + cterminal.colors.BLUE, ",".join(supported_output_types) + cterminal.colors.ENDC, flush=True)
         exit()
-    print("Working on it...", flush=True)
+
+    print(make_header_string("INPUT/OUTPUT INFORMATION", separator="+", big_header=True), flush=True)
+    print("Input PCAP file:"  + cterminal.colors.BLUE, args.pcap_path + cterminal.colors.ENDC, flush=True)
+    file_size_bytes = os.path.getsize(args.pcap_path)
+    file_size_str = (str(round(file_size_bytes/(1024**2), 3)) + " megabytes") if (file_size_bytes < 1024**3) \
+        else (str(round(file_size_bytes/(1024**3), 3)) + " gigabytes")
+
+    print("Parsing and working on", cterminal.colors.BLUE + file_size_str + cterminal.colors.ENDC, "of data. Please wait.", flush=True)
+
     if args.output_type=="csv":
-        print("Output CSV file:" + cterminal.colors.BLUE, csv_output_dir, cterminal.colors.ENDC, flush=True)
+        print("Output CSV file:", cterminal.colors.BLUE + csv_output_dir + cterminal.colors.ENDC, flush=True)
 
     if args.verbose:
         print("")
         print(make_header_string("VERBOSE OUTPUT ACTIVATED", separator="+", big_header=True), flush=True)
-        print(make_header_string("SUPPORTED PROTOCOLS"), flush=True)
+        print(make_header_string("NetMeter Supported Protocols", separator="-", big_header=True), flush=True)
         print("Layer 1: Ethernet", flush=True)
         print("Layer 2: Ethernet", flush=True)
         print("Layer 3: IPv4", flush=True)
-        print("Layer 3+: ICMPv4", flush=True)
+        print("Layer 3+: ICMPv4, IGMPv4", flush=True)
         print("Layer 4: TCP, UDP", flush=True, end="\n\n")
 
     with open(args.pcap_path, "rb") as f:

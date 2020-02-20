@@ -1,6 +1,6 @@
 # HOST
-## CURRENT NUMBER OF FEATURES
-**140 Host Features:**  
+## CURRENT NUMBER OF GENES
+**140 Host Genes:**  
 - 14 Conceptual Features
 - 126 Statistical Features
 
@@ -13,7 +13,7 @@ host_id (joined 1-tuple):
 first_talker_time  
 last_talker_time  
 
-## FEATURES
+## GENES
 ### Conceptual Features
 
 ### Statistical Features
