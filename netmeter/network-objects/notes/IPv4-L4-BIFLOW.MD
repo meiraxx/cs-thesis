@@ -1,12 +1,20 @@
 # IPv4-L4 BiFlow
 ## CURRENT NUMBER OF GENES
-**36 BiFlow Genes:**
-- 0 Conceptual Features
+**42 BiFlow Genes:**
+- 6 Conceptual Features
 - 36 Statistical Features
 
 ## GENES
 ### Conceptual Features
-**None, for now**  
+**L4 Data Packet Number Features**  
+biflow_any_eth_ipv4_l4_n_data_packets  
+biflow_fwd_eth_ipv4_l4_n_data_packets  
+biflow_bwd_eth_ipv4_l4_n_data_packets  
+
+**L4 Data Packet Frequency Features**  
+biflow_any_eth_ipv4_l4_data_packets_per_sec  
+biflow_fwd_eth_ipv4_l4_data_packets_per_sec  
+biflow_bwd_eth_ipv4_l4_data_packets_per_sec  
 
 ### Statistical Features
 **L4 Protocol Metadata Features**  

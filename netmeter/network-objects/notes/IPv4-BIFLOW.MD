@@ -1,8 +1,8 @@
 # IPv4-BiFlow
 ## Extended by: TCP-BiFlow
 ## CURRENT NUMBER OF GENES
-**103 Biflow Genes:**
-- 13 Conceptual Features
+**100 Biflow Genes:**
+- 10 Conceptual Features
 - 90 Statistical Features
 
 ## IDENTIFIER
@@ -23,9 +23,6 @@ biflow_any_duration
 biflow_any_n_packets  
 biflow_fwd_n_packets  
 biflow_bwd_n_packets  
-biflow_any_n_data_packets  
-biflow_fwd_n_data_packets  
-biflow_bwd_n_data_packets  
 
 **Packet Frequency Features**  
 biflow_any_packets_per_sec  

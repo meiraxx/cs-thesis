@@ -5,9 +5,6 @@ biflow_any_duration
 biflow_any_n_packets
 biflow_fwd_n_packets
 biflow_bwd_n_packets
-biflow_any_n_data_packets
-biflow_fwd_n_data_packets
-biflow_bwd_n_data_packets
 biflow_any_packets_per_sec
 biflow_fwd_packets_per_sec
 biflow_bwd_packets_per_sec
