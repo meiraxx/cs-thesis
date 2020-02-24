@@ -328,26 +328,27 @@ def build_packets(input_pcap_file, args):
         # TCP and UDP are the most relevant protocols, so we focus on layer 4 (transport layer)
 
         # Unpack the data within the IPv4 frame: either TCP or UDP data
-        transport_layer = ipv4.data
+        l4_layer = ipv4.data
 
         # -----------------------
         # TCP/UDP packet genes
         # -----------------------
         # Extracting l4 protocol name
-        transport_protocol_name = type(transport_layer).__name__
+        l4_protocol_name = type(l4_layer).__name__
 
         # TCP/UDP source and destination ports
-        src_port = transport_layer.sport
-        dst_port = transport_layer.dport
+        src_port = l4_layer.sport
+        dst_port = l4_layer.dport
 
         # TCP/UDP lengths
-        transport_options_len = len(transport_layer.opts) if hasattr(transport_layer, "opts") else 0
-        transport_header_len = transport_layer.__hdr_len__
-        transport_data_len = len(transport_layer.data)
+        l4_options_len = len(l4_layer.opts) if hasattr(l4_layer, "opts") else 0
+        l4_header_len = l4_layer.__hdr_len__ + l4_options_len
+        l4_data_len = len(l4_layer.data)
+        l4_packet_genes = [l4_header_len, l4_data_len]
 
         # IPv4-L4 Flow Identifier: 6-tuple -> (src ip, src port, dst ip, dst port, protocol_stack, inner_sep_counter)
         # note: inner_sep_counter is incremented whenever a flow reaches its end, which is defined by the protocol used
-        flow_id = (src_ip, src_port, dst_ip, dst_port, transport_protocol_name, 0)
+        flow_id = (src_ip, src_port, dst_ip, dst_port, l4_protocol_name, 0)
 
         # Packet-level debug Info
         if args.debug:
@@ -356,30 +357,30 @@ def build_packets(input_pcap_file, args):
             print("IPv4 header length:", ipv4_header_len, flush=True)
             print("IPv4 options length:", ipv4_options_len, flush=True)
             print("IPv4 data length:", ipv4_data_len, flush=True)
-            print("Transport header length:", transport_header_len, flush=True)
-            print("Transport options length:", transport_options_len, flush=True)
-            print("Transport data length:", transport_data_len, flush=True)
+            print("Transport header length:", l4_header_len, flush=True)
+            print("Transport options length:", l4_options_len, flush=True)
+            print("Transport data length:", l4_data_len, flush=True)
 
-        packet_genes = [flow_id,] + ipv4_packet_genes
-        if transport_protocol_name == "TCP":
+        packet_genes = [flow_id,] + ipv4_packet_genes + l4_packet_genes
+        if l4_protocol_name == "TCP":
             # ===================
             # TCP packet genes
             # ===================
             #https://en.wikipedia.org/wiki/Transmission_Control_Protocol
             #https://tools.ietf.org/html/rfc793
 
-            tcp_fin_flag = ( transport_layer.flags & dpkt.tcp.TH_FIN ) != 0
-            tcp_syn_flag = ( transport_layer.flags & dpkt.tcp.TH_SYN ) != 0
-            tcp_rst_flag = ( transport_layer.flags & dpkt.tcp.TH_RST ) != 0
-            tcp_psh_flag = ( transport_layer.flags & dpkt.tcp.TH_PUSH) != 0
-            tcp_ack_flag = ( transport_layer.flags & dpkt.tcp.TH_ACK ) != 0
-            tcp_urg_flag = ( transport_layer.flags & dpkt.tcp.TH_URG ) != 0
-            tcp_ece_flag = ( transport_layer.flags & dpkt.tcp.TH_ECE ) != 0
-            tcp_cwr_flag = ( transport_layer.flags & dpkt.tcp.TH_CWR ) != 0
+            tcp_fin_flag = ( l4_layer.flags & dpkt.tcp.TH_FIN ) != 0
+            tcp_syn_flag = ( l4_layer.flags & dpkt.tcp.TH_SYN ) != 0
+            tcp_rst_flag = ( l4_layer.flags & dpkt.tcp.TH_RST ) != 0
+            tcp_psh_flag = ( l4_layer.flags & dpkt.tcp.TH_PUSH) != 0
+            tcp_ack_flag = ( l4_layer.flags & dpkt.tcp.TH_ACK ) != 0
+            tcp_urg_flag = ( l4_layer.flags & dpkt.tcp.TH_URG ) != 0
+            tcp_ece_flag = ( l4_layer.flags & dpkt.tcp.TH_ECE ) != 0
+            tcp_cwr_flag = ( l4_layer.flags & dpkt.tcp.TH_CWR ) != 0
             tcp_packet_genes = [tcp_fin_flag, tcp_syn_flag, tcp_rst_flag, tcp_psh_flag, tcp_ack_flag, tcp_urg_flag, tcp_ece_flag, tcp_cwr_flag]
             packet_genes += tcp_packet_genes
             packets.append(packet_genes)
-        elif transport_protocol_name == "UDP":
+        elif l4_protocol_name == "UDP":
             # ================
             # UDP packet genes
             # ================
@@ -485,6 +486,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids):
         # FUTURE-TODO: validate using tcp_seq
         rfc793_tcp_biflows = dict()
         rfc793_tcp_biflow_ids = []
+        n_disconected_packets = 0
 
         # create RFC793-compliant TCP flows
         for tmp_tcp_biflow_id in tmp_tcp_biflow_ids:
@@ -503,6 +505,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids):
             else:
                 # NEW RFC793-compliant TCP FLOW
                 rfc793 = RFC793()
+                rfc793_tcp_biflow_id = None
                 curr_packet_index = 0
                 previous_packet_index = 0
                 inner_sep_counter = 0
@@ -522,29 +525,34 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids):
                     except IndexError:
                         fin3,syn3,rst3,psh3,ack3,urg2,ece3,cwr3 = [False]*8
                     
-                    # ==================================
-                    # TCP FLOW INITIATION RULES - BACKUP
-                    # ==================================
-                    # r1,r2: begin flow
-                    r1 = (syn1 and not ack1) and (syn2 and ack2) and ack3           # 3-way handshake (full-duplex), syn+syn-ack+ack / syn+syn-ack+syn-ack
-                    r2 = (syn1 and not ack1) and ack2                               # 2-way handshake (half-duplex), syn+syn-ack / syn+ack
+                    # =========================
+                    # TCP FLOW INITIATION RULES
+                    # =========================
+                    # Begin Flow: tcp_three_way_handshake (r1), tcp_two_way_handshake (r2)
+                    # 3-way handshake (full-duplex): (syn,syn-ack,ack) or (syn,syn-ack,syn-ack)
+                    r1 = (syn1 and not ack1) and (syn2 and ack2) and ack3
+                    # 2-way handshake (half-duplex): (syn,ack) or (syn,syn-ack)
+                    r2 = (syn1 and not ack1) and ack2
 
-                    # ===================================
-                    # TCP FLOW TERMINATION RULES - BACKUP
-                    # ===================================
-                    # r3,r4: end flow
-                    r3 = fin1 and (fin2 and ack2) and ack3                          # graceful termination
-                    r4 = rst1 and not rst2                                          # abort termination
+                    # ==========================
+                    # TCP FLOW TERMINATION RULES
+                    # ==========================
+                    # End Flow: tcp_graceful_termination (r3), tcp_abort_termination (r4)
+                    # graceful termination
+                    r3 = fin1 and (fin2 and ack2) and ack3
+                    # abort termination
+                    r4 = rst1 and not rst2
+                    # null termination
+                    r5 = (curr_packet_index == flow_any_n_packets-1)
 
-                    # ============================
-                    # TCP FLOW INITIATION - BACKUP
-                    # ============================
-                    # consider flow begin or ignore it (considering it is safer, but not considering it will leave out flows that have started before the capture)
-                    # the only rule used for flow begin will be the half-duplex handshake rule because it is inclusive of the full-duplex handshake rule,
-                    # i.e., (r2 or r1) == r2, for any flow
-                    if r2:
+                    # ===================
+                    # TCP FLOW INITIATION
+                    # ===================
+                    # Note: Consider flow begin or ignore it (considering it is safer, but not considering it will
+                    # leave out flows that have started before the capture)
+                    if r1:
                         flow_begin = True
-
+                        
                     # we consider flows only the ones that start with a 2 or 3-way handshake (r1,r2)
                     # the flow end conditions are r3 and r4, (fin,fin-ack,ack)/(rst,!rst,---), or if the packet is the last one of the existing communication
                     if flow_begin:
@@ -562,104 +570,31 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids):
                             previous_packet_index = curr_packet_index + 3
                             inner_sep_counter += 1
                             flow_tcp_termination_graceful = True
+                        # abort termination
+                        elif r4:
+                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
+                            rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
+                            flow_begin = False
+                            previous_packet_index = curr_packet_index + 1
+                            inner_sep_counter += 1
+                            flow_tcp_termination_abort = True
+                        # null termination
+                        elif r5:
+                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
+                            rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
+                            flow_begin = False
+                            previous_packet_index = curr_packet_index + 1
+                            inner_sep_counter += 1
+                            flow_tcp_termination_null = True
+                    else:
+                        if rfc793_tcp_biflow_id:
+                            rfc793_tcp_biflows[rfc793_tcp_biflow_id].append(curr_flow[curr_packet_index])
                         else:
-                            # abort termination
-                            if r4:
-                                rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
-                                rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
-                                flow_begin = False
-                                previous_packet_index = curr_packet_index + 1
-                                inner_sep_counter += 1
-                                flow_tcp_termination_abort = True
-                            # null termination
-                            elif curr_packet_index == flow_any_n_packets-1:
-                                rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
-                                rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
-                                flow_begin = False
-                                previous_packet_index = curr_packet_index + 1
-                                inner_sep_counter += 1
-                                flow_tcp_termination_null = True
+                            # disconected packet
+                            n_disconected_packets += 1
                     # keep iterating through the packets
-                    curr_packet_index+=1
-                    """
-                    # =========================
-                    # TCP FLOW INITIATION RULES
-                    # =========================
-                    # Begin Flow: tcp_three_way_handshake, tcp_two_way_handshake
-                    # 3-way handshake (full-duplex): (syn,syn-ack,ack) or (syn,syn-ack,syn-ack)
-                    rfc793.tcp_three_way_handshake_phase1 = rfc793.tcp_three_way_handshake_phase1 or ((syn1 and not ack1) and (syn2 and ack2) and ack3)
-                    rfc793.tcp_three_way_handshake_phase2 = rfc793.tcp_three_way_handshake_phase1 and (rfc793.tcp_three_way_handshake_phase2 or ((syn1 and ack1) and ack2))
-                    rfc793.tcp_three_way_handshake_phase3 = rfc793.tcp_three_way_handshake_phase2 and (rfc793.tcp_three_way_handshake_phase3 or ack1)
-
-                    # 2-way handshake (half-duplex): (syn,ack) or (syn,syn-ack)
-                    rfc793.tcp_two_way_handshake_phase1 = rfc793.tcp_two_way_handshake_phase1 or ((syn1 and not ack1) and ack2)
-                    rfc793.tcp_two_way_handshake_phase2 = rfc793.tcp_two_way_handshake_phase1 and (rfc793.tcp_two_way_handshake_phase2 or ack1)
-
-                    # ==========================
-                    # TCP FLOW TERMINATION RULES
-                    # ==========================
-                    # End Flow: tcp_graceful_termination, tcp_abort_termination
-                    # graceful termination
-                    rfc793.tcp_graceful_termination_phase1 = rfc793.tcp_graceful_termination_phase1 or (fin1 and (fin2 and ack2) and ack3)
-                    rfc793.tcp_graceful_termination_phase2 = rfc793.tcp_graceful_termination_phase1 and (rfc793.tcp_graceful_termination_phase2 or ((fin1 and ack1) and ack2))
-                    rfc793.tcp_graceful_termination_phase3 = rfc793.tcp_graceful_termination_phase2 and (rfc793.tcp_graceful_termination_phase3 or ack1)
-
-                    # abort termination
-                    rfc793.tcp_abort_termination_phase1 = rfc793.tcp_abort_termination_phase1 or (rst1 and not rst2)
-                    rfc793.tcp_abort_termination_phase2 = rfc793.tcp_abort_termination_phase1 and (rfc793.tcp_abort_termination_phase2 or not rst1)
-
-                    # ===================
-                    # TCP FLOW INITIATION
-                    # ===================
-                    # Note: Consider flow begin or ignore it (considering it is safer, but not considering it will
-                    # leave out flows that have started before the capture)
-
-                    # Flow start conditions:
-                    # S1: 2-way handshake
-                    # S2: 3-way handshake
-                    #if rfc793.tcp_three_way_handshake_phase3:
-                    #    tcp_biflow_initiated = True
-                    #elif rfc793.tcp_two_way_handshake_phase2:
-                    #    tcp_biflow_initiated = True
-
-                    # Flow end conditions are:
-                    # E1: (fin,fin-ack,ack)
-                    # E2: (rst,!rst,---)
-                    # E3:the packet is the last one of the existing communication
-                    if rfc793.tcp_three_way_handshake_phase3:
-                        tcp_flow_id = (tmp_tcp_biflow_id[0], tmp_tcp_biflow_id[1], tmp_tcp_biflow_id[2],\
-                            tmp_tcp_biflow_id[3], tmp_tcp_biflow_id[4], tmp_tcp_biflow_id[5] + rfc793.inner_sep_counter)
-                        next_packet_index = 0
-                        # ====================
-                        # TCP FLOW TERMINATION
-                        # ====================
-                        # graceful termination
-                        if rfc793.tcp_graceful_termination_phase3:
-                            rfc793_tcp_biflows[tcp_flow_id] = curr_flow[previous_packet_index:curr_packet_index+3]
-                            rfc793_tcp_biflow_ids.append(tcp_flow_id)
-                            previous_packet_index = curr_packet_index + 3
-                            rfc793.inner_sep_counter += 1
-
-                            rfc793.tcp_graceful_termination_phase1 = False
-                            rfc793.tcp_graceful_termination_phase2 = False
-                            rfc793.tcp_graceful_termination_phase3 = False
-                        else:
-                            # abort termination
-                            if rfc793.tcp_abort_termination_phase2:
-                                rfc793_tcp_biflows[tcp_flow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
-                                rfc793_tcp_biflow_ids.append(tcp_flow_id)
-                                previous_packet_index = curr_packet_index + 1
-                                rfc793.inner_sep_counter += 1
-                            # null termination
-                            elif curr_packet_index == flow_any_n_packets-1:
-                                rfc793_tcp_biflows[tcp_flow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
-                                rfc793_tcp_biflow_ids.append(tcp_flow_id)
-                                previous_packet_index = curr_packet_index + 1
-                                rfc793.inner_sep_counter += 1
-                    # keep iterating through the packets
-                    curr_packet_index+=1
-                    """
-        return rfc793_tcp_biflows, rfc793_tcp_biflow_ids
+                    curr_packet_index += 1
+        return rfc793_tcp_biflows, rfc793_tcp_biflow_ids, n_disconected_packets
 
     # ==================================
     # Separate L3 BiFlows by L4 protocol
@@ -668,11 +603,11 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids):
     tmp_tcp_biflows, tmp_tcp_biflow_ids = dict(), list()
     for l3_biflow_id in l3_biflow_ids:
         biflow = l3_biflows[l3_biflow_id]
-        transport_protocol_name = l3_biflow_id[4]
-        if transport_protocol_name=="UDP":
+        l4_protocol_name = l3_biflow_id[4]
+        if l4_protocol_name == "UDP":
             udp_biflows[l3_biflow_id] = biflow
             udp_biflow_ids.append(l3_biflow_id)
-        elif transport_protocol_name=="TCP":
+        elif l4_protocol_name == "TCP":
             tmp_tcp_biflows[l3_biflow_id] = biflow
             tmp_tcp_biflow_ids.append(l3_biflow_id)
         else:
@@ -681,15 +616,18 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids):
             sys.exit(1)
 
     # Apply RFC793 to the unseparated TCP BiFlows
-    tcp_biflows, tcp_biflow_ids = build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids)
+    tcp_biflows, tcp_biflow_ids, n_disconected_packets = build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids)
     #tcp_biflows, tcp_biflow_ids = tmp_tcp_biflows, tmp_tcp_biflow_ids
-    return udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids
+    return udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, n_disconected_packets
 
 def get_biflow_header_by_type(protocol_stack):
     genes_dir = "network-objects" + os.sep + "genes"
-    genes_header_str = ""
     if protocol_stack == "ipv4":
         genes_file = genes_dir + os.sep + "ipv4-biflow-header.txt"
+    elif protocol_stack == "ipv4-l4":
+        genes_file = genes_dir + os.sep + "ipv4-l4-biflow-header.txt"
+    elif protocol_stack == "ipv4-tcp":
+        genes_file = genes_dir + os.sep + "ipv4-tcp-biflow-header.txt"
     else:
         print("[!] Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4", file=sys.stderr, flush=True)
         sys.exit(1)
@@ -700,298 +638,745 @@ def get_biflow_header_by_type(protocol_stack):
 
     return genes_header_str
 
-def calculate_l3_l4_biflow_genes(biflows, biflow_ids):
-    """Calculate and output IPv4 biflow genes"""
-    time_scale_factor = 1000.0
-    ipv4_biflow_genes_header_str = get_biflow_header_by_type("ipv4")
-    ipv4_biflow_genes_header_list = ipv4_biflow_genes_header_str.split("|")
-
-    # Note: in case of a bug, use "biflow_no" to debug
-    for biflow_no, biflow_id in enumerate(biflow_ids):
-        curr_biflow = biflows[biflow_id]
-        # DEV-NOTE: curr_biflow[packet_index][packet_gene_index]
-        # NOTE: backward packets may not exist
-
-        # =========================
-        # PREPARE DATA STRUCTURES |
-        # =========================
-
-        # ======================
-        # Packet Number Features
-        # ======================
-        biflow_any_n_packets = len(curr_biflow)
-        biflow_fwd_n_packets = 0
-        biflow_bwd_n_packets = 0
-
-        biflow_any_n_data_packets = 0
-        biflow_fwd_n_data_packets = 0
-        biflow_bwd_n_data_packets = 0
-
+def calculate_l3_l4_biflow_genes(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4_tcp_biflows, ipv4_tcp_biflow_ids):
+    """Calculate and output L3-L4 biflow genes"""
+    def calculate_l3_biflow_genes(biflows, biflow_ids, l4_protocol=None):
+        """Calculate and output L3 (only IPv4 for now) biflow genes"""
+        time_scale_factor = 1000.0
+        # =================
+        # IPv4 GENES HEADER
+        # =================
+        ipv4_biflow_genes_header_str = get_biflow_header_by_type("ipv4")
+        ipv4_biflow_genes_header_list = ipv4_biflow_genes_header_str.split("|")
         # ===============
-        # Length Features
+        # L4 GENES HEADER
         # ===============
-        biflow_any_eth_ipv4_data_lens = list()
-        biflow_fwd_eth_ipv4_data_lens = list()
-        biflow_bwd_eth_ipv4_data_lens = list()
+        ipv4_l4_biflow_genes_header_str = get_biflow_header_by_type("ipv4-l4")
+        ipv4_l4_biflow_genes_header_list = ipv4_l4_biflow_genes_header_str.split("|")
+        # ================
+        # TCP GENES HEADER
+        # ================
+        ipv4_tcp_biflow_genes_header_str = get_biflow_header_by_type("ipv4-tcp")
+        ipv4_tcp_biflow_genes_header_list = ipv4_tcp_biflow_genes_header_str.split("|")
 
-        biflow_any_eth_ipv4_header_lens = list()
-        biflow_fwd_eth_ipv4_header_lens = list()
-        biflow_bwd_eth_ipv4_header_lens = list()
+        for biflow_id in biflow_ids:
+            curr_biflow = biflows[biflow_id]
+            # DEV-NOTE: curr_biflow[packet_index][packet_gene_index]
+            # NOTE: backward packets may not exist
 
-        # ======================
-        # IP Fragmentation Flags
-        # ======================
-        biflow_any_eth_ipv4_df_flags = list()
-        biflow_fwd_eth_ipv4_df_flags = list()
-        biflow_bwd_eth_ipv4_df_flags = list()
+            # =========================
+            # PREPARE DATA STRUCTURES |
+            # =========================
 
-        biflow_any_eth_ipv4_mf_flags = list()
-        biflow_fwd_eth_ipv4_mf_flags = list()
-        biflow_bwd_eth_ipv4_mf_flags = list()
+            # ======
+            # Packet
+            # ======
+            # ----------------
+            # Packet Frequency
+            # ----------------
+            biflow_any_n_packets = len(curr_biflow)
+            biflow_fwd_n_packets = 0
+            biflow_bwd_n_packets = 0
 
-        # =============
-        # Time Features
-        # =============
-        biflow_any_iats = list()
-        biflow_fwd_iats = list()
-        biflow_bwd_iats = list()
+            # ---------------------
+            # Data Packet Frequency
+            # ---------------------
+            biflow_any_n_data_packets = 0
+            biflow_fwd_n_data_packets = 0
+            biflow_bwd_n_data_packets = 0
 
-        # ==========================
-        # POPULATE DATA STRUCTURES |
-        # ==========================
-        curr_packet_index = 0
-        while curr_packet_index < biflow_any_n_packets:
-            previous_packet = curr_biflow[curr_packet_index-1]
-            previous_packet_biflow_id = previous_packet[0]
-            previous_packet_timestamp = previous_packet[1]
+            # -------------------
+            # Inter-arrival Times
+            # -------------------
+            biflow_any_iats = list()
+            biflow_fwd_iats = list()
+            biflow_bwd_iats = list()
 
-            curr_packet = curr_biflow[curr_packet_index]
-            curr_packet_biflow_id = curr_packet[0]
-            curr_packet_timestamp = curr_packet[1]
-            curr_packet_eth_ipv4_header_len = curr_packet[2]
-            curr_packet_eth_ipv4_data_len = curr_packet[3]
-            curr_packet_df_flag = curr_packet[4]
-            curr_packet_mf_flag = curr_packet[5]
+            # ====
+            # IPv4
+            # ====
+            # -------------------
+            # IPv4 Header Lengths
+            # -------------------
+            biflow_any_eth_ipv4_data_lens = list()
+            biflow_fwd_eth_ipv4_data_lens = list()
+            biflow_bwd_eth_ipv4_data_lens = list()
 
-            # IAT requires that there's at least two packets.
-            if curr_packet_index >= 1:
-                curr_packet_time = datetime_to_unixtime(previous_packet_timestamp)
-                next_packet_time = datetime_to_unixtime(curr_packet_timestamp)
-                curr_packet_iat = (next_packet_time - curr_packet_time)/time_scale_factor
-                biflow_any_iats.append(curr_packet_iat)
-                if previous_packet_biflow_id == biflow_id:
-                    biflow_fwd_iats.append(curr_packet_iat)
+            # -----------------
+            # IPv4 Data Lengths
+            # -----------------
+            biflow_any_eth_ipv4_header_lens = list()
+            biflow_fwd_eth_ipv4_header_lens = list()
+            biflow_bwd_eth_ipv4_header_lens = list()
+
+            # ------------------------
+            # IPv4 Fragmentation Flags
+            # ------------------------
+            biflow_any_eth_ipv4_df_flags = list()
+            biflow_fwd_eth_ipv4_df_flags = list()
+            biflow_bwd_eth_ipv4_df_flags = list()
+
+            biflow_any_eth_ipv4_mf_flags = list()
+            biflow_fwd_eth_ipv4_mf_flags = list()
+            biflow_bwd_eth_ipv4_mf_flags = list()
+
+            # ==
+            # L4
+            # ==
+            # -----------------
+            # L4 Header Lengths
+            # -----------------
+            biflow_any_eth_ipv4_l4_header_lens = list()
+            biflow_fwd_eth_ipv4_l4_header_lens = list()
+            biflow_bwd_eth_ipv4_l4_header_lens = list()
+
+            # ---------------
+            # L4 Data Lengths
+            # ---------------
+            biflow_any_eth_ipv4_l4_data_lens = list()
+            biflow_fwd_eth_ipv4_l4_data_lens = list()
+            biflow_bwd_eth_ipv4_l4_data_lens = list()
+
+            # ===
+            # TCP
+            # ===
+            # --------------
+            # TCP Flow Flags
+            # --------------
+            biflow_any_eth_ipv4_tcp_fin_flags = list()
+            biflow_any_eth_ipv4_tcp_syn_flags = list()
+            biflow_any_eth_ipv4_tcp_rst_flags = list()
+            biflow_any_eth_ipv4_tcp_psh_flags = list()
+            biflow_any_eth_ipv4_tcp_ack_flags = list()
+            biflow_any_eth_ipv4_tcp_urg_flags = list()
+            biflow_any_eth_ipv4_tcp_ece_flags = list()
+            biflow_any_eth_ipv4_tcp_cwr_flags = list()
+
+            biflow_fwd_eth_ipv4_tcp_fin_flags = list()
+            biflow_fwd_eth_ipv4_tcp_syn_flags = list()
+            biflow_fwd_eth_ipv4_tcp_rst_flags = list()
+            biflow_fwd_eth_ipv4_tcp_psh_flags = list()
+            biflow_fwd_eth_ipv4_tcp_ack_flags = list()
+            biflow_fwd_eth_ipv4_tcp_urg_flags = list()
+            biflow_fwd_eth_ipv4_tcp_ece_flags = list()
+            biflow_fwd_eth_ipv4_tcp_cwr_flags = list()
+
+            biflow_bwd_eth_ipv4_tcp_fin_flags = list()
+            biflow_bwd_eth_ipv4_tcp_syn_flags = list()
+            biflow_bwd_eth_ipv4_tcp_rst_flags = list()
+            biflow_bwd_eth_ipv4_tcp_psh_flags = list()
+            biflow_bwd_eth_ipv4_tcp_ack_flags = list()
+            biflow_bwd_eth_ipv4_tcp_urg_flags = list()
+            biflow_bwd_eth_ipv4_tcp_ece_flags = list()
+            biflow_bwd_eth_ipv4_tcp_cwr_flags = list()
+
+            # ==========================
+            # POPULATE DATA STRUCTURES |
+            # ==========================
+            curr_packet_index = 0
+            while curr_packet_index < biflow_any_n_packets:
+                # ===============
+                # Packet Concepts
+                # ===============
+                if curr_packet_index >= 1:
+                    previous_packet = curr_biflow[curr_packet_index-1]
+                    previous_packet_biflow_id = previous_packet[0]
+                    previous_packet_timestamp = previous_packet[1]
+
+                curr_packet = curr_biflow[curr_packet_index]
+                curr_packet_biflow_id = curr_packet[0]
+                curr_packet_timestamp = curr_packet[1]
+                curr_packet_eth_ipv4_header_len = curr_packet[2]
+                curr_packet_eth_ipv4_data_len = curr_packet[3]
+                curr_packet_eth_ipv4_df_flag = curr_packet[4]
+                curr_packet_eth_ipv4_mf_flag = curr_packet[5]
+
+                # IAT requires that there's at least two packets.
+                if curr_packet_index >= 1:
+                    curr_packet_time = datetime_to_unixtime(previous_packet_timestamp)
+                    next_packet_time = datetime_to_unixtime(curr_packet_timestamp)
+                    curr_packet_iat = (next_packet_time - curr_packet_time)/time_scale_factor
+                    biflow_any_iats.append(curr_packet_iat)
+                    if previous_packet_biflow_id == biflow_id:
+                        biflow_fwd_iats.append(curr_packet_iat)
+                    else:
+                        biflow_bwd_iats.append(curr_packet_iat)
+
+                # =============
+                # IPv4 Concepts
+                # =============
+                biflow_any_eth_ipv4_data_lens.append(curr_packet_eth_ipv4_data_len)
+                biflow_any_eth_ipv4_header_lens.append(curr_packet_eth_ipv4_header_len)
+                biflow_any_eth_ipv4_df_flags.append(curr_packet_eth_ipv4_df_flag)
+                biflow_any_eth_ipv4_mf_flags.append(curr_packet_eth_ipv4_mf_flag)
+
+                if curr_packet_biflow_id == biflow_id:
+                    biflow_fwd_eth_ipv4_data_lens.append(curr_packet_eth_ipv4_data_len)
+                    biflow_fwd_eth_ipv4_header_lens.append(curr_packet_eth_ipv4_header_len)
+                    biflow_fwd_eth_ipv4_df_flags.append(curr_packet_eth_ipv4_df_flag)
+                    biflow_fwd_eth_ipv4_mf_flags.append(curr_packet_eth_ipv4_mf_flag)
+
+                    biflow_fwd_n_packets += 1
+                    if curr_packet_eth_ipv4_header_len != curr_packet_eth_ipv4_data_len:
+                        biflow_any_n_data_packets += 1
+                        biflow_fwd_n_data_packets += 1
                 else:
-                    biflow_bwd_iats.append(curr_packet_iat)
+                    biflow_bwd_eth_ipv4_data_lens.append(curr_packet_eth_ipv4_data_len)
+                    biflow_bwd_eth_ipv4_header_lens.append(curr_packet_eth_ipv4_header_len)
+                    biflow_bwd_eth_ipv4_df_flags.append(curr_packet_eth_ipv4_df_flag)
+                    biflow_bwd_eth_ipv4_mf_flags.append(curr_packet_eth_ipv4_mf_flag)
 
-            biflow_any_eth_ipv4_data_lens.append(curr_packet_eth_ipv4_data_len)
-            biflow_any_eth_ipv4_header_lens.append(curr_packet_eth_ipv4_header_len)
-            biflow_any_eth_ipv4_df_flags.append(curr_packet_df_flag)
-            biflow_any_eth_ipv4_mf_flags.append(curr_packet_mf_flag)
+                    biflow_bwd_n_packets += 1
+                    if curr_packet_eth_ipv4_header_len != curr_packet_eth_ipv4_data_len:
+                        biflow_any_n_data_packets += 1
+                        biflow_bwd_n_data_packets += 1
 
-            if curr_packet_biflow_id == biflow_id:
-                biflow_fwd_eth_ipv4_data_lens.append(curr_packet_eth_ipv4_data_len)
-                biflow_fwd_eth_ipv4_header_lens.append(curr_packet_eth_ipv4_header_len)
-                biflow_fwd_eth_ipv4_df_flags.append(curr_packet_df_flag)
-                biflow_fwd_eth_ipv4_mf_flags.append(curr_packet_mf_flag)
+                # ===========
+                # L4 Concepts
+                # ===========
+                if l4_protocol:
+                    curr_packet_eth_ipv4_l4_header_len = curr_packet[6]
+                    curr_packet_eth_ipv4_l4_data_len = curr_packet[7]
 
-                biflow_fwd_n_packets += 1
-                if curr_packet_eth_ipv4_header_len != curr_packet_eth_ipv4_data_len:
-                    biflow_any_n_data_packets += 1
-                    biflow_fwd_n_data_packets += 1
+                    # any
+                    biflow_any_eth_ipv4_l4_header_lens.append(curr_packet_eth_ipv4_l4_header_len)
+                    biflow_any_eth_ipv4_l4_data_lens.append(curr_packet_eth_ipv4_l4_data_len)
+
+                    #fwd
+                    if curr_packet_biflow_id == biflow_id:
+                        biflow_fwd_eth_ipv4_l4_header_lens.append(curr_packet_eth_ipv4_l4_header_len)
+                        biflow_fwd_eth_ipv4_l4_data_lens.append(curr_packet_eth_ipv4_l4_data_len)
+                    #bwd
+                    else:
+                        biflow_bwd_eth_ipv4_l4_header_lens.append(curr_packet_eth_ipv4_l4_header_len)
+                        biflow_bwd_eth_ipv4_l4_data_lens.append(curr_packet_eth_ipv4_l4_data_len)
+
+                    # ============
+                    # TCP Concepts
+                    # ============
+                    if l4_protocol == "TCP":
+                        curr_packet_eth_ipv4_tcp_fin_flag = curr_packet[-8]
+                        curr_packet_eth_ipv4_tcp_syn_flag = curr_packet[-7]
+                        curr_packet_eth_ipv4_tcp_rst_flag = curr_packet[-6]
+                        curr_packet_eth_ipv4_tcp_psh_flag = curr_packet[-5]
+                        curr_packet_eth_ipv4_tcp_ack_flag = curr_packet[-4]
+                        curr_packet_eth_ipv4_tcp_urg_flag = curr_packet[-3]
+                        curr_packet_eth_ipv4_tcp_ece_flag = curr_packet[-2]
+                        curr_packet_eth_ipv4_tcp_cwr_flag = curr_packet[-1]
+
+                        # any
+                        biflow_any_eth_ipv4_tcp_fin_flags.append(curr_packet_eth_ipv4_tcp_fin_flag)
+                        biflow_any_eth_ipv4_tcp_syn_flags.append(curr_packet_eth_ipv4_tcp_syn_flag)
+                        biflow_any_eth_ipv4_tcp_rst_flags.append(curr_packet_eth_ipv4_tcp_rst_flag)
+                        biflow_any_eth_ipv4_tcp_psh_flags.append(curr_packet_eth_ipv4_tcp_psh_flag)
+                        biflow_any_eth_ipv4_tcp_ack_flags.append(curr_packet_eth_ipv4_tcp_ack_flag)
+                        biflow_any_eth_ipv4_tcp_urg_flags.append(curr_packet_eth_ipv4_tcp_urg_flag)
+                        biflow_any_eth_ipv4_tcp_ece_flags.append(curr_packet_eth_ipv4_tcp_ece_flag)
+                        biflow_any_eth_ipv4_tcp_cwr_flags.append(curr_packet_eth_ipv4_tcp_cwr_flag)
+
+                        #fwd
+                        if curr_packet_biflow_id == biflow_id:
+                            biflow_fwd_eth_ipv4_tcp_fin_flags.append(curr_packet_eth_ipv4_tcp_fin_flag)
+                            biflow_fwd_eth_ipv4_tcp_syn_flags.append(curr_packet_eth_ipv4_tcp_syn_flag)
+                            biflow_fwd_eth_ipv4_tcp_rst_flags.append(curr_packet_eth_ipv4_tcp_rst_flag)
+                            biflow_fwd_eth_ipv4_tcp_psh_flags.append(curr_packet_eth_ipv4_tcp_psh_flag)
+                            biflow_fwd_eth_ipv4_tcp_ack_flags.append(curr_packet_eth_ipv4_tcp_ack_flag)
+                            biflow_fwd_eth_ipv4_tcp_urg_flags.append(curr_packet_eth_ipv4_tcp_urg_flag)
+                            biflow_fwd_eth_ipv4_tcp_ece_flags.append(curr_packet_eth_ipv4_tcp_ece_flag)
+                            biflow_fwd_eth_ipv4_tcp_cwr_flags.append(curr_packet_eth_ipv4_tcp_cwr_flag)
+                        #bwd
+                        else:
+                            biflow_bwd_eth_ipv4_tcp_fin_flags.append(curr_packet_eth_ipv4_tcp_fin_flag)
+                            biflow_bwd_eth_ipv4_tcp_syn_flags.append(curr_packet_eth_ipv4_tcp_syn_flag)
+                            biflow_bwd_eth_ipv4_tcp_rst_flags.append(curr_packet_eth_ipv4_tcp_rst_flag)
+                            biflow_bwd_eth_ipv4_tcp_psh_flags.append(curr_packet_eth_ipv4_tcp_psh_flag)
+                            biflow_bwd_eth_ipv4_tcp_ack_flags.append(curr_packet_eth_ipv4_tcp_ack_flag)
+                            biflow_bwd_eth_ipv4_tcp_urg_flags.append(curr_packet_eth_ipv4_tcp_urg_flag)
+                            biflow_bwd_eth_ipv4_tcp_ece_flags.append(curr_packet_eth_ipv4_tcp_ece_flag)
+                            biflow_bwd_eth_ipv4_tcp_cwr_flags.append(curr_packet_eth_ipv4_tcp_cwr_flag)
+                # keep iterating through the packets
+                curr_packet_index+=1
+
+            # ================================
+            # ENRICH AND EXTRACT INFORMATION |
+            # ================================
+
+            # ======================
+            # ADDITIONAL INFORMATION
+            # ======================
+            first_packet = curr_biflow[0]
+            last_packet = curr_biflow[biflow_any_n_packets-1]
+            first_packet_timestamp = first_packet[1]
+            last_packet_timestamp = last_packet[1]
+
+            biflow_any_first_packet_time = datetime_to_unixtime(first_packet_timestamp)
+            biflow_any_last_packet_time = datetime_to_unixtime(last_packet_timestamp)
+
+            # =================
+            # IPv4 Data Lengths
+            # =================
+            biflow_any_eth_ipv4_data_len_total = round(sum(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_mean = round(np.mean(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_std = round(np.std(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_var = round(np.var(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_max = round(max(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_min = round(min(biflow_any_eth_ipv4_data_lens), 3)
+
+            biflow_fwd_eth_ipv4_data_len_total = round(sum(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_mean = round(np.mean(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_std = round(np.std(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_var = round(np.var(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_max = round(max(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_min = round(min(biflow_fwd_eth_ipv4_data_lens), 3)
+
+            if len(biflow_bwd_eth_ipv4_data_lens) == 0:
+                biflow_bwd_eth_ipv4_data_len_total = biflow_bwd_eth_ipv4_data_len_mean = biflow_bwd_eth_ipv4_data_len_std = \
+                    biflow_bwd_eth_ipv4_data_len_var = biflow_bwd_eth_ipv4_data_len_max = biflow_bwd_eth_ipv4_data_len_min = 0.0
             else:
-                biflow_bwd_eth_ipv4_data_lens.append(curr_packet_eth_ipv4_data_len)
-                biflow_bwd_eth_ipv4_header_lens.append(curr_packet_eth_ipv4_header_len)
-                biflow_bwd_eth_ipv4_df_flags.append(curr_packet_df_flag)
-                biflow_bwd_eth_ipv4_mf_flags.append(curr_packet_mf_flag)
+                biflow_bwd_eth_ipv4_data_len_total = round(sum(biflow_bwd_eth_ipv4_data_lens), 3)
+                biflow_bwd_eth_ipv4_data_len_mean = round(np.mean(biflow_bwd_eth_ipv4_data_lens), 3)
+                biflow_bwd_eth_ipv4_data_len_std = round(np.std(biflow_bwd_eth_ipv4_data_lens), 3)
+                biflow_bwd_eth_ipv4_data_len_var = round(np.var(biflow_bwd_eth_ipv4_data_lens), 3)
+                biflow_bwd_eth_ipv4_data_len_max = round(max(biflow_bwd_eth_ipv4_data_lens), 3)
+                biflow_bwd_eth_ipv4_data_len_min = round(min(biflow_bwd_eth_ipv4_data_lens), 3)
 
-                biflow_bwd_n_packets += 1
-                if curr_packet_eth_ipv4_header_len != curr_packet_eth_ipv4_data_len:
-                    biflow_any_n_data_packets += 1
-                    biflow_bwd_n_data_packets += 1
+            # =============
+            # TIME FEATURES
+            # =============
+            biflow_any_duration = round((biflow_any_last_packet_time - biflow_any_first_packet_time)/time_scale_factor, 3)
+            biflow_any_first_packet_time = unixtime_to_datetime(biflow_any_first_packet_time)
+            biflow_any_last_packet_time = unixtime_to_datetime(biflow_any_last_packet_time)
+            if biflow_any_duration == 0:
+                biflow_any_packets_per_sec = biflow_fwd_packets_per_sec = biflow_bwd_packets_per_sec = 0.0
+                biflow_any_bytes_per_sec = biflow_fwd_bytes_per_sec = biflow_bwd_bytes_per_sec = 0.0
+            else:
+                biflow_any_packets_per_sec = round(biflow_any_n_packets/biflow_any_duration, 3)
+                biflow_fwd_packets_per_sec = round(biflow_fwd_n_packets/biflow_any_duration, 3)
+                biflow_bwd_packets_per_sec = round(biflow_bwd_n_packets/biflow_any_duration,3 )
+                biflow_any_bytes_per_sec = round(biflow_any_eth_ipv4_data_len_total/biflow_any_duration, 3)
+                biflow_fwd_bytes_per_sec = round(biflow_fwd_eth_ipv4_data_len_total/biflow_any_duration, 3)
+                biflow_bwd_bytes_per_sec = round(biflow_bwd_eth_ipv4_data_len_total/biflow_any_duration, 3)
 
-            curr_packet_index+=1
+            # ===================
+            # IPv4 Header Lengths
+            # ===================
 
-        # ================================
-        # ENRICH AND EXTRACT INFORMATION |
-        # ================================
+            biflow_any_eth_ipv4_header_len_total = round(sum(biflow_any_eth_ipv4_header_lens), 3)
+            biflow_any_eth_ipv4_header_len_mean = round(np.mean(biflow_any_eth_ipv4_header_lens), 3)
+            biflow_any_eth_ipv4_header_len_std = round(np.std(biflow_any_eth_ipv4_header_lens), 3)
+            biflow_any_eth_ipv4_header_len_var = round(np.var(biflow_any_eth_ipv4_header_lens), 3)
+            biflow_any_eth_ipv4_header_len_max = round(max(biflow_any_eth_ipv4_header_lens), 3)
+            biflow_any_eth_ipv4_header_len_min = round(min(biflow_any_eth_ipv4_header_lens), 3)
 
-        # ======================
-        # ADDITIONAL INFORMATION
-        # ======================
-        first_packet = curr_biflow[0]
-        last_packet = curr_biflow[biflow_any_n_packets-1]
-        first_packet_timestamp = first_packet[1]
-        last_packet_timestamp = last_packet[1]
+            biflow_fwd_eth_ipv4_header_len_total = round(sum(biflow_fwd_eth_ipv4_header_lens), 3)
+            biflow_fwd_eth_ipv4_header_len_mean = round(np.mean(biflow_fwd_eth_ipv4_header_lens), 3)
+            biflow_fwd_eth_ipv4_header_len_std = round(np.std(biflow_fwd_eth_ipv4_header_lens), 3)
+            biflow_fwd_eth_ipv4_header_len_var = round(np.var(biflow_fwd_eth_ipv4_header_lens), 3)
+            biflow_fwd_eth_ipv4_header_len_max = round(max(biflow_fwd_eth_ipv4_header_lens), 3)
+            biflow_fwd_eth_ipv4_header_len_min = round(min(biflow_fwd_eth_ipv4_header_lens), 3)
 
-        biflow_any_first_packet_time = datetime_to_unixtime(first_packet_timestamp)
-        biflow_any_last_packet_time = datetime_to_unixtime(last_packet_timestamp)
+            if len(biflow_bwd_eth_ipv4_header_lens) == 0:
+                biflow_bwd_eth_ipv4_header_len_total = biflow_bwd_eth_ipv4_header_len_mean = biflow_bwd_eth_ipv4_header_len_std = \
+                    biflow_bwd_eth_ipv4_header_len_var = biflow_bwd_eth_ipv4_header_len_max = biflow_bwd_eth_ipv4_header_len_min = 0.0
+            else:
+                biflow_bwd_eth_ipv4_header_len_total = round(sum(biflow_bwd_eth_ipv4_header_lens), 3)
+                biflow_bwd_eth_ipv4_header_len_mean = round(np.mean(biflow_bwd_eth_ipv4_header_lens), 3)
+                biflow_bwd_eth_ipv4_header_len_std = round(np.std(biflow_bwd_eth_ipv4_header_lens), 3)
+                biflow_bwd_eth_ipv4_header_len_var = round(np.var(biflow_bwd_eth_ipv4_header_lens), 3)
+                biflow_bwd_eth_ipv4_header_len_max = round(max(biflow_bwd_eth_ipv4_header_lens), 3)
+                biflow_bwd_eth_ipv4_header_len_min = round(min(biflow_bwd_eth_ipv4_header_lens), 3)
+                
 
-        # ==============
-        # Packet Lengths
-        # ==============
-        biflow_any_eth_ipv4_data_len_total = round(sum(biflow_any_eth_ipv4_data_lens), 3)
-        biflow_any_eth_ipv4_data_len_mean = round(np.mean(biflow_any_eth_ipv4_data_lens), 3)
-        biflow_any_eth_ipv4_data_len_std = round(np.std(biflow_any_eth_ipv4_data_lens), 3)
-        biflow_any_eth_ipv4_data_len_var = round(np.var(biflow_any_eth_ipv4_data_lens), 3)
-        biflow_any_eth_ipv4_data_len_max = round(max(biflow_any_eth_ipv4_data_lens), 3)
-        biflow_any_eth_ipv4_data_len_min = round(min(biflow_any_eth_ipv4_data_lens), 3)
+            # ==========================
+            # Packet Inter-arrival Times
+            # ==========================
 
-        biflow_fwd_eth_ipv4_data_len_total = round(sum(biflow_fwd_eth_ipv4_data_lens), 3)
-        biflow_fwd_eth_ipv4_data_len_mean = round(np.mean(biflow_fwd_eth_ipv4_data_lens), 3)
-        biflow_fwd_eth_ipv4_data_len_std = round(np.std(biflow_fwd_eth_ipv4_data_lens), 3)
-        biflow_fwd_eth_ipv4_data_len_var = round(np.var(biflow_fwd_eth_ipv4_data_lens), 3)
-        biflow_fwd_eth_ipv4_data_len_max = round(max(biflow_fwd_eth_ipv4_data_lens), 3)
-        biflow_fwd_eth_ipv4_data_len_min = round(min(biflow_fwd_eth_ipv4_data_lens), 3)
+            # Packet IATs need at least 2 packets to be properly populated
+            if len(biflow_any_iats) == 0:
+                biflow_any_iat_total = biflow_any_iat_mean = biflow_any_iat_std = biflow_any_iat_var = biflow_any_iat_max = biflow_any_iat_min = 0.0
+            else:
+                biflow_any_iat_total = round(sum(biflow_any_iats), 3)
+                biflow_any_iat_mean = round(np.mean(biflow_any_iats), 3)
+                biflow_any_iat_std = round(np.std(biflow_any_iats), 3)
+                biflow_any_iat_var = round(np.var(biflow_any_iats), 3)
+                biflow_any_iat_max = round(max(biflow_any_iats), 3)
+                biflow_any_iat_min = round(min(biflow_any_iats), 3)
 
-        if len(biflow_bwd_eth_ipv4_data_lens) == 0:
-            biflow_bwd_eth_ipv4_data_len_total = biflow_bwd_eth_ipv4_data_len_mean = biflow_bwd_eth_ipv4_data_len_std \
-            = biflow_bwd_eth_ipv4_data_len_var = biflow_bwd_eth_ipv4_data_len_max = biflow_bwd_eth_ipv4_data_len_min = 0.0
-        else:
-            biflow_bwd_eth_ipv4_data_len_total = round(sum(biflow_bwd_eth_ipv4_data_lens), 3)
-            biflow_bwd_eth_ipv4_data_len_mean = round(np.mean(biflow_bwd_eth_ipv4_data_lens), 3)
-            biflow_bwd_eth_ipv4_data_len_std = round(np.std(biflow_bwd_eth_ipv4_data_lens), 3)
-            biflow_bwd_eth_ipv4_data_len_var = round(np.var(biflow_bwd_eth_ipv4_data_lens), 3)
-            biflow_bwd_eth_ipv4_data_len_max = round(max(biflow_bwd_eth_ipv4_data_lens), 3)
-            biflow_bwd_eth_ipv4_data_len_min = round(min(biflow_bwd_eth_ipv4_data_lens), 3)
+            # Packet IATs need at least 2 packets to be properly populated
+            if len(biflow_fwd_iats) == 0:
+                biflow_fwd_iat_total = biflow_fwd_iat_mean = biflow_fwd_iat_std = biflow_fwd_iat_var =biflow_fwd_iat_max = biflow_fwd_iat_min = 0.0
+            else:
+                biflow_fwd_iat_total = round(sum(biflow_fwd_iats), 3)
+                biflow_fwd_iat_mean = round(np.mean(biflow_fwd_iats), 3)
+                biflow_fwd_iat_std = round(np.std(biflow_fwd_iats), 3)
+                biflow_fwd_iat_var = round(np.var(biflow_fwd_iats), 3)
+                biflow_fwd_iat_max = round(max(biflow_fwd_iats), 3)
+                biflow_fwd_iat_min = round(min(biflow_fwd_iats), 3)
 
-        # =============
-        # TIME FEATURES
-        # =============
-        biflow_any_duration = round((biflow_any_last_packet_time - biflow_any_first_packet_time)/time_scale_factor, 3)
-        biflow_any_first_packet_time = unixtime_to_datetime(biflow_any_first_packet_time)
-        biflow_any_last_packet_time = unixtime_to_datetime(biflow_any_last_packet_time)
-        if biflow_any_duration == 0:
-            biflow_any_packets_per_sec = biflow_fwd_packets_per_sec = biflow_bwd_packets_per_sec = 0.0
-            biflow_any_bytes_per_sec = biflow_fwd_bytes_per_sec = biflow_bwd_bytes_per_sec = 0.0
-        else:
-            biflow_any_packets_per_sec = round(biflow_any_n_packets/biflow_any_duration, 3)
-            biflow_fwd_packets_per_sec = round(biflow_fwd_n_packets/biflow_any_duration, 3)
-            biflow_bwd_packets_per_sec = round(biflow_bwd_n_packets/biflow_any_duration,3 )
-            biflow_any_bytes_per_sec = round(biflow_any_eth_ipv4_data_len_total/biflow_any_duration, 3)
-            biflow_fwd_bytes_per_sec = round(biflow_fwd_eth_ipv4_data_len_total/biflow_any_duration, 3)
-            biflow_bwd_bytes_per_sec = round(biflow_bwd_eth_ipv4_data_len_total/biflow_any_duration, 3)
+            # Packet IATs need at least 2 packets to be properly populated
+            if len(biflow_bwd_iats) == 0:
+                biflow_bwd_iat_total = biflow_bwd_iat_mean = biflow_bwd_iat_std = biflow_bwd_iat_var = biflow_bwd_iat_max = biflow_bwd_iat_min = 0.0
+            else:
+                biflow_bwd_iat_total = round(sum(biflow_bwd_iats), 3)
+                biflow_bwd_iat_mean = round(np.mean(biflow_bwd_iats), 3)
+                biflow_bwd_iat_std = round(np.std(biflow_bwd_iats), 3)
+                biflow_bwd_iat_var = round(np.var(biflow_bwd_iats), 3)
+                biflow_bwd_iat_max = round(max(biflow_bwd_iats), 3)
+                biflow_bwd_iat_min = round(min(biflow_bwd_iats), 3)
 
-        # =========================================================================
-        # Packet Header Lengths (14 byte Ether header + ip header + tcp/udp header)
-        # =========================================================================
+            # ======================
+            # IP Fragmentation Flags
+            # ======================
+            biflow_any_eth_ipv4_df_flags_total = round(sum(biflow_any_eth_ipv4_df_flags), 3)
+            biflow_any_eth_ipv4_df_flags_mean = round(np.mean(biflow_any_eth_ipv4_df_flags), 3)
+            biflow_any_eth_ipv4_df_flags_std = round(np.std(biflow_any_eth_ipv4_df_flags), 3)
+            biflow_any_eth_ipv4_df_flags_var = round(np.var(biflow_any_eth_ipv4_df_flags), 3)
+            biflow_any_eth_ipv4_df_flags_max = round(max(biflow_any_eth_ipv4_df_flags), 3)
+            biflow_any_eth_ipv4_df_flags_min = round(min(biflow_any_eth_ipv4_df_flags), 3)
 
-        biflow_any_eth_ipv4_header_len_total = round(sum(biflow_any_eth_ipv4_header_lens), 3)
-        biflow_any_eth_ipv4_header_len_mean = round(np.mean(biflow_any_eth_ipv4_header_lens), 3)
-        biflow_any_eth_ipv4_header_len_std = round(np.std(biflow_any_eth_ipv4_header_lens), 3)
-        biflow_any_eth_ipv4_header_len_var = round(np.var(biflow_any_eth_ipv4_header_lens), 3)
-        biflow_any_eth_ipv4_header_len_max = round(max(biflow_any_eth_ipv4_header_lens), 3)
-        biflow_any_eth_ipv4_header_len_min = round(min(biflow_any_eth_ipv4_header_lens), 3)
+            biflow_fwd_eth_ipv4_df_flags_total = round(sum(biflow_fwd_eth_ipv4_df_flags), 3)
+            biflow_fwd_eth_ipv4_df_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_df_flags), 3)
+            biflow_fwd_eth_ipv4_df_flags_std = round(np.std(biflow_fwd_eth_ipv4_df_flags), 3)
+            biflow_fwd_eth_ipv4_df_flags_var = round(np.var(biflow_fwd_eth_ipv4_df_flags), 3)
+            biflow_fwd_eth_ipv4_df_flags_max = round(max(biflow_fwd_eth_ipv4_df_flags), 3)
+            biflow_fwd_eth_ipv4_df_flags_min = round(min(biflow_fwd_eth_ipv4_df_flags), 3)
 
-        biflow_fwd_eth_ipv4_header_len_total = round(sum(biflow_fwd_eth_ipv4_header_lens), 3)
-        biflow_fwd_eth_ipv4_header_len_mean = round(np.mean(biflow_fwd_eth_ipv4_header_lens), 3)
-        biflow_fwd_eth_ipv4_header_len_std = round(np.std(biflow_fwd_eth_ipv4_header_lens), 3)
-        biflow_fwd_eth_ipv4_header_len_var = round(np.var(biflow_fwd_eth_ipv4_header_lens), 3)
-        biflow_fwd_eth_ipv4_header_len_max = round(max(biflow_fwd_eth_ipv4_header_lens), 3)
-        biflow_fwd_eth_ipv4_header_len_min = round(min(biflow_fwd_eth_ipv4_header_lens), 3)
+            if len(biflow_bwd_eth_ipv4_df_flags) == 0:
+                biflow_bwd_eth_ipv4_df_flags_total = biflow_bwd_eth_ipv4_df_flags_mean = biflow_bwd_eth_ipv4_df_flags_std = \
+                    biflow_bwd_eth_ipv4_df_flags_var = biflow_bwd_eth_ipv4_df_flags_max = biflow_bwd_eth_ipv4_df_flags_min = 0
+            else:
+                biflow_bwd_eth_ipv4_df_flags_total = round(sum(biflow_bwd_eth_ipv4_df_flags), 3)
+                biflow_bwd_eth_ipv4_df_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_df_flags), 3)
+                biflow_bwd_eth_ipv4_df_flags_std = round(np.std(biflow_bwd_eth_ipv4_df_flags), 3)
+                biflow_bwd_eth_ipv4_df_flags_var = round(np.var(biflow_bwd_eth_ipv4_df_flags), 3)
+                biflow_bwd_eth_ipv4_df_flags_max = round(max(biflow_bwd_eth_ipv4_df_flags), 3)
+                biflow_bwd_eth_ipv4_df_flags_min = round(min(biflow_bwd_eth_ipv4_df_flags), 3)
 
-        if len(biflow_bwd_eth_ipv4_header_lens) == 0:
-            biflow_bwd_eth_ipv4_header_len_total = biflow_bwd_eth_ipv4_header_len_mean = biflow_bwd_eth_ipv4_header_len_std \
-            = biflow_bwd_eth_ipv4_header_len_var = biflow_bwd_eth_ipv4_header_len_max = biflow_bwd_eth_ipv4_header_len_min = 0.0
-        else:
-            biflow_bwd_eth_ipv4_header_len_total = round(sum(biflow_bwd_eth_ipv4_header_lens), 3)
-            biflow_bwd_eth_ipv4_header_len_mean = round(np.mean(biflow_bwd_eth_ipv4_header_lens), 3)
-            biflow_bwd_eth_ipv4_header_len_std = round(np.std(biflow_bwd_eth_ipv4_header_lens), 3)
-            biflow_bwd_eth_ipv4_header_len_var = round(np.var(biflow_bwd_eth_ipv4_header_lens), 3)
-            biflow_bwd_eth_ipv4_header_len_max = round(max(biflow_bwd_eth_ipv4_header_lens), 3)
-            biflow_bwd_eth_ipv4_header_len_min = round(min(biflow_bwd_eth_ipv4_header_lens), 3)
-            
+            biflow_any_eth_ipv4_mf_flags_total = round(sum(biflow_any_eth_ipv4_mf_flags), 3)
+            biflow_any_eth_ipv4_mf_flags_mean = round(np.mean(biflow_any_eth_ipv4_mf_flags), 3)
+            biflow_any_eth_ipv4_mf_flags_std = round(np.std(biflow_any_eth_ipv4_mf_flags), 3)
+            biflow_any_eth_ipv4_mf_flags_var = round(np.var(biflow_any_eth_ipv4_mf_flags), 3)
+            biflow_any_eth_ipv4_mf_flags_max = round(max(biflow_any_eth_ipv4_mf_flags), 3)
+            biflow_any_eth_ipv4_mf_flags_min = round(min(biflow_any_eth_ipv4_mf_flags), 3)
 
-        # ==========================
-        # Packet Inter-arrival Times
-        # ==========================
+            biflow_fwd_eth_ipv4_mf_flags_total = round(sum(biflow_fwd_eth_ipv4_mf_flags), 3)
+            biflow_fwd_eth_ipv4_mf_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_mf_flags), 3)
+            biflow_fwd_eth_ipv4_mf_flags_std = round(np.std(biflow_fwd_eth_ipv4_mf_flags), 3)
+            biflow_fwd_eth_ipv4_mf_flags_var = round(np.var(biflow_fwd_eth_ipv4_mf_flags), 3)
+            biflow_fwd_eth_ipv4_mf_flags_max = round(max(biflow_fwd_eth_ipv4_mf_flags), 3)
+            biflow_fwd_eth_ipv4_mf_flags_min = round(min(biflow_fwd_eth_ipv4_mf_flags), 3)
 
-        # Packet IATs need at least 2 packets to be properly populated
-        if len(biflow_any_iats) == 0:
-            biflow_any_iat_total = biflow_any_iat_mean = biflow_any_iat_std = biflow_any_iat_var = biflow_any_iat_max = biflow_any_iat_min = 0.0
-        else:
-            biflow_any_iat_total = round(sum(biflow_any_iats), 3)
-            biflow_any_iat_mean = round(np.mean(biflow_any_iats), 3)
-            biflow_any_iat_std = round(np.std(biflow_any_iats), 3)
-            biflow_any_iat_var = round(np.var(biflow_any_iats), 3)
-            biflow_any_iat_max = round(max(biflow_any_iats), 3)
-            biflow_any_iat_min = round(min(biflow_any_iats), 3)
+            if len(biflow_bwd_eth_ipv4_mf_flags) == 0:
+                biflow_bwd_eth_ipv4_mf_flags_total = biflow_bwd_eth_ipv4_mf_flags_mean = biflow_bwd_eth_ipv4_mf_flags_std = \
+                    biflow_bwd_eth_ipv4_mf_flags_var = biflow_bwd_eth_ipv4_mf_flags_max = biflow_bwd_eth_ipv4_mf_flags_min = 0
+            else:
+                biflow_bwd_eth_ipv4_mf_flags_total = round(sum(biflow_bwd_eth_ipv4_mf_flags), 3)
+                biflow_bwd_eth_ipv4_mf_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_mf_flags), 3)
+                biflow_bwd_eth_ipv4_mf_flags_std = round(np.std(biflow_bwd_eth_ipv4_mf_flags), 3)
+                biflow_bwd_eth_ipv4_mf_flags_var = round(np.var(biflow_bwd_eth_ipv4_mf_flags), 3)
+                biflow_bwd_eth_ipv4_mf_flags_max = round(max(biflow_bwd_eth_ipv4_mf_flags), 3)
+                biflow_bwd_eth_ipv4_mf_flags_min = round(min(biflow_bwd_eth_ipv4_mf_flags), 3)
 
-        # Packet IATs need at least 2 packets to be properly populated
-        if len(biflow_fwd_iats) == 0:
-            biflow_fwd_iat_total = biflow_fwd_iat_mean = biflow_fwd_iat_std = biflow_fwd_iat_var =biflow_fwd_iat_max = biflow_fwd_iat_min = 0.0
-        else:
-            biflow_fwd_iat_total = round(sum(biflow_fwd_iats), 3)
-            biflow_fwd_iat_mean = round(np.mean(biflow_fwd_iats), 3)
-            biflow_fwd_iat_std = round(np.std(biflow_fwd_iats), 3)
-            biflow_fwd_iat_var = round(np.var(biflow_fwd_iats), 3)
-            biflow_fwd_iat_max = round(max(biflow_fwd_iats), 3)
-            biflow_fwd_iat_min = round(min(biflow_fwd_iats), 3)
+            # ==========================
+            # L4 Protocol Specific Genes
+            # ==========================
+            if l4_protocol:
+                # =================
+                # L4 HEADER LENGTHS
+                # =================
+                biflow_any_eth_ipv4_l4_header_len_total = round(sum(biflow_any_eth_ipv4_l4_header_lens), 3)
+                biflow_any_eth_ipv4_l4_header_len_mean = round(np.mean(biflow_any_eth_ipv4_l4_header_lens), 3)
+                biflow_any_eth_ipv4_l4_header_len_std = round(np.std(biflow_any_eth_ipv4_l4_header_lens), 3)
+                biflow_any_eth_ipv4_l4_header_len_var = round(np.var(biflow_any_eth_ipv4_l4_header_lens), 3)
+                biflow_any_eth_ipv4_l4_header_len_max = round(max(biflow_any_eth_ipv4_l4_header_lens), 3)
+                biflow_any_eth_ipv4_l4_header_len_min = round(min(biflow_any_eth_ipv4_l4_header_lens), 3)
 
-        # ======================
-        # IP Fragmentation Flags
-        # ======================
-        biflow_any_eth_ipv4_df_flags_total = round(sum(biflow_any_eth_ipv4_df_flags), 3)
-        biflow_any_eth_ipv4_df_flags_mean = round(np.mean(biflow_any_eth_ipv4_df_flags), 3)
-        biflow_any_eth_ipv4_df_flags_std = round(np.std(biflow_any_eth_ipv4_df_flags), 3)
-        biflow_any_eth_ipv4_df_flags_var = round(np.var(biflow_any_eth_ipv4_df_flags), 3)
-        biflow_any_eth_ipv4_df_flags_max = round(max(biflow_any_eth_ipv4_df_flags), 3)
-        biflow_any_eth_ipv4_df_flags_min = round(min(biflow_any_eth_ipv4_df_flags), 3)
+                biflow_fwd_eth_ipv4_l4_header_len_total = round(sum(biflow_fwd_eth_ipv4_l4_header_lens), 3)
+                biflow_fwd_eth_ipv4_l4_header_len_mean = round(np.mean(biflow_fwd_eth_ipv4_l4_header_lens), 3)
+                biflow_fwd_eth_ipv4_l4_header_len_std = round(np.std(biflow_fwd_eth_ipv4_l4_header_lens), 3)
+                biflow_fwd_eth_ipv4_l4_header_len_var = round(np.var(biflow_fwd_eth_ipv4_l4_header_lens), 3)
+                biflow_fwd_eth_ipv4_l4_header_len_max = round(max(biflow_fwd_eth_ipv4_l4_header_lens), 3)
+                biflow_fwd_eth_ipv4_l4_header_len_min = round(min(biflow_fwd_eth_ipv4_l4_header_lens), 3)
 
-        biflow_fwd_eth_ipv4_df_flags_total = round(sum(biflow_fwd_eth_ipv4_df_flags), 3)
-        biflow_fwd_eth_ipv4_df_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_df_flags), 3)
-        biflow_fwd_eth_ipv4_df_flags_std = round(np.std(biflow_fwd_eth_ipv4_df_flags), 3)
-        biflow_fwd_eth_ipv4_df_flags_var = round(np.var(biflow_fwd_eth_ipv4_df_flags), 3)
-        biflow_fwd_eth_ipv4_df_flags_max = round(max(biflow_fwd_eth_ipv4_df_flags), 3)
-        biflow_fwd_eth_ipv4_df_flags_min = round(min(biflow_fwd_eth_ipv4_df_flags), 3)
+                if len(biflow_bwd_eth_ipv4_l4_header_lens) == 0:
+                    biflow_bwd_eth_ipv4_l4_header_len_total = biflow_bwd_eth_ipv4_l4_header_len_mean = biflow_bwd_eth_ipv4_l4_header_len_std = \
+                        biflow_bwd_eth_ipv4_l4_header_len_var = biflow_bwd_eth_ipv4_l4_header_len_max = biflow_bwd_eth_ipv4_l4_header_len_min = 0
+                else:
+                    biflow_bwd_eth_ipv4_l4_header_len_total = round(sum(biflow_bwd_eth_ipv4_l4_header_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_header_len_mean = round(np.mean(biflow_bwd_eth_ipv4_l4_header_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_header_len_std = round(np.std(biflow_bwd_eth_ipv4_l4_header_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_header_len_var = round(np.var(biflow_bwd_eth_ipv4_l4_header_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_header_len_max = round(max(biflow_bwd_eth_ipv4_l4_header_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_header_len_min = round(min(biflow_bwd_eth_ipv4_l4_header_lens), 3)
 
-        biflow_bwd_eth_ipv4_df_flags_total = round(sum(biflow_bwd_eth_ipv4_df_flags), 3)
-        biflow_bwd_eth_ipv4_df_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_df_flags), 3)
-        biflow_bwd_eth_ipv4_df_flags_std = round(np.std(biflow_bwd_eth_ipv4_df_flags), 3)
-        biflow_bwd_eth_ipv4_df_flags_var = round(np.var(biflow_bwd_eth_ipv4_df_flags), 3)
-        biflow_bwd_eth_ipv4_df_flags_max = round(max(biflow_bwd_eth_ipv4_df_flags), 3)
-        biflow_bwd_eth_ipv4_df_flags_min = round(min(biflow_bwd_eth_ipv4_df_flags), 3)
+                # ===============
+                # L4 DATA LENGTHS
+                # ===============
+                biflow_any_eth_ipv4_l4_data_len_total = round(sum(biflow_any_eth_ipv4_l4_data_lens), 3)
+                biflow_any_eth_ipv4_l4_data_len_mean = round(np.mean(biflow_any_eth_ipv4_l4_data_lens), 3)
+                biflow_any_eth_ipv4_l4_data_len_std = round(np.std(biflow_any_eth_ipv4_l4_data_lens), 3)
+                biflow_any_eth_ipv4_l4_data_len_var = round(np.var(biflow_any_eth_ipv4_l4_data_lens), 3)
+                biflow_any_eth_ipv4_l4_data_len_max = round(max(biflow_any_eth_ipv4_l4_data_lens), 3)
+                biflow_any_eth_ipv4_l4_data_len_min = round(min(biflow_any_eth_ipv4_l4_data_lens), 3)
 
-        biflow_any_eth_ipv4_mf_flags_total = round(sum(biflow_any_eth_ipv4_mf_flags), 3)
-        biflow_any_eth_ipv4_mf_flags_mean = round(np.mean(biflow_any_eth_ipv4_mf_flags), 3)
-        biflow_any_eth_ipv4_mf_flags_std = round(np.std(biflow_any_eth_ipv4_mf_flags), 3)
-        biflow_any_eth_ipv4_mf_flags_var = round(np.var(biflow_any_eth_ipv4_mf_flags), 3)
-        biflow_any_eth_ipv4_mf_flags_max = round(max(biflow_any_eth_ipv4_mf_flags), 3)
-        biflow_any_eth_ipv4_mf_flags_min = round(min(biflow_any_eth_ipv4_mf_flags), 3)
+                biflow_fwd_eth_ipv4_l4_data_len_total = round(sum(biflow_fwd_eth_ipv4_l4_data_lens), 3)
+                biflow_fwd_eth_ipv4_l4_data_len_mean = round(np.mean(biflow_fwd_eth_ipv4_l4_data_lens), 3)
+                biflow_fwd_eth_ipv4_l4_data_len_std = round(np.std(biflow_fwd_eth_ipv4_l4_data_lens), 3)
+                biflow_fwd_eth_ipv4_l4_data_len_var = round(np.var(biflow_fwd_eth_ipv4_l4_data_lens), 3)
+                biflow_fwd_eth_ipv4_l4_data_len_max = round(max(biflow_fwd_eth_ipv4_l4_data_lens), 3)
+                biflow_fwd_eth_ipv4_l4_data_len_min = round(min(biflow_fwd_eth_ipv4_l4_data_lens), 3)
 
-        biflow_fwd_eth_ipv4_mf_flags_total = round(sum(biflow_fwd_eth_ipv4_mf_flags), 3)
-        biflow_fwd_eth_ipv4_mf_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_mf_flags), 3)
-        biflow_fwd_eth_ipv4_mf_flags_std = round(np.std(biflow_fwd_eth_ipv4_mf_flags), 3)
-        biflow_fwd_eth_ipv4_mf_flags_var = round(np.var(biflow_fwd_eth_ipv4_mf_flags), 3)
-        biflow_fwd_eth_ipv4_mf_flags_max = round(max(biflow_fwd_eth_ipv4_mf_flags), 3)
-        biflow_fwd_eth_ipv4_mf_flags_min = round(min(biflow_fwd_eth_ipv4_mf_flags), 3)
+                if len(biflow_bwd_eth_ipv4_l4_data_lens) == 0:
+                    biflow_bwd_eth_ipv4_l4_data_len_total = biflow_bwd_eth_ipv4_l4_data_len_mean = biflow_bwd_eth_ipv4_l4_data_len_std = \
+                        biflow_bwd_eth_ipv4_l4_data_len_var = biflow_bwd_eth_ipv4_l4_data_len_max = biflow_bwd_eth_ipv4_l4_data_len_min = 0
+                else:
+                    biflow_bwd_eth_ipv4_l4_data_len_total = round(sum(biflow_bwd_eth_ipv4_l4_data_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_data_len_mean = round(np.mean(biflow_bwd_eth_ipv4_l4_data_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_data_len_std = round(np.std(biflow_bwd_eth_ipv4_l4_data_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_data_len_var = round(np.var(biflow_bwd_eth_ipv4_l4_data_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_data_len_max = round(max(biflow_bwd_eth_ipv4_l4_data_lens), 3)
+                    biflow_bwd_eth_ipv4_l4_data_len_min = round(min(biflow_bwd_eth_ipv4_l4_data_lens), 3)
 
-        biflow_bwd_eth_ipv4_mf_flags_total = round(sum(biflow_bwd_eth_ipv4_mf_flags), 3)
-        biflow_bwd_eth_ipv4_mf_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_mf_flags), 3)
-        biflow_bwd_eth_ipv4_mf_flags_std = round(np.std(biflow_bwd_eth_ipv4_mf_flags), 3)
-        biflow_bwd_eth_ipv4_mf_flags_var = round(np.var(biflow_bwd_eth_ipv4_mf_flags), 3)
-        biflow_bwd_eth_ipv4_mf_flags_max = round(max(biflow_bwd_eth_ipv4_mf_flags), 3)
-        biflow_bwd_eth_ipv4_mf_flags_min = round(min(biflow_bwd_eth_ipv4_mf_flags), 3)
+                # ===========================
+                # TCP Protocol Specific Genes
+                # ===========================
+                if l4_protocol == "TCP":
+                    # =========
+                    # FIN FLAGS
+                    # =========
+                    biflow_any_eth_ipv4_tcp_fin_flags_total = round(sum(biflow_any_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_any_eth_ipv4_tcp_fin_flags_mean = round(np.mean(biflow_any_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_any_eth_ipv4_tcp_fin_flags_std = round(np.std(biflow_any_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_any_eth_ipv4_tcp_fin_flags_var = round(np.var(biflow_any_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_any_eth_ipv4_tcp_fin_flags_max = round(max(biflow_any_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_any_eth_ipv4_tcp_fin_flags_min = round(min(biflow_any_eth_ipv4_tcp_fin_flags), 3)
 
-        # Packet IATs need at least 2 packets to be properly populated
-        if len(biflow_bwd_iats) == 0:
-            biflow_bwd_iat_total = biflow_bwd_iat_mean = biflow_bwd_iat_std = biflow_bwd_iat_var = biflow_bwd_iat_max = biflow_bwd_iat_min = 0.0
-        else:
-            biflow_bwd_iat_total = round(sum(biflow_bwd_iats), 3)
-            biflow_bwd_iat_mean = round(np.mean(biflow_bwd_iats), 3)
-            biflow_bwd_iat_std = round(np.std(biflow_bwd_iats), 3)
-            biflow_bwd_iat_var = round(np.var(biflow_bwd_iats), 3)
-            biflow_bwd_iat_max = round(max(biflow_bwd_iats), 3)
-            biflow_bwd_iat_min = round(min(biflow_bwd_iats), 3)
+                    biflow_fwd_eth_ipv4_tcp_fin_flags_total = round(sum(biflow_fwd_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_fin_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_fin_flags_std = round(np.std(biflow_fwd_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_fin_flags_var = round(np.var(biflow_fwd_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_fin_flags_max = round(max(biflow_fwd_eth_ipv4_tcp_fin_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_fin_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_fin_flags), 3)
 
-        # ===============
-        # WRAP-UP RESULTS
-        # ===============
-        biflow_local_vars = locals()
-        biflow_gene_values_list = [biflow_local_vars[var_name] for var_name in ipv4_biflow_genes_header_list]
-        biflow_genes_generator = dict(zip(ipv4_biflow_genes_header_list, biflow_gene_values_list))
+                    if len(biflow_bwd_eth_ipv4_tcp_fin_flags) == 0:
+                        biflow_bwd_eth_ipv4_tcp_fin_flags_total = biflow_bwd_eth_ipv4_tcp_fin_flags_mean = biflow_bwd_eth_ipv4_tcp_fin_flags_std = \
+                            biflow_bwd_eth_ipv4_tcp_fin_flags_var = biflow_bwd_eth_ipv4_tcp_fin_flags_max = biflow_bwd_eth_ipv4_tcp_fin_flags_min = 0
+                    else:
+                        biflow_bwd_eth_ipv4_tcp_fin_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_fin_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_fin_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_fin_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_fin_flags_std = round(np.std(biflow_bwd_eth_ipv4_tcp_fin_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_fin_flags_var = round(np.var(biflow_bwd_eth_ipv4_tcp_fin_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_fin_flags_max = round(max(biflow_bwd_eth_ipv4_tcp_fin_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_fin_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_fin_flags), 3)
 
-        yield biflow_genes_generator
+                    # =========
+                    # SYN FLAGS
+                    # =========
+                    biflow_any_eth_ipv4_tcp_syn_flags_total = round(sum(biflow_any_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_any_eth_ipv4_tcp_syn_flags_mean = round(np.mean(biflow_any_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_any_eth_ipv4_tcp_syn_flags_std = round(np.std(biflow_any_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_any_eth_ipv4_tcp_syn_flags_var = round(np.var(biflow_any_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_any_eth_ipv4_tcp_syn_flags_max = round(max(biflow_any_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_any_eth_ipv4_tcp_syn_flags_min = round(min(biflow_any_eth_ipv4_tcp_syn_flags), 3)
+
+                    biflow_fwd_eth_ipv4_tcp_syn_flags_total = round(sum(biflow_fwd_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_syn_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_syn_flags_std = round(np.std(biflow_fwd_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_syn_flags_var = round(np.var(biflow_fwd_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_syn_flags_max = round(max(biflow_fwd_eth_ipv4_tcp_syn_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_syn_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_syn_flags), 3)
+
+                    if len(biflow_bwd_eth_ipv4_tcp_syn_flags) == 0:
+                        biflow_bwd_eth_ipv4_tcp_syn_flags_total = biflow_bwd_eth_ipv4_tcp_syn_flags_mean = biflow_bwd_eth_ipv4_tcp_syn_flags_std = \
+                            biflow_bwd_eth_ipv4_tcp_syn_flags_var = biflow_bwd_eth_ipv4_tcp_syn_flags_max = biflow_bwd_eth_ipv4_tcp_syn_flags_min = 0
+                    else:
+                        biflow_bwd_eth_ipv4_tcp_syn_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_syn_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_syn_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_syn_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_syn_flags_std = round(np.std(biflow_bwd_eth_ipv4_tcp_syn_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_syn_flags_var = round(np.var(biflow_bwd_eth_ipv4_tcp_syn_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_syn_flags_max = round(max(biflow_bwd_eth_ipv4_tcp_syn_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_syn_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_syn_flags), 3)
+
+                    # =========
+                    # RST FLAGS
+                    # =========
+                    biflow_any_eth_ipv4_tcp_rst_flags_total = round(sum(biflow_any_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_any_eth_ipv4_tcp_rst_flags_mean = round(np.mean(biflow_any_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_any_eth_ipv4_tcp_rst_flags_std = round(np.std(biflow_any_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_any_eth_ipv4_tcp_rst_flags_var = round(np.var(biflow_any_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_any_eth_ipv4_tcp_rst_flags_max = round(max(biflow_any_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_any_eth_ipv4_tcp_rst_flags_min = round(min(biflow_any_eth_ipv4_tcp_rst_flags), 3)
+
+                    biflow_fwd_eth_ipv4_tcp_rst_flags_total = round(sum(biflow_fwd_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_rst_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_rst_flags_std = round(np.std(biflow_fwd_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_rst_flags_var = round(np.var(biflow_fwd_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_rst_flags_max = round(max(biflow_fwd_eth_ipv4_tcp_rst_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_rst_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_rst_flags), 3)
+
+                    if len(biflow_bwd_eth_ipv4_tcp_rst_flags) == 0:
+                        biflow_bwd_eth_ipv4_tcp_rst_flags_total = biflow_bwd_eth_ipv4_tcp_rst_flags_mean = biflow_bwd_eth_ipv4_tcp_rst_flags_std = \
+                            biflow_bwd_eth_ipv4_tcp_rst_flags_var = biflow_bwd_eth_ipv4_tcp_rst_flags_max = biflow_bwd_eth_ipv4_tcp_rst_flags_min = 0
+                    else:
+                        biflow_bwd_eth_ipv4_tcp_rst_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_rst_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_rst_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_rst_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_rst_flags_std = round(np.std(biflow_bwd_eth_ipv4_tcp_rst_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_rst_flags_var = round(np.var(biflow_bwd_eth_ipv4_tcp_rst_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_rst_flags_max = round(max(biflow_bwd_eth_ipv4_tcp_rst_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_rst_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_rst_flags), 3)
+
+                    # =========
+                    # PSH FLAGS
+                    # =========
+                    biflow_any_eth_ipv4_tcp_psh_flags_total = round(sum(biflow_any_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_any_eth_ipv4_tcp_psh_flags_mean = round(np.mean(biflow_any_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_any_eth_ipv4_tcp_psh_flags_std = round(np.std(biflow_any_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_any_eth_ipv4_tcp_psh_flags_var = round(np.var(biflow_any_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_any_eth_ipv4_tcp_psh_flags_max = round(max(biflow_any_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_any_eth_ipv4_tcp_psh_flags_min = round(min(biflow_any_eth_ipv4_tcp_psh_flags), 3)
+
+                    biflow_fwd_eth_ipv4_tcp_psh_flags_total = round(sum(biflow_fwd_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_psh_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_psh_flags_std = round(np.std(biflow_fwd_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_psh_flags_var = round(np.var(biflow_fwd_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_psh_flags_max = round(max(biflow_fwd_eth_ipv4_tcp_psh_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_psh_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_psh_flags), 3)
+
+                    if len(biflow_bwd_eth_ipv4_tcp_psh_flags) == 0:
+                        biflow_bwd_eth_ipv4_tcp_psh_flags_total = biflow_bwd_eth_ipv4_tcp_psh_flags_mean = biflow_bwd_eth_ipv4_tcp_psh_flags_std = \
+                            biflow_bwd_eth_ipv4_tcp_psh_flags_var = biflow_bwd_eth_ipv4_tcp_psh_flags_max = biflow_bwd_eth_ipv4_tcp_psh_flags_min = 0
+                    else:
+                        biflow_bwd_eth_ipv4_tcp_psh_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_psh_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_psh_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_psh_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_psh_flags_std = round(np.std(biflow_bwd_eth_ipv4_tcp_psh_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_psh_flags_var = round(np.var(biflow_bwd_eth_ipv4_tcp_psh_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_psh_flags_max = round(max(biflow_bwd_eth_ipv4_tcp_psh_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_psh_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_psh_flags), 3)
+
+                    # =========
+                    # ACK FLAGS
+                    # =========
+                    biflow_any_eth_ipv4_tcp_ack_flags_total = round(sum(biflow_any_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ack_flags_mean = round(np.mean(biflow_any_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ack_flags_std = round(np.std(biflow_any_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ack_flags_var = round(np.var(biflow_any_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ack_flags_max = round(max(biflow_any_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ack_flags_min = round(min(biflow_any_eth_ipv4_tcp_ack_flags), 3)
+
+                    biflow_fwd_eth_ipv4_tcp_ack_flags_total = round(sum(biflow_fwd_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ack_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ack_flags_std = round(np.std(biflow_fwd_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ack_flags_var = round(np.var(biflow_fwd_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ack_flags_max = round(max(biflow_fwd_eth_ipv4_tcp_ack_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ack_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_ack_flags), 3)
+
+                    if len(biflow_bwd_eth_ipv4_tcp_ack_flags) == 0:
+                        biflow_bwd_eth_ipv4_tcp_ack_flags_total = biflow_bwd_eth_ipv4_tcp_ack_flags_mean = biflow_bwd_eth_ipv4_tcp_ack_flags_std = \
+                            biflow_bwd_eth_ipv4_tcp_ack_flags_var = biflow_bwd_eth_ipv4_tcp_ack_flags_max = biflow_bwd_eth_ipv4_tcp_ack_flags_min = 0
+                    else:
+                        biflow_bwd_eth_ipv4_tcp_ack_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_ack_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ack_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_ack_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ack_flags_std = round(np.std(biflow_bwd_eth_ipv4_tcp_ack_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ack_flags_var = round(np.var(biflow_bwd_eth_ipv4_tcp_ack_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ack_flags_max = round(max(biflow_bwd_eth_ipv4_tcp_ack_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ack_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_ack_flags), 3)
+
+                    # =========
+                    # URG FLAGS
+                    # =========
+                    biflow_any_eth_ipv4_tcp_urg_flags_total = round(sum(biflow_any_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_any_eth_ipv4_tcp_urg_flags_mean = round(np.mean(biflow_any_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_any_eth_ipv4_tcp_urg_flags_std = round(np.std(biflow_any_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_any_eth_ipv4_tcp_urg_flags_var = round(np.var(biflow_any_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_any_eth_ipv4_tcp_urg_flags_max = round(max(biflow_any_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_any_eth_ipv4_tcp_urg_flags_min = round(min(biflow_any_eth_ipv4_tcp_urg_flags), 3)
+
+                    biflow_fwd_eth_ipv4_tcp_urg_flags_total = round(sum(biflow_fwd_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_urg_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_urg_flags_std = round(np.std(biflow_fwd_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_urg_flags_var = round(np.var(biflow_fwd_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_urg_flags_max = round(max(biflow_fwd_eth_ipv4_tcp_urg_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_urg_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_urg_flags), 3)
+
+                    if len(biflow_bwd_eth_ipv4_tcp_urg_flags) == 0:
+                        biflow_bwd_eth_ipv4_tcp_urg_flags_total = biflow_bwd_eth_ipv4_tcp_urg_flags_mean = biflow_bwd_eth_ipv4_tcp_urg_flags_std = \
+                            biflow_bwd_eth_ipv4_tcp_urg_flags_var = biflow_bwd_eth_ipv4_tcp_urg_flags_max = biflow_bwd_eth_ipv4_tcp_urg_flags_min = 0
+                    else:
+                        biflow_bwd_eth_ipv4_tcp_urg_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_urg_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_urg_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_urg_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_urg_flags_std = round(np.std(biflow_bwd_eth_ipv4_tcp_urg_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_urg_flags_var = round(np.var(biflow_bwd_eth_ipv4_tcp_urg_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_urg_flags_max = round(max(biflow_bwd_eth_ipv4_tcp_urg_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_urg_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_urg_flags), 3)
+
+                    # =========
+                    # ECE FLAGS
+                    # =========
+                    biflow_any_eth_ipv4_tcp_ece_flags_total = round(sum(biflow_any_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ece_flags_mean = round(np.mean(biflow_any_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ece_flags_std = round(np.std(biflow_any_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ece_flags_var = round(np.var(biflow_any_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ece_flags_max = round(max(biflow_any_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_any_eth_ipv4_tcp_ece_flags_min = round(min(biflow_any_eth_ipv4_tcp_ece_flags), 3)
+
+                    biflow_fwd_eth_ipv4_tcp_ece_flags_total = round(sum(biflow_fwd_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ece_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ece_flags_std = round(np.std(biflow_fwd_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ece_flags_var = round(np.var(biflow_fwd_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ece_flags_max = round(max(biflow_fwd_eth_ipv4_tcp_ece_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_ece_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_ece_flags), 3)
+
+                    if len(biflow_bwd_eth_ipv4_tcp_ece_flags) == 0:
+                        biflow_bwd_eth_ipv4_tcp_ece_flags_total = biflow_bwd_eth_ipv4_tcp_ece_flags_mean = biflow_bwd_eth_ipv4_tcp_ece_flags_std = \
+                            biflow_bwd_eth_ipv4_tcp_ece_flags_var = biflow_bwd_eth_ipv4_tcp_ece_flags_max = biflow_bwd_eth_ipv4_tcp_ece_flags_min = 0
+                    else:
+                        biflow_bwd_eth_ipv4_tcp_ece_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_ece_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ece_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_ece_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ece_flags_std = round(np.std(biflow_bwd_eth_ipv4_tcp_ece_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ece_flags_var = round(np.var(biflow_bwd_eth_ipv4_tcp_ece_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ece_flags_max = round(max(biflow_bwd_eth_ipv4_tcp_ece_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_ece_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_ece_flags), 3)
+
+                    # =========
+                    # CWR FLAGS
+                    # =========
+                    biflow_any_eth_ipv4_tcp_cwr_flags_total = round(sum(biflow_any_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_any_eth_ipv4_tcp_cwr_flags_mean = round(np.mean(biflow_any_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_any_eth_ipv4_tcp_cwr_flags_std = round(np.std(biflow_any_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_any_eth_ipv4_tcp_cwr_flags_var = round(np.var(biflow_any_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_any_eth_ipv4_tcp_cwr_flags_max = round(max(biflow_any_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_any_eth_ipv4_tcp_cwr_flags_min = round(min(biflow_any_eth_ipv4_tcp_cwr_flags), 3)
+
+                    biflow_fwd_eth_ipv4_tcp_cwr_flags_total = round(sum(biflow_fwd_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_cwr_flags_mean = round(np.mean(biflow_fwd_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_cwr_flags_std = round(np.std(biflow_fwd_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_cwr_flags_var = round(np.var(biflow_fwd_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_cwr_flags_max = round(max(biflow_fwd_eth_ipv4_tcp_cwr_flags), 3)
+                    biflow_fwd_eth_ipv4_tcp_cwr_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_cwr_flags), 3)
+
+                    if len(biflow_bwd_eth_ipv4_tcp_cwr_flags) == 0:
+                        biflow_bwd_eth_ipv4_tcp_cwr_flags_total = biflow_bwd_eth_ipv4_tcp_cwr_flags_mean = biflow_bwd_eth_ipv4_tcp_cwr_flags_std = \
+                            biflow_bwd_eth_ipv4_tcp_cwr_flags_var = biflow_bwd_eth_ipv4_tcp_cwr_flags_max = biflow_bwd_eth_ipv4_tcp_cwr_flags_min = 0
+                    else:
+                        biflow_bwd_eth_ipv4_tcp_cwr_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_cwr_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_cwr_flags_std = round(np.std(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_cwr_flags_var = round(np.var(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_cwr_flags_max = round(max(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
+                        biflow_bwd_eth_ipv4_tcp_cwr_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
+
+            # ===============
+            # WRAP-UP RESULTS
+            # ===============
+            ipv4_all_biflow_genes_header_list = ipv4_biflow_genes_header_list + ipv4_l4_biflow_genes_header_list + ipv4_tcp_biflow_genes_header_list
+            biflow_local_vars = locals()
+            biflow_gene_values_list = [biflow_local_vars[var_name] for var_name in ipv4_all_biflow_genes_header_list]
+            biflow_genes_generator = dict(zip(ipv4_all_biflow_genes_header_list, biflow_gene_values_list))
+
+            yield biflow_genes_generator
+
+    ipv4_tcp_biflow_genes_generator = calculate_l3_biflow_genes(ipv4_tcp_biflows, ipv4_tcp_biflow_ids, l4_protocol="TCP")
+    return ipv4_tcp_biflow_genes_generator
 
 def output_biflow_genes(ipv4_flow_genes_generator, output_type, output_dir=False, over_ipv4=False):
     """
@@ -1002,12 +1387,13 @@ def output_biflow_genes(ipv4_flow_genes_generator, output_type, output_dir=False
         - L4: UDP, TCP
     """
     if output_type=="csv":
-        ipv4_flow_genes_header_str = get_biflow_header_by_type("ipv4")
+        ipv4_flow_genes_header_str = get_biflow_header_by_type("ipv4") + "|" + \
+            get_biflow_header_by_type("ipv4-l4") + "|" + get_biflow_header_by_type("ipv4-tcp")
         ipv4_flow_genes_csv = ipv4_flow_genes_header_str + "\n"
         for ipv4_flow_genes_dict in ipv4_flow_genes_generator:
             ipv4_flow_genes_list = list(ipv4_flow_genes_dict.values())
             ipv4_flow_genes_csv += generate_flow_line(ipv4_flow_genes_list) + "\n"
-        f = open(output_dir + os.sep + "ipv4-biflows2.csv", "w")
+        f = open(output_dir + os.sep + "ipv4-biflows.csv", "w")
         f.write(ipv4_flow_genes_csv)
         f.close()
 
@@ -1068,14 +1454,15 @@ def generate_network_objets(input_pcap_file, args, netmeter_globals):
         module_init_time = time.time()
         print(make_header_string("1.4. Layer-4 Bidirectional Flows: UDP and TCP"), flush=True)
 
-    udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids = build_l4_biflows(l3_biflows, l3_biflow_ids)
+    udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, n_disconected_packets = build_l4_biflows(l3_biflows, l3_biflow_ids)
     
     if args.verbose:
         n_preserved_udp_packets = sum([len(udp_biflows[udp_biflow_id]) for udp_biflow_id in udp_biflow_ids])
         n_preserved_tcp_packets = sum([len(tcp_biflows[tcp_biflow_id]) for tcp_biflow_id in tcp_biflow_ids])
 
-        print("[+] IPv4-UDP Packets preserved:", n_preserved_udp_packets, "IPv4-UDP Packets", flush=True)
-        print("[+] IPv4-TCP Packets preserved:", n_preserved_tcp_packets, "IPv4-TCP Packets", flush=True)
+        print("[+] IPv4-UDP Packets preserved:", n_preserved_udp_packets, "IPv4-UDP OK Packets", flush=True)
+        print("[+] IPv4-TCP Packets preserved:", n_preserved_tcp_packets, "IPv4-TCP OK Packets", flush=True)
+        print("[+] IPv4-TCP Packets disconected:", n_disconected_packets, "IPv4-TCP DCed Packets", flush=True)
         print("[+] IPv4-UDP Flows detected:" + cterminal.colors.GREEN, len(udp_biflows), "IPv4-UDP BiFlows" + cterminal.colors.ENDC, flush=True)
         print("[+] IPv4-TCP Flows detected:" + cterminal.colors.GREEN, len(tcp_biflows), "IPv4-TCP BiFlows" + cterminal.colors.ENDC, flush=True)
         print("[+] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
@@ -1090,15 +1477,17 @@ def generate_network_objets(input_pcap_file, args, netmeter_globals):
     # ------------------------------
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("2.1. IPv4 & (TCP|UDP) BiFlow Genes"), flush=True)
+        print(make_header_string("2.1. IPv4 & L4 BiFlow Genes"), flush=True)
 
     # TODO: use the udp and tcp biflows as input for calculate_l3_l4_biflow_genes function and calculate specific l4 flow genes
     # (merge TCP, think UDP/TCP)
-    l3_l4_flow_genes_generator = calculate_l3_l4_biflow_genes(tcp_biflows, tcp_biflow_ids)
+    l3_l4_flow_genes_generator = calculate_l3_l4_biflow_genes(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids)
 
     if args.verbose:
-        l3_n_flow_genes = get_biflow_header_by_type("ipv4").count("|") - 2
-        print("[+] Calculated IPv4 & (TCP|UDP) BiFlow Genes:" + cterminal.colors.GREEN,
+        # minus 3 to remove biflow_id, biflow_any_first_packet_time and biflow_any_last_packet_time
+        l3_n_flow_genes = (get_biflow_header_by_type("ipv4").count("|") + 1 - 3) + \
+            (get_biflow_header_by_type("ipv4-l4").count("|") + 1) + (get_biflow_header_by_type("ipv4-tcp").count("|") + 1)
+        print("[+] Calculated IPv4 & L4 BiFlow Genes:" + cterminal.colors.GREEN,
             l3_n_flow_genes, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
         print("[+] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
 

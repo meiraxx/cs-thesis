@@ -79,7 +79,7 @@ biflow_bwd_eth_ipv4_header_len_var
 biflow_bwd_eth_ipv4_header_len_max  
 biflow_bwd_eth_ipv4_header_len_min  
 
-*Packet IPv4 Lengths*  
+*Packet IPv4 Data Lengths*  
 biflow_any_eth_ipv4_data_len_total  
 biflow_any_eth_ipv4_data_len_mean  
 biflow_any_eth_ipv4_data_len_std  
