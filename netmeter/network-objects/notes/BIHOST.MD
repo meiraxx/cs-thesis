@@ -1,11 +1,13 @@
-# IPv4-HOST
+# BiHost
+**Given the time I have, I don't know how I will implement any BiHost genes, but maybe...**  
+
 ## CURRENT NUMBER OF GENES
-**140 Host Genes:**  
+**140 BiHost Genes:**  
 - 14 Conceptual Features
 - 126 Statistical Features
 
 ## IDENTIFIER
-host_id (joined 1-tuple):  
+bihost_id (joined 1-tuple):  
 - (**source_ip**)  
 - (**destination_ip**)  
 

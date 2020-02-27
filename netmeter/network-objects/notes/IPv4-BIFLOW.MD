@@ -11,6 +11,7 @@
 - (source_ip, source_port, **destination_ip**, **destination_port**, protocol_stack, inner_sep_counter)  
 
 ## ADDITIONAL INFORMATION
+bitalker_id
 biflow_any_first_packet_time  
 biflow_any_last_packet_time  
 
@@ -29,7 +30,7 @@ biflow_any_packets_per_sec
 biflow_fwd_packets_per_sec  
 biflow_bwd_packets_per_sec  
 
-**Byte Frequency Features**  
+**Packet Byte Frequency Features**  
 biflow_any_bytes_per_sec  
 biflow_fwd_bytes_per_sec  
 biflow_bwd_bytes_per_sec  

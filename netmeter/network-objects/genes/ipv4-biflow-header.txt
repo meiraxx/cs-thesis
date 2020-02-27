@@ -1,4 +1,5 @@
 biflow_id
+bitalker_id
 biflow_any_first_packet_time
 biflow_any_last_packet_time
 biflow_any_duration

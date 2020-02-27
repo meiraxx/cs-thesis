@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 """
-This script is meant to output "hosts" (ipX), "talkers" (ipX-ipY) and "flows"
+This script is meant to output "bihosts" (ipX), "bitalkers" (ipX-ipY) and "biflows"
 (ipX-portA-ipY-portB-protocol_stack-inner_sep_counter), which are network objects,
-and their respective conceptual and statistical features to build a dataset.
-This conceptual and statistical features are called, in their combination, genes.
-NetMeter is the first of the three main tasks of my thesis.
+and their respective conceptual and statistical features to build a dataset. These
+network objects are meant to perform a logical packet aggregation having a bidirectional
+view at all times, hence the 'bi' prefix. For simplicity, the generated conceptual and
+statistical network object features are called, in their combination, network object genes.
+NetMeter will take a PCAP as an input and will output NetGenes in a specified output format.
+NetMeter is the first of the four (1/4) main tasks of my thesis.
 
 AUTHORSHIP:
 Joao Meira <joao.meira.cs@gmail.com>
@@ -124,6 +127,7 @@ class NetMeterGlobals:
         self.csv_files_dir = args.data_dir + os.sep + "csv"
         # csv output dir is only created when needed
         self.csv_output_dir = self.csv_files_dir + os.sep + os.path.splitext(os.path.basename(args.pcap_path))[0]
+        self.genes_dir = "network-objects" + os.sep + "genes"
 
 # ==========================
 # START: Auxiliary Functions
@@ -154,15 +158,19 @@ def biflow_id_to_pcap_filter(biflow_id):
     pcap_filter = src_ip_filter + "&&" + src_port_filter
     return pcap_filter
 
-def flow_id_to_talker_id(flow_id):
-    splitted_flow_id = flow_id.split("-")
-    return splitted_flow_id[0] + "-" + splitted_flow_id[2]
+def bitalker_id_to_str(bitalker_id):
+    """Convert bitalker_id tuple to string"""
+    # we're mapping two IPs which are already strings, but no problem because IPs will eventually be integer
+    return "-".join(map(str,bitalker_id))
 
-def generate_flow_line(flow_genes):
-    return flow_id_to_str(flow_genes[0]) + "|" + "|".join(map(str,flow_genes[1:]))
+def biflow_id_to_bitalker_id(biflow_id):
+    """Get biflow_id's correspondent bitalker_id"""
+    bitalker_id = (biflow_id[0], biflow_id[2])
+    return bitalker_id
 
-def flow_id_to_str(flow_id):
-    return "-".join(map(str,flow_id))
+def biflow_id_to_str(biflow_id):
+    """Convert biflow_id tuple to string"""
+    return "-".join(map(str,biflow_id))
 
 def datetime_to_unixtime(datetime_str):
     time_scale_factor = 1000.0
@@ -252,7 +260,7 @@ def build_packets(input_pcap_file, args):
     # TODO: find a database and dataset format which accomodates such diverse feature formats (tcp vs udp vs icmp) while maintaining
     # all the relevant genes for each format... maybe there needs to be dataset separation, or maybe it's enough to put a "L3-protocol"
     # and "L4-protocol" field to separate those formats in the same dataset and zero-out different values - it will complicate too much
-    # when introducing mixed NetGenes (l3flows/l4flows/talkers/hosts)
+    # when introducing mixed NetGenes (l3biflows/l4biflows/bitalkers/bihosts)
     packets = []
     
     # [+] PARSE ALL PACKETS
@@ -422,7 +430,7 @@ def build_packets(input_pcap_file, args):
         print("[-] EthL1-EthL2-IPv4-<Other L4> packets:" + cterminal.colors.RED, n_packets_eth_ipv4_others, "packets" + cterminal.colors.ENDC, flush=True)
         print("[-] EthL1-EthL2-IPv6 packets:" + cterminal.colors.RED, n_packets_eth_ipv6, "packets" + cterminal.colors.ENDC, flush=True)
         print("[-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets:" + cterminal.colors.RED, n_packets_others, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[+] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
     # Verify some safe conditions
     if args.safe_check:
         if ipv4_header_len < 20 or ipv4_header_len > 60:
@@ -496,14 +504,14 @@ class RFC793:
         self.flow_termination_r3 = False
 
         # CONCEPTUAL FEATURES
-        self.biflow_any_eth_ipv4_tcp_initiation_two_way_handshake = False
-        self.biflow_any_eth_ipv4_tcp_full_duplex_connection_established = False
-        self.biflow_any_eth_ipv4_tcp_half_duplex_connection_established = False
-        self.biflow_any_eth_ipv4_tcp_connection_rejected = False
-        self.biflow_any_eth_ipv4_tcp_connection_dropped = False
-        self.biflow_any_eth_ipv4_tcp_termination_graceful = False
-        self.biflow_any_eth_ipv4_tcp_termination_abort = False
-        self.biflow_any_eth_ipv4_tcp_termination_null = False
+        self.biflow_eth_ipv4_tcp_initiation_two_way_handshake = False
+        self.biflow_eth_ipv4_tcp_full_duplex_connection_established = False
+        self.biflow_eth_ipv4_tcp_half_duplex_connection_established = False
+        self.biflow_eth_ipv4_tcp_connection_rejected = False
+        self.biflow_eth_ipv4_tcp_connection_dropped = False
+        self.biflow_eth_ipv4_tcp_termination_graceful = False
+        self.biflow_eth_ipv4_tcp_termination_abort = False
+        self.biflow_eth_ipv4_tcp_termination_null = False
 
     def reset_states_and_genes(self):
         # if flow hasn't terminated, we can't reset states and genes
@@ -523,25 +531,25 @@ class RFC793:
         self.flow_termination_r3 = False
 
         # CONCEPTUAL FEATURES
-        self.biflow_any_eth_ipv4_tcp_initiation_two_way_handshake = False
-        self.biflow_any_eth_ipv4_tcp_full_duplex_connection_established = False
-        self.biflow_any_eth_ipv4_tcp_half_duplex_connection_established = False
-        self.biflow_any_eth_ipv4_tcp_connection_rejected = False
-        self.biflow_any_eth_ipv4_tcp_connection_dropped = False
-        self.biflow_any_eth_ipv4_tcp_termination_graceful = False
-        self.biflow_any_eth_ipv4_tcp_termination_abort = False
-        self.biflow_any_eth_ipv4_tcp_termination_null = False
+        self.biflow_eth_ipv4_tcp_initiation_two_way_handshake = False
+        self.biflow_eth_ipv4_tcp_full_duplex_connection_established = False
+        self.biflow_eth_ipv4_tcp_half_duplex_connection_established = False
+        self.biflow_eth_ipv4_tcp_connection_rejected = False
+        self.biflow_eth_ipv4_tcp_connection_dropped = False
+        self.biflow_eth_ipv4_tcp_termination_graceful = False
+        self.biflow_eth_ipv4_tcp_termination_abort = False
+        self.biflow_eth_ipv4_tcp_termination_null = False
 
     def get_rfc793_tcp_biflow_conceptual_features(self):
         rfc793_tcp_biflow_conceptual_features = [
-            self.biflow_any_eth_ipv4_tcp_initiation_two_way_handshake,
-            self.biflow_any_eth_ipv4_tcp_full_duplex_connection_established,
-            self.biflow_any_eth_ipv4_tcp_half_duplex_connection_established,
-            self.biflow_any_eth_ipv4_tcp_connection_rejected,
-            self.biflow_any_eth_ipv4_tcp_connection_dropped,
-            self.biflow_any_eth_ipv4_tcp_termination_graceful,
-            self.biflow_any_eth_ipv4_tcp_termination_abort,
-            self.biflow_any_eth_ipv4_tcp_termination_null
+            self.biflow_eth_ipv4_tcp_initiation_two_way_handshake,
+            self.biflow_eth_ipv4_tcp_full_duplex_connection_established,
+            self.biflow_eth_ipv4_tcp_half_duplex_connection_established,
+            self.biflow_eth_ipv4_tcp_connection_rejected,
+            self.biflow_eth_ipv4_tcp_connection_dropped,
+            self.biflow_eth_ipv4_tcp_termination_graceful,
+            self.biflow_eth_ipv4_tcp_termination_abort,
+            self.biflow_eth_ipv4_tcp_termination_null
         ]
 
         return rfc793_tcp_biflow_conceptual_features
@@ -636,7 +644,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                             # ----------------------------------
                             # Established Full-Duplex Connection
                             # ----------------------------------
-                            rfc793.biflow_any_eth_ipv4_tcp_full_duplex_connection_established = True
+                            rfc793.biflow_eth_ipv4_tcp_full_duplex_connection_established = True
                         # -----------------
                         # Two-way Handshake
                         # -----------------
@@ -653,18 +661,18 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                             # RST packet, no message is received at all by the endpoint, but these termination cases are handled
                             # by our flow termination rules later.
                             rfc793.flow_initiated = True
-                            rfc793.biflow_any_eth_ipv4_tcp_initiation_two_way_handshake = True
+                            rfc793.biflow_eth_ipv4_tcp_initiation_two_way_handshake = True
 
                             # -------------------
                             # Rejected Connection
                             # -------------------
                             if rst2:
-                                rfc793.biflow_any_eth_ipv4_tcp_connection_rejected = True
+                                rfc793.biflow_eth_ipv4_tcp_connection_rejected = True
                             # ----------------------------------
                             # Established Half-Duplex Connection
                             # ----------------------------------
                             else:
-                                rfc793.biflow_any_eth_ipv4_tcp_half_duplex_connection_established = True
+                                rfc793.biflow_eth_ipv4_tcp_half_duplex_connection_established = True
                         # ---------------------------------
                         # Unacknowledged Connection Request
                         # ---------------------------------
@@ -674,7 +682,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                             # ------------------
                             # Dropped connection
                             # ------------------
-                            rfc793.biflow_any_eth_ipv4_tcp_connection_dropped = True
+                            rfc793.biflow_eth_ipv4_tcp_connection_dropped = True
 
                     # the flow end conditions are r1 and r2, (fin,fin-ack,ack)/(rst,!rst,---),
                     # or if the packet is the last one of the existing communication
@@ -689,7 +697,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                         if rfc793.flow_termination_r1:
                             rfc793.flow_initiated = False
                             rfc793.flow_terminated = True
-                            rfc793.biflow_any_eth_ipv4_tcp_termination_graceful = True
+                            rfc793.biflow_eth_ipv4_tcp_termination_graceful = True
                             # keep tcp biflow
                             rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = rfc793.get_rfc793_tcp_biflow_conceptual_features()
                             rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+3]
@@ -700,7 +708,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                         elif rfc793.flow_termination_r2:
                             rfc793.flow_initiated = False
                             rfc793.flow_terminated = True
-                            rfc793.biflow_any_eth_ipv4_tcp_termination_abort = True
+                            rfc793.biflow_eth_ipv4_tcp_termination_abort = True
                             # keep tcp biflow
                             rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = rfc793.get_rfc793_tcp_biflow_conceptual_features()
                             rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
@@ -711,7 +719,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                         elif rfc793.flow_termination_r3:
                             rfc793.flow_initiated = False
                             rfc793.flow_terminated = True
-                            rfc793.biflow_any_eth_ipv4_tcp_termination_null = True
+                            rfc793.biflow_eth_ipv4_tcp_termination_null = True
                             # keep tcp biflow
                             rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = rfc793.get_rfc793_tcp_biflow_conceptual_features()
                             rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
@@ -730,23 +738,23 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                     # =====================
                     if args.debug == "2":
                         # Initiation/Connection Types
-                        if rfc793.biflow_any_eth_ipv4_tcp_full_duplex_connection_established:
+                        if rfc793.biflow_eth_ipv4_tcp_full_duplex_connection_established:
                             print("[D] IPv4-TCP Full-Duplex Connection Established (3-way Handshake): " +\
                                 biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
-                        elif rfc793.biflow_any_eth_ipv4_tcp_half_duplex_connection_established:
+                        elif rfc793.biflow_eth_ipv4_tcp_half_duplex_connection_established:
                             print("[D] IPv4-TCP Half-Duplex Connection Established (2-way Handshake): " +\
                                 biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
-                        elif rfc793.biflow_any_eth_ipv4_tcp_connection_rejected:
+                        elif rfc793.biflow_eth_ipv4_tcp_connection_rejected:
                             print("[D] IPv4-TCP Rejected Connection (2-way Handshake): " + biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
-                        elif rfc793.biflow_any_eth_ipv4_tcp_connection_dropped:
+                        elif rfc793.biflow_eth_ipv4_tcp_connection_dropped:
                             print("[D] IPv4-TCP Dropped Connection (No Handshake): " + biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
 
                         # Termination Types
-                        if rfc793.biflow_any_eth_ipv4_tcp_termination_graceful:
+                        if rfc793.biflow_eth_ipv4_tcp_termination_graceful:
                             print("[D] IPv4-TCP Graceful Termination: " + biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
-                        elif rfc793.biflow_any_eth_ipv4_tcp_termination_abort:
+                        elif rfc793.biflow_eth_ipv4_tcp_termination_abort:
                             print("[D] IPv4-TCP Abort Termination: " + biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
-                        elif rfc793.biflow_any_eth_ipv4_tcp_termination_null:
+                        elif rfc793.biflow_eth_ipv4_tcp_termination_null:
                             print("[D] IPv4-TCP Null Termination: " + biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
 
                     # =====================================================================================================
@@ -784,26 +792,25 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
     return udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features, n_disconected_rfc793_packets
 
 def get_biflow_header_by_type(protocol_stack):
-    genes_dir = "network-objects" + os.sep + "genes"
-
+    """Use L3-L4 protocol stack to fetch correct biflow headers and return them as a list"""
     # IPv4
     if protocol_stack == "ipv4":
-        genes_file = genes_dir + os.sep + "ipv4-biflow-header.txt"
+        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "ipv4-biflow-header.txt"
     # IPv4 and generic layer 4
     elif protocol_stack == "ipv4-l4":
-        genes_file = genes_dir + os.sep + "ipv4-l4-biflow-header.txt"
+        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "ipv4-l4-biflow-header.txt"
     # IPv4 and TCP
     elif protocol_stack == "ipv4-tcp":
-        genes_file = genes_dir + os.sep + "ipv4-tcp-biflow-header.txt"
+        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "ipv4-tcp-biflow-header.txt"
     else:
         print("[!] Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4", file=sys.stderr, flush=True)
         sys.exit(1)
 
-    f = open(genes_file, "r")
-    genes_header_str = f.read().replace("\n", "|")
+    f = open(biflow_genes_file, "r")
+    biflow_genes_header_lst = f.read().split("\n")
     f.close()
 
-    return genes_header_str
+    return biflow_genes_header_lst
 
 def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4_tcp_biflows, ipv4_tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features):
     """Return L3-L4 biflow gene generators"""
@@ -813,18 +820,15 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
         # =================
         # IPv4 GENES HEADER
         # =================
-        ipv4_biflow_genes_header_str = get_biflow_header_by_type("ipv4")
-        ipv4_biflow_genes_header_list = ipv4_biflow_genes_header_str.split("|")
+        ipv4_biflow_genes_header_list = get_biflow_header_by_type("ipv4")
         # ===============
         # L4 GENES HEADER
         # ===============
-        ipv4_l4_biflow_genes_header_str = get_biflow_header_by_type("ipv4-l4")
-        ipv4_l4_biflow_genes_header_list = ipv4_l4_biflow_genes_header_str.split("|")
+        ipv4_l4_biflow_genes_header_list = get_biflow_header_by_type("ipv4-l4")
         # ================
         # TCP GENES HEADER
         # ================
-        ipv4_tcp_biflow_genes_header_str = get_biflow_header_by_type("ipv4-tcp")
-        ipv4_tcp_biflow_genes_header_list = ipv4_tcp_biflow_genes_header_str.split("|")
+        ipv4_tcp_biflow_genes_header_list = get_biflow_header_by_type("ipv4-tcp")
 
         for biflow_id in biflow_ids:
             # DEV-NOTE: curr_biflow[packet_index][packet_gene_index]
@@ -835,14 +839,14 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                 # ====================================
                 # Set Local L4 Conceptual Feature Vars
                 # ====================================
-                biflow_any_eth_ipv4_tcp_initiation_two_way_handshake = curr_biflow_l4_conceptual_features[0]
-                biflow_any_eth_ipv4_tcp_full_duplex_connection_established = curr_biflow_l4_conceptual_features[1]
-                biflow_any_eth_ipv4_tcp_half_duplex_connection_established = curr_biflow_l4_conceptual_features[2]
-                biflow_any_eth_ipv4_tcp_connection_rejected = curr_biflow_l4_conceptual_features[3]
-                biflow_any_eth_ipv4_tcp_connection_dropped = curr_biflow_l4_conceptual_features[4]
-                biflow_any_eth_ipv4_tcp_termination_graceful = curr_biflow_l4_conceptual_features[5]
-                biflow_any_eth_ipv4_tcp_termination_abort = curr_biflow_l4_conceptual_features[6]
-                biflow_any_eth_ipv4_tcp_termination_null = curr_biflow_l4_conceptual_features[7]
+                biflow_eth_ipv4_tcp_initiation_two_way_handshake = curr_biflow_l4_conceptual_features[0]
+                biflow_eth_ipv4_tcp_full_duplex_connection_established = curr_biflow_l4_conceptual_features[1]
+                biflow_eth_ipv4_tcp_half_duplex_connection_established = curr_biflow_l4_conceptual_features[2]
+                biflow_eth_ipv4_tcp_connection_rejected = curr_biflow_l4_conceptual_features[3]
+                biflow_eth_ipv4_tcp_connection_dropped = curr_biflow_l4_conceptual_features[4]
+                biflow_eth_ipv4_tcp_termination_graceful = curr_biflow_l4_conceptual_features[5]
+                biflow_eth_ipv4_tcp_termination_abort = curr_biflow_l4_conceptual_features[6]
+                biflow_eth_ipv4_tcp_termination_null = curr_biflow_l4_conceptual_features[7]
 
             # =========================
             # PREPARE DATA STRUCTURES |
@@ -1096,11 +1100,14 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             # ======================
             # ADDITIONAL INFORMATION
             # ======================
+            # Build bitalker_id and convert bitalker_id and biflow_id to strings
+            bitalker_id = bitalker_id_to_str(biflow_id_to_bitalker_id(biflow_id))
+            biflow_id = biflow_id_to_str(biflow_id)
+
             first_packet = curr_biflow[0]
             last_packet = curr_biflow[biflow_any_n_packets-1]
             first_packet_timestamp = first_packet[1]
             last_packet_timestamp = last_packet[1]
-
             biflow_any_first_packet_time = datetime_to_unixtime(first_packet_timestamp)
             biflow_any_last_packet_time = datetime_to_unixtime(last_packet_timestamp)
 
@@ -1587,10 +1594,9 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             # WRAP-UP RESULTS
             # ===============
             biflow_local_vars = locals()
-            biflow_gene_values_list = [biflow_local_vars[var_name] for var_name in ipv4_all_biflow_genes_header_list]
-            biflow_genes_generator = dict(zip(ipv4_all_biflow_genes_header_list, biflow_gene_values_list))
+            biflow_genes = [str(biflow_local_vars[var_name]) for var_name in ipv4_all_biflow_genes_header_list]
 
-            yield biflow_genes_generator
+            yield biflow_genes
 
     # IPv4-UDP Genes Generator
     ipv4_udp_biflow_genes_generator = calculate_l3_l4_biflow_genes(ipv4_udp_biflows, ipv4_udp_biflow_ids, l4_protocol="UDP")
@@ -1598,9 +1604,11 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
     ipv4_tcp_biflow_genes_generator = calculate_l3_l4_biflow_genes(ipv4_tcp_biflows, ipv4_tcp_biflow_ids,\
         l4_protocol="TCP", l4_conceptual_features=rfc793_tcp_biflow_conceptual_features)
 
-    return ipv4_udp_biflow_genes_generator, ipv4_tcp_biflow_genes_generator
+    # can return it a listed yelder since we're doing passive analysis, not real-time detection
+    # https://stackoverflow.com/questions/3487802/which-is-generally-faster-a-yield-or-an-append
+    return list(ipv4_udp_biflow_genes_generator), list(ipv4_tcp_biflow_genes_generator)
 
-def output_biflow_genes(ipv4_udp_biflow_genes_generator, ipv4_tcp_biflow_genes_generator, args, netmeter_globals):
+def output_biflow_genes(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst):
     """
     Output all flows and their genes with the following supported protocols, where important in:
         - L1: Ethernet
@@ -1608,72 +1616,90 @@ def output_biflow_genes(ipv4_udp_biflow_genes_generator, ipv4_tcp_biflow_genes_g
         - L3: IPv4
         - L4: UDP, TCP
     """
-    if args.output_type=="csv":
-        # ===
+
+    # ===============
+    # IPv4-UDP Header
+    # ===============
+    ipv4_udp_biflow_genes_header_lst = get_biflow_header_by_type("ipv4") + get_biflow_header_by_type("ipv4-l4")
+    # ===============
+    # IPv4-TCP Header
+    # ===============
+    ipv4_tcp_biflow_genes_header_lst = get_biflow_header_by_type("ipv4") + get_biflow_header_by_type("ipv4-l4") + get_biflow_header_by_type("ipv4-tcp")
+
+    if args.output_type == "csv":
+        os.makedirs(netmeter_globals.csv_output_dir, exist_ok=True)
+        print("[+] Output CSV directory:", cterminal.colors.BLUE + netmeter_globals.csv_output_dir + cterminal.colors.ENDC, flush=True)
+        # ===========
+        # CSV Headers
+        # ===========
+        ipv4_udp_biflow_genes_header_str = "|".join(ipv4_udp_biflow_genes_header_lst)
+        ipv4_tcp_biflow_genes_header_str = "|".join(ipv4_tcp_biflow_genes_header_lst)
+
+        # ========
+        # CSV Rows
+        # ========
+        # UDP
+        ipv4_udp_biflow_genes_str_lst = ["|".join(ipv4_udp_biflow_genes) for ipv4_udp_biflow_genes in ipv4_udp_biflow_genes_generator_lst]
+        ipv4_udp_biflow_genes_output = ipv4_udp_biflow_genes_header_str + "\n" + "\n".join(ipv4_udp_biflow_genes_str_lst)
+
         # TCP
-        # ===
-        # -------------------
-        # IPv4-TCP CSV Header
-        # -------------------
-        ipv4_tcp_biflow_genes_csv_str = get_biflow_header_by_type("ipv4") + "|" + \
-            get_biflow_header_by_type("ipv4-l4") + "|" + get_biflow_header_by_type("ipv4-tcp") + "\n"
+        ipv4_tcp_biflow_genes_str_lst = ["|".join(ipv4_tcp_biflow_genes) for ipv4_tcp_biflow_genes in ipv4_tcp_biflow_genes_generator_lst]
+        ipv4_tcp_biflow_genes_output = ipv4_tcp_biflow_genes_header_str + "\n" + "\n".join(ipv4_tcp_biflow_genes_str_lst)
 
-        # -------------------
-        # IPv4-TCP CSV Values
-        # -------------------
-        for ipv4_tcp_biflow_genes_dict in ipv4_tcp_biflow_genes_generator:
-            ipv4_tcp_biflow_genes_list = list(ipv4_tcp_biflow_genes_dict.values())
-            ipv4_tcp_biflow_genes_csv_str += generate_flow_line(ipv4_tcp_biflow_genes_list) + "\n"
-
-        # -----------------
-        # IPv4-TCP CSV Save
-        # -----------------
-        f = open(netmeter_globals.csv_output_dir + os.sep + "ipv4-tcp-biflows.csv", "w")
-        f.write(ipv4_tcp_biflow_genes_csv_str)
-        f.close()
-
-        ipv4_tcp_biflow_genes_csv_str = get_biflow_header_by_type("ipv4") + "|" + \
-            get_biflow_header_by_type("ipv4-l4") + "|" + get_biflow_header_by_type("ipv4-tcp") + "\n"
-
-        # -------------------
-        # IPv4-UDP CSV Header
-        # -------------------
-        ipv4_udp_biflow_genes_csv_str = get_biflow_header_by_type("ipv4") + "|" + \
-            get_biflow_header_by_type("ipv4-l4") + "\n"
-
-        # -------------------
-        # IPv4-UDP CSV Values
-        # -------------------
-        for ipv4_udp_biflow_genes_dict in ipv4_udp_biflow_genes_generator:
-            ipv4_udp_biflow_genes_list = list(ipv4_udp_biflow_genes_dict.values())
-            ipv4_udp_biflow_genes_csv_str += generate_flow_line(ipv4_udp_biflow_genes_list) + "\n"
-
-        # -----------------
+        # =================
         # IPv4-UDP CSV Save
-        # -----------------
+        # =================
         f = open(netmeter_globals.csv_output_dir + os.sep + "ipv4-udp-biflows.csv", "w")
-        f.write(ipv4_udp_biflow_genes_csv_str)
+        f.write(ipv4_udp_biflow_genes_output)
         f.close()
 
-def generate_network_objets(input_pcap_file, args, netmeter_globals):
+        # =================
+        # IPv4-TCP CSV Save
+        # =================
+        f = open(netmeter_globals.csv_output_dir + os.sep + "ipv4-tcp-biflows.csv", "w")
+        f.write(ipv4_tcp_biflow_genes_output)
+        f.close()
+
+def get_bitalker_header():
+    """Fetch bitalker header and return it as a list"""
+    bitalker_genes_file = netmeter_globals.genes_dir + os.sep + "bitalker-header.txt"
+
+    f = open(bitalker_genes_file, "r")
+    bitalker_genes_header_lst = f.read().split("\n")
+    f.close()
+
+    return bitalker_genes_header_lst
+
+def build_bitalkers(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst):
+    bitalker_genes_header_lst = get_bitalker_header()
+    bitalkers = dict()
+    bitalker_ids = list()
+    #for ipv4_udp_biflow_genes in ipv4_udp_biflow_genes_generator_lst:
+    #ipv4_tcp_biflow_genes_generator_lst
+    return bitalkers, bitalker_ids
+
+def generate_network_objets(input_pcap_file):
     """
-    Build all network objects: packets, flows, talkers and hosts
+    Build all network objects: packets, flows, bitalkers and hosts
     """
     if args.verbose:
         run_init_time = time.time()
-        print(make_header_string("1. Network Object Construction", separator="=", big_header=True), flush=True)
+        print(make_header_string("1. Packet Construction", separator="=", big_header=True), flush=True)
 
     # =======
     # Packets
     # =======
     packet_genes = build_packets(input_pcap_file, args)
 
+    if args.verbose:
+        print(make_header_string("2. Flow Construction", separator="=", big_header=True), flush=True)
+
     # ====================
     # Unidirectional Flows
     # ====================
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("1.2. Layer-3 Unidirectional Flows: IPv4"), flush=True)
+        print(make_header_string("2.1. Layer-3 Unidirectional Flows: IPv4"), flush=True)
 
     l3_uniflows, l3_uniflow_ids = build_l3_uniflows(packet_genes)
     del(packet_genes)
@@ -1682,7 +1708,7 @@ def generate_network_objets(input_pcap_file, args, netmeter_globals):
         n_preserved_packets = sum([len(l3_uniflows[l3_uniflow_id]) for l3_uniflow_id in l3_uniflow_ids])
         print("[+] Packets preserved:", n_preserved_packets, "IPv4 Packets", flush=True)
         print("[+] Flows detected:" + cterminal.colors.GREEN, len(l3_uniflow_ids), "IPv4 UniFlows" + cterminal.colors.ENDC, flush=True)
-        print("[+] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
 
     # ===================
     # Bidirectional Flows
@@ -1693,7 +1719,7 @@ def generate_network_objets(input_pcap_file, args, netmeter_globals):
     # -------
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("1.3. Layer-3 Bidirectional Flows: IPv4"), flush=True)
+        print(make_header_string("2.2. Layer-3 Bidirectional Flows: IPv4"), flush=True)
 
     l3_biflows, l3_biflow_ids = build_l3_biflows(l3_uniflows, l3_uniflow_ids)
     del(l3_uniflows)
@@ -1703,14 +1729,14 @@ def generate_network_objets(input_pcap_file, args, netmeter_globals):
         n_preserved_packets = sum([len(l3_biflows[l3_biflow_id]) for l3_biflow_id in l3_biflow_ids])
         print("[+] IPv4 Packets preserved:", n_preserved_packets, "IPv4 Packets", flush=True)
         print("[+] IPv4 BiFlows detected:" + cterminal.colors.GREEN, len(l3_biflows), "IPv4 BiFlows" + cterminal.colors.ENDC, flush=True)
-        print("[+] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
 
     # -------
     # Layer 4
     # -------
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("1.4. Layer-4 Bidirectional Flows: UDP and TCP"), flush=True)
+        print(make_header_string("2.3. Layer-4 Bidirectional Flows: UDP and TCP"), flush=True)
 
     udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features,\
         n_disconected_rfc793_packets = build_l4_biflows(l3_biflows, l3_biflow_ids, args)
@@ -1724,30 +1750,28 @@ def generate_network_objets(input_pcap_file, args, netmeter_globals):
         print("[+] IPv4-TCP Packets disconected:", n_disconected_rfc793_packets, "IPv4-TCP DCed Packets", flush=True)
         print("[+] IPv4-UDP Flows detected:" + cterminal.colors.GREEN, len(udp_biflows), "IPv4-UDP BiFlows" + cterminal.colors.ENDC, flush=True)
         print("[+] IPv4-TCP Flows detected:" + cterminal.colors.GREEN, len(tcp_biflows), "IPv4-TCP BiFlows" + cterminal.colors.ENDC, flush=True)
-        print("[+] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
 
     # =================
     # IPv4 BiFlow Genes
     # =================
     if args.verbose:
-        print(make_header_string("2. Layer-3 and Layer-4 Bidirectional Flow Genes", separator="=", big_header=True), flush=True)
-    # ------------------------------
-    # IPv4 Flow Feature Calculations
-    # ------------------------------
+        print(make_header_string("3. Layer-3 and Layer-4 Bidirectional Flow Genes", separator="=", big_header=True), flush=True)
+    # ------------------------------------------
+    # IPv4-L4-(TCP|UDP) BiFlow Gene Calculations
+    # ------------------------------------------
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("2.1. IPv4+GenericL4+(TCP|UDP) BiFlow Genes"), flush=True)
+        print(make_header_string("3.1. IPv4+GenericL4+(TCP|UDP) BiFlow Genes"), flush=True)
 
-    # TODO: use the udp and tcp biflows as input for get_l3_l4_biflow_gene_generators function and calculate specific l4 flow genes
-    # (merge TCP, think UDP/TCP)
-    ipv4_udp_biflow_genes_generator, ipv4_tcp_biflow_genes_generator =\
+    ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst =\
         get_l3_l4_biflow_gene_generators(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features)
 
     if args.verbose:
-        # minus 3 to remove biflow_id, biflow_any_first_packet_time and biflow_any_last_packet_time
-        ipv4_flow_genes_count = get_biflow_header_by_type("ipv4").count("|") + 1 - 3
-        ipv4_l4_genes_count = get_biflow_header_by_type("ipv4-l4").count("|") + 1
-        ipv4_tcp_genes_count = get_biflow_header_by_type("ipv4-tcp").count("|") + 1
+        # minus 4 to remove biflow_id, bitalker_id, biflow_any_first_packet_time and biflow_any_last_packet_time
+        ipv4_flow_genes_count = len(get_biflow_header_by_type("ipv4")) - 4
+        ipv4_l4_genes_count = len(get_biflow_header_by_type("ipv4-l4"))
+        ipv4_tcp_genes_count = len(get_biflow_header_by_type("ipv4-tcp"))
 
         print("[+] Calculated IPv4 BiFlow Genes:", ipv4_flow_genes_count, "BiFlow Genes", flush=True)
         print("[+] Calculated IPv4+GenericL4 BiFlow Genes:", ipv4_flow_genes_count + ipv4_l4_genes_count, "BiFlow Genes", flush=True)
@@ -1755,37 +1779,53 @@ def generate_network_objets(input_pcap_file, args, netmeter_globals):
             ipv4_flow_genes_count + ipv4_l4_genes_count, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
         print("[+] Calculated IPv4+GenericL4+TCP BiFlow Genes:" + cterminal.colors.GREEN, \
             ipv4_flow_genes_count + ipv4_l4_genes_count + ipv4_tcp_genes_count, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
-        print("[+] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
+        print("[T] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
 
-    # ------------------------
-    # IPv4 Flow Feature Output
-    # ------------------------
+    # ------------------------------------
+    # IPv4-L4-(TCP|UDP) BiFlow Gene Output
+    # ------------------------------------
     if args.verbose:
         module_init_time = time.time()
 
-    output_biflow_genes(ipv4_udp_biflow_genes_generator, ipv4_tcp_biflow_genes_generator, args, netmeter_globals)
-
-    # ---------------------
-    # Output directory info
-    # ---------------------
-    if args.output_type=="csv":
-        os.makedirs(netmeter_globals.csv_output_dir, exist_ok=True)
-        print("[+] Output CSV directory:", cterminal.colors.BLUE + netmeter_globals.csv_output_dir + cterminal.colors.ENDC, flush=True)
+    output_biflow_genes(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst)
 
     if args.verbose:
-        print("[+] Saved in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[T] Saved in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+
+    # ==============
+    # BiTalker Genes
+    # ==============
+    if args.verbose:
+        print(make_header_string("4. BiTalker Construction", separator="=", big_header=True), flush=True)
+
+    # --------------------------
+    # BiTalker Gene Calculations
+    # --------------------------
+    if args.verbose:
+        module_init_time = time.time()
+        print(make_header_string("4.1. BiTalkers"), flush=True)
+
+    bitalkers, bitalker_ids = build_bitalkers(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst)
+
+    if args.verbose:
+        n_bitalkers = 0
+        n_contemplated_ipv4_biflows = 0
+        n_contemplated_ipv4_udp_biflows = 0
+        n_contemplated_ipv4_tcp_biflows = 0
+        print("[+] IPv4 BiFlows contemplated:", n_contemplated_ipv4_biflows, "IPv4 BiFlows", flush=True)
+        print("[+] IPv4-UDP BiFlows contemplated:", n_contemplated_ipv4_udp_biflows, "IPv4-UDP BiFlows", flush=True)
+        print("[+] IPv4-TCP BiFlows contemplated:", n_contemplated_ipv4_tcp_biflows, "IPv4-TCP BiFlows", flush=True)
+        print("[+] BiTalkers detected:", n_bitalkers, "BiTalkers", flush=True)
+        print("[T] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
 
     # ========
     # FINISHED
     # ========
     if args.verbose:
         print(make_header_string("Total Extraction Time", separator="=", big_header=True), flush=True)
-        print("[+] Script took" + cterminal.colors.YELLOW, round(time.time() - run_init_time, 3), "seconds" + cterminal.colors.ENDC, "to complete", flush=True)
+        print("[T] Script took" + cterminal.colors.YELLOW, round(time.time() - run_init_time, 3), "seconds" + cterminal.colors.ENDC, "to complete", flush=True)
 
 def run():
-    args = NetMeterArgs().args
-    netmeter_globals = NetMeterGlobals(args)
-    
     os.makedirs(netmeter_globals.pcap_files_dir, exist_ok=True)
     os.makedirs(netmeter_globals.csv_files_dir, exist_ok=True)
 
@@ -1808,11 +1848,14 @@ def run():
         print("[+] Layer 4: TCP, UDP", flush=True, end="\n\n")
 
     with open(args.pcap_path, "rb") as input_pcap_file:
-        generate_network_objets(input_pcap_file, args, netmeter_globals)
+        generate_network_objets(input_pcap_file)
 
 # Reading Command-Line Output:
 # [!]: Error Information
 # [+]: Normal Information
+# [T]: Time Information
 # [D]: Debug Information
 if __name__ == "__main__":
+    args = NetMeterArgs().args
+    netmeter_globals = NetMeterGlobals(args)
     run()
