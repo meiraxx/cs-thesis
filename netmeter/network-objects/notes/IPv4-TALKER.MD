@@ -1,7 +1,7 @@
-# TALKER
+# IPv4-Talker
 ## CURRENT NUMBER OF GENES
-**176 Talker Genes:**  
-- 14 Conceptual Features
+**179 Talker Genes:**  
+- 17 Conceptual Features
 - 162 Statistical Features
 
 ## IDENTIFIER
@@ -17,22 +17,27 @@ talker_any_last_biflow_time
 ### Conceptual Features
 **Time Features**  
 talker_any_duration  
-talker_any_flows_per_sec  
-talker_fwd_flows_per_sec  
-talker_bwd_flows_per_sec  
+talker_any_biflows_per_sec  
+talker_fwd_biflows_per_sec  
+talker_bwd_biflows_per_sec  
 talker_any_biflow_bytes_per_sec  
 talker_fwd_biflow_bytes_per_sec  
 talker_bwd_biflow_bytes_per_sec  
 
 **Flow Number Features**  
-talker_n_any_flows  
-talker_n_fwd_flows  
-talker_n_bwd_flows  
+talker_n_any_biflows  
+talker_n_fwd_biflows  
+talker_n_bwd_biflows  
 
 **TCP Flow Number Features**  
-talker_n_any_tcp_flows  
-talker_n_fwd_tcp_flows  
-talker_n_bwd_tcp_flows  
+talker_n_any_tcp_biflows  
+talker_n_fwd_tcp_biflows  
+talker_n_bwd_tcp_biflows  
+
+**UDP Flow Number Features**  
+talker_n_any_udp_biflows  
+talker_n_fwd_udp_biflows  
+talker_n_bwd_udp_biflows  
 
 **Destination Port Features**  
 talker_n_unique_dst_ports  
