@@ -1,5 +1,5 @@
 # IPv4-BiFlow
-## Extended by: TCP-BiFlow
+## Extended by: BiFlow-IPv4-L4, BiFlow-IPv4-TCP
 ## CURRENT NUMBER OF GENES
 **100 Biflow Genes:**
 - 10 Conceptual Features

@@ -158,19 +158,23 @@ def biflow_id_to_pcap_filter(biflow_id):
     pcap_filter = src_ip_filter + "&&" + src_port_filter
     return pcap_filter
 
-def bitalker_id_to_str(bitalker_id):
-    """Convert bitalker_id tuple to string"""
-    # we're mapping two IPs which are already strings, but no problem because IPs will eventually be integer
-    return "-".join(map(str,bitalker_id))
-
 def biflow_id_to_bitalker_id(biflow_id):
     """Get biflow_id's correspondent bitalker_id"""
-    bitalker_id = (biflow_id[0], biflow_id[2])
+    # Note: we remodified the definition of bitalker to keep the BiFlow protocol_stack because then we can
+    # cluster most biflow genes while considering different protocols at this level
+    bitalker_id = (biflow_id[0], biflow_id[2], biflow_id[4])
     return bitalker_id
 
-def biflow_id_to_str(biflow_id):
-    """Convert biflow_id tuple to string"""
-    return "-".join(map(str,biflow_id))
+def bitalker_id_to_bihost_id(bitalker_id):
+    """Get bitalker_id's correspondent bihost_id"""
+    # Note: we will keep this network object definition without the protocol_stack because BiTalkers do not have
+    # too much protocol_stack-dependent genes, which means there won't be too many different genes at this level
+    bihost_id = bitalker_id[0]
+    return bihost_id
+
+def iterator_to_str(iterator, separator="-"):
+    """Convert biflow_id or bitalker_id iterables to string"""
+    return separator.join(map(str,iterator))
 
 def datetime_to_unixtime(datetime_str):
     time_scale_factor = 1000.0
@@ -396,8 +400,8 @@ def build_packets(input_pcap_file, args):
             # ===================
             # TCP packet genes
             # ===================
-            #https://en.wikipedia.org/wiki/Transmission_Control_Protocol
-            #https://tools.ietf.org/html/rfc793
+            # https://en.wikipedia.org/wiki/Transmission_Control_Protocol
+            # https://tools.ietf.org/html/rfc793
 
             tcp_fin_flag = ( l4_layer.flags & dpkt.tcp.TH_FIN ) != 0
             tcp_syn_flag = ( l4_layer.flags & dpkt.tcp.TH_SYN ) != 0
@@ -413,8 +417,8 @@ def build_packets(input_pcap_file, args):
             # ================
             # UDP packet genes
             # ================
-            #https://pdfs.semanticscholar.org/3648/75dcf14e886a9f9fa9310bb6fd9c8a4f4105.pdf
-            # TODO: in case it applies, do udp packet genes
+            # https://pdfs.semanticscholar.org/3648/75dcf14e886a9f9fa9310bb6fd9c8a4f4105.pdf
+            # MAYBE-TODO: in case it applies, do udp packet genes
             udp_packet_genes = []
             packet_genes += udp_packet_genes
         # store packet genes
@@ -450,8 +454,11 @@ def build_l3_uniflows(packets):
             l3_uniflows[flow_id].append(packet)
         except KeyError:
             l3_uniflows[flow_id] = [packet]
-    #remove duplicates mantaining order
+
+    # remove duplicates mantaining order
+    # SHOULD-TODO: use right data structure from the start
     l3_uniflow_ids = list(OrderedDict.fromkeys(l3_uniflow_ids))
+
     return l3_uniflows, l3_uniflow_ids
 
 def build_l3_biflows(l3_uniflows, l3_uniflow_ids):
@@ -561,7 +568,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
     build layer-4 bidirectional flows according to TCP and UDP RFCs"""
     def build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids, args):
         """Local helper function to build TCP BiFlows according to RFC793"""
-        # FUTURE-TODO: validate using tcp_seq
+        # COULD-TODO: validate using tcp_seq
         rfc793_tcp_biflow_conceptual_features = dict()
         rfc793_tcp_biflows = dict()
         rfc793_tcp_biflow_ids = []
@@ -795,13 +802,13 @@ def get_biflow_header_by_type(protocol_stack):
     """Use L3-L4 protocol stack to fetch correct biflow headers and return them as a list"""
     # IPv4
     if protocol_stack == "ipv4":
-        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "ipv4-biflow-header.txt"
+        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "biflow-ipv4-header.txt"
     # IPv4 and generic layer 4
     elif protocol_stack == "ipv4-l4":
-        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "ipv4-l4-biflow-header.txt"
+        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "biflow-ipv4-l4-header.txt"
     # IPv4 and TCP
     elif protocol_stack == "ipv4-tcp":
-        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "ipv4-tcp-biflow-header.txt"
+        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "biflow-ipv4-tcp-header.txt"
     else:
         print("[!] Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4", file=sys.stderr, flush=True)
         sys.exit(1)
@@ -1101,8 +1108,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             # ADDITIONAL INFORMATION
             # ======================
             # Build bitalker_id and convert bitalker_id and biflow_id to strings
-            bitalker_id = bitalker_id_to_str(biflow_id_to_bitalker_id(biflow_id))
-            biflow_id = biflow_id_to_str(biflow_id)
+            bitalker_id = iterator_to_str(biflow_id_to_bitalker_id(biflow_id))
+            biflow_id = iterator_to_str(biflow_id)
 
             first_packet = curr_biflow[0]
             last_packet = curr_biflow[biflow_any_n_packets-1]
@@ -1660,9 +1667,22 @@ def output_biflow_genes(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_gen
         f.write(ipv4_tcp_biflow_genes_output)
         f.close()
 
-def get_bitalker_header():
-    """Fetch bitalker header and return it as a list"""
-    bitalker_genes_file = netmeter_globals.genes_dir + os.sep + "bitalker-header.txt"
+def get_bitalker_header_by_type(protocol_stack):
+    """Use L3-L4 protocol stack to fetch correct bitalker headers and return them as a list"""
+    bitalker_genes_file = netmeter_globals.genes_dir + os.sep + "bitalker-ipv4-header.txt"
+
+    # IPv4
+    if protocol_stack == "ipv4":
+        bitalker_genes_header_lst = netmeter_globals.genes_dir + os.sep + "bitalker-ipv4-header.txt"
+    # IPv4 and generic layer 4
+    elif protocol_stack == "ipv4-l4":
+        bitalker_genes_header_lst = netmeter_globals.genes_dir + os.sep + "bitalker-ipv4-l4-header.txt"
+    # IPv4 and TCP
+    elif protocol_stack == "ipv4-tcp":
+        bitalker_genes_header_lst = netmeter_globals.genes_dir + os.sep + "bitalker-ipv4-tcp-header.txt"
+    else:
+        print("[!] Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4", file=sys.stderr, flush=True)
+        sys.exit(1)
 
     f = open(bitalker_genes_file, "r")
     bitalker_genes_header_lst = f.read().split("\n")
@@ -1670,13 +1690,81 @@ def get_bitalker_header():
 
     return bitalker_genes_header_lst
 
-def build_bitalkers(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst):
-    bitalker_genes_header_lst = get_bitalker_header()
-    bitalkers = dict()
-    bitalker_ids = list()
-    #for ipv4_udp_biflow_genes in ipv4_udp_biflow_genes_generator_lst:
-    #ipv4_tcp_biflow_genes_generator_lst
-    return bitalkers, bitalker_ids
+def calculate_bitalker_genes():
+    """Calculate BiTalker Genes from UDP and TCP BiFlow Genes"""
+    # ==============
+    # BiTalker Genes
+    # ==============
+    # Note: IP and TCP statistical features are not added because it's an exaggeration at this level  
+    """
+    bitalker_genes_header_lst = get_bitalker_header_by_type("ipv4")
+    first_biflow = ipv4_udp_biflow_genes[0]
+    last_biflow = ipv4_udp_biflow_genes[-1]
+
+    # ----------------------
+    # Additional Information
+    # ----------------------
+    bihost_id = bitalker_id_to_bihost_id()
+    # first_biflow_initiation_time: bitalker_iniation_time
+    bitalker_any_first_biflow_initiation_time = first_biflow[2]
+    # last_biflow_termination_time: bitalker_termination_time
+    bitalker_any_last_biflow_termination_time = last_biflow[3]
+    bitalker_any_duration = bitalker_any_last_biflow_termination_time - 
+    for ipv4_udp_biflow_genes in ipv4_udp_biflow_genes_generator_lst:
+        # ID
+        curr_biflow_id = ipv4_udp_biflow_genes[0]
+        curr_talker_id = biflow_id_to_bitalker_id(curr_biflow_id)
+
+        # Additional Info
+        bitalker_id = ipv4_udp_biflow_genes[1]
+        biflow_any_first_packet_time = ipv4_udp_biflow_genes[2]
+        biflow_any_last_packet_time = ipv4_udp_biflow_genes[3]
+
+        # ============
+        # BiFlow Genes
+        # ============
+        # Note: Only conceptual features are considered
+        biflow_any_duration = ipv4_udp_biflow_genes[4]
+        biflow_any_n_packets = ipv4_udp_biflow_genes[5]
+        biflow_fwd_n_packets = ipv4_udp_biflow_genes[6]
+        biflow_bwd_n_packets = ipv4_udp_biflow_genes[7]
+        biflow_any_packets_per_sec = ipv4_udp_biflow_genes[8]
+        biflow_fwd_packets_per_sec = ipv4_udp_biflow_genes[9]
+        biflow_bwd_packets_per_sec = ipv4_udp_biflow_genes[10]
+        biflow_any_bytes_per_sec = ipv4_udp_biflow_genes[11]
+        biflow_fwd_bytes_per_sec = ipv4_udp_biflow_genes[12]
+        biflow_bwd_bytes_per_sec = ipv4_udp_biflow_genes[13]
+
+        print(len(ipv4_udp_biflow_genes))
+    """
+    return
+
+def build_l4_bitalkers(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids):
+    """Build L4 BiTalkers"""
+    def build_bitalkers(biflows, biflow_ids):
+        """Build BiTalkers"""
+        bitalkers = dict()
+        bitalker_ids = list()
+
+        for biflow_id in biflow_ids:
+            bitalker_id = biflow_id_to_bitalker_id(biflow_id)
+            biflow = biflows[biflow_id]
+            bitalker_ids.append(bitalker_id)
+            try:
+                bitalkers[bitalker_id].append(biflow)
+            except:
+                bitalkers[bitalker_id] = [biflow]
+
+        #SHOULD-TODO: use right data structure from the start
+        #remove duplicates mantaining order
+        bitalker_ids = list(OrderedDict.fromkeys(bitalker_ids))
+
+        return bitalkers, bitalker_ids
+
+    udp_bitalkers, udp_bitalker_ids = build_bitalkers(udp_biflows, udp_biflow_ids)
+    tcp_bitalkers, tcp_bitalker_ids = build_bitalkers(tcp_biflows, tcp_biflow_ids)
+
+    return udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids
 
 def generate_network_objets(input_pcap_file):
     """
@@ -1692,7 +1780,7 @@ def generate_network_objets(input_pcap_file):
     packet_genes = build_packets(input_pcap_file, args)
 
     if args.verbose:
-        print(make_header_string("2. Flow Construction", separator="=", big_header=True), flush=True)
+        print(make_header_string("2. Bidirectional Flow Construction", separator="=", big_header=True), flush=True)
 
     # ====================
     # Unidirectional Flows
@@ -1740,7 +1828,9 @@ def generate_network_objets(input_pcap_file):
 
     udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features,\
         n_disconected_rfc793_packets = build_l4_biflows(l3_biflows, l3_biflow_ids, args)
-    
+    del(l3_biflows)
+    del(l3_biflow_ids)
+
     if args.verbose:
         n_preserved_udp_packets = sum([len(udp_biflows[udp_biflow_id]) for udp_biflow_id in udp_biflow_ids])
         n_preserved_tcp_packets = sum([len(tcp_biflows[tcp_biflow_id]) for tcp_biflow_id in tcp_biflow_ids])
@@ -1748,21 +1838,21 @@ def generate_network_objets(input_pcap_file):
         print("[+] IPv4-UDP Packets preserved:", n_preserved_udp_packets, "IPv4-UDP OK Packets", flush=True)
         print("[+] IPv4-TCP Packets preserved:", n_preserved_tcp_packets, "IPv4-TCP OK Packets", flush=True)
         print("[+] IPv4-TCP Packets disconected:", n_disconected_rfc793_packets, "IPv4-TCP DCed Packets", flush=True)
-        print("[+] IPv4-UDP Flows detected:" + cterminal.colors.GREEN, len(udp_biflows), "IPv4-UDP BiFlows" + cterminal.colors.ENDC, flush=True)
-        print("[+] IPv4-TCP Flows detected:" + cterminal.colors.GREEN, len(tcp_biflows), "IPv4-TCP BiFlows" + cterminal.colors.ENDC, flush=True)
+        print("[+] IPv4-UDP BiFlows detected:" + cterminal.colors.GREEN, len(udp_biflows), "IPv4-UDP BiFlows" + cterminal.colors.ENDC, flush=True)
+        print("[+] IPv4-TCP BiFlows detected:" + cterminal.colors.GREEN, len(tcp_biflows), "IPv4-TCP BiFlows" + cterminal.colors.ENDC, flush=True)
         print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
 
-    # =================
-    # IPv4 BiFlow Genes
-    # =================
+    # ==============================
+    # IPv4-L4-(UDP|TCP) BiFlow Genes
+    # ==============================
     if args.verbose:
         print(make_header_string("3. Layer-3 and Layer-4 Bidirectional Flow Genes", separator="=", big_header=True), flush=True)
     # ------------------------------------------
-    # IPv4-L4-(TCP|UDP) BiFlow Gene Calculations
+    # IPv4-L4-(UDP|TCP) BiFlow Gene Calculations
     # ------------------------------------------
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("3.1. IPv4+GenericL4+(TCP|UDP) BiFlow Genes"), flush=True)
+        print(make_header_string("3.1. IPv4+GenericL4+(UDP|TCP) BiFlow Genes"), flush=True)
 
     ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst =\
         get_l3_l4_biflow_gene_generators(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features)
@@ -1782,7 +1872,7 @@ def generate_network_objets(input_pcap_file):
         print("[T] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
 
     # ------------------------------------
-    # IPv4-L4-(TCP|UDP) BiFlow Gene Output
+    # IPv4-L4-(UDP|TCP) BiFlow Gene Output
     # ------------------------------------
     if args.verbose:
         module_init_time = time.time()
@@ -1792,32 +1882,37 @@ def generate_network_objets(input_pcap_file):
     if args.verbose:
         print("[T] Saved in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
 
-    # ==============
-    # BiTalker Genes
-    # ==============
+    # =====================
+    # Bidirectional Talkers
+    # =====================
     if args.verbose:
-        print(make_header_string("4. BiTalker Construction", separator="=", big_header=True), flush=True)
+        print(make_header_string("4. Bidirectional Talker Construction", separator="=", big_header=True), flush=True)
 
-    # --------------------------
-    # BiTalker Gene Calculations
-    # --------------------------
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("4.1. BiTalkers"), flush=True)
+        print(make_header_string("4.1. Layer-4 BiTalkers: UDP and TCP"), flush=True)
 
-    bitalkers, bitalker_ids = build_bitalkers(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst)
-
+    udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids = build_l4_bitalkers(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids)
     if args.verbose:
-        n_bitalkers = 0
-        n_contemplated_ipv4_biflows = 0
-        n_contemplated_ipv4_udp_biflows = 0
-        n_contemplated_ipv4_tcp_biflows = 0
-        print("[+] IPv4 BiFlows contemplated:", n_contemplated_ipv4_biflows, "IPv4 BiFlows", flush=True)
+        n_contemplated_ipv4_udp_biflows = sum([len(udp_bitalkers[udp_bitalker_id]) for udp_bitalker_id in udp_bitalker_ids])
+        n_contemplated_ipv4_tcp_biflows = sum([len(tcp_bitalkers[tcp_bitalker_id]) for tcp_bitalker_id in tcp_bitalker_ids])
+        n_ipv4_udp_bitalkers = len(udp_bitalker_ids)
+        n_ipv4_tcp_bitalkers = len(tcp_bitalker_ids)
+
         print("[+] IPv4-UDP BiFlows contemplated:", n_contemplated_ipv4_udp_biflows, "IPv4-UDP BiFlows", flush=True)
         print("[+] IPv4-TCP BiFlows contemplated:", n_contemplated_ipv4_tcp_biflows, "IPv4-TCP BiFlows", flush=True)
-        print("[+] BiTalkers detected:", n_bitalkers, "BiTalkers", flush=True)
+        print("[+] IPv4-UDP BiTalkers detected:" + cterminal.colors.GREEN, n_ipv4_udp_bitalkers, "IPv4-UDP BiTalkers" + cterminal.colors.ENDC, flush=True)
+        print("[+] IPv4-TCP BiTalkers detected:" + cterminal.colors.GREEN, n_ipv4_tcp_bitalkers, "IPv4-TCP BiTalkers" + cterminal.colors.ENDC, flush=True)
         print("[T] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
 
+    # ================================
+    # IPv4-L4-(UDP|TCP) BiTalker Genes
+    # ================================
+    if args.verbose:
+        print(make_header_string("5. BiTalker Construction", separator="=", big_header=True), flush=True)
+
+    # TODO: do bitalker genes and use rfc793_tcp_biflow_conceptual_features
+    
     # ========
     # FINISHED
     # ========
