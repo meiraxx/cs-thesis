@@ -1,9 +1,11 @@
 # BiTalker
 ## Extended by: BiTalker-IPv4-L4, BiTalker-IPv4-TCP
 ## CURRENT NUMBER OF GENES
-**83 BiTalker Genes:**  
-- 11 Conceptual Features
-- 72 Statistical Features
+**100 BiTalker Genes:**  
+- 10 Conceptual Features
+- 90 Statistical Features
+
+Note: forward/backward BiFlows are not considered, forward/backward BiTalkers are  
 
 ## IDENTIFIER
 **bitalker_id (joined 3-tuple):**  
@@ -19,9 +21,6 @@ bitalker_any_last_biflow_termination_time
 ### Conceptual Features
 **Time Features**  
 bitalker_any_duration  
-
-**Destination Port Features**  
-bitalker_n_unique_dst_ports  
 
 **BiFlow Number Features**  
 bitalker_any_n_biflows  
@@ -40,29 +39,51 @@ bitalker_bwd_biflow_bytes_per_sec
 
 ### Statistical Features
 **IP Previous Statistical Features**  
-Not added because it's an exaggeration at this level  
+Excluding IPv4 Data Lengthes, not added because it's an exaggeration at this level  
+
+*IPv4 Data Lengthes*  
+bitalker_any_biflow_eth_ipv4_data_lens_total  
+bitalker_any_biflow_eth_ipv4_data_lens_mean  
+bitalker_any_biflow_eth_ipv4_data_lens_std  
+bitalker_any_biflow_eth_ipv4_data_lens_var  
+bitalker_any_biflow_eth_ipv4_data_lens_max  
+bitalker_any_biflow_eth_ipv4_data_lens_min  
+
+bitalker_fwd_biflow_eth_ipv4_data_lens_total  
+bitalker_fwd_biflow_eth_ipv4_data_lens_mean  
+bitalker_fwd_biflow_eth_ipv4_data_lens_std  
+bitalker_fwd_biflow_eth_ipv4_data_lens_var  
+bitalker_fwd_biflow_eth_ipv4_data_lens_max  
+bitalker_fwd_biflow_eth_ipv4_data_lens_min  
+
+bitalker_bwd_biflow_eth_ipv4_data_lens_total  
+bitalker_bwd_biflow_eth_ipv4_data_lens_mean  
+bitalker_bwd_biflow_eth_ipv4_data_lens_std  
+bitalker_bwd_biflow_eth_ipv4_data_lens_var  
+bitalker_bwd_biflow_eth_ipv4_data_lens_max  
+bitalker_bwd_biflow_eth_ipv4_data_lens_min  
 
 **Packet Features**  
 bitalker_any_biflow_n_packets_total  
 bitalker_any_biflow_n_packets_mean  
+bitalker_any_biflow_n_packets_std  
+bitalker_any_biflow_n_packets_var  
 bitalker_any_biflow_n_packets_max  
 bitalker_any_biflow_n_packets_min  
-bitalker_any_biflow_n_packets_var  
-bitalker_any_biflow_n_packets_std  
 
 bitalker_fwd_biflow_n_packets_total  
 bitalker_fwd_biflow_n_packets_mean  
+bitalker_fwd_biflow_n_packets_std  
+bitalker_fwd_biflow_n_packets_var  
 bitalker_fwd_biflow_n_packets_max  
 bitalker_fwd_biflow_n_packets_min  
-bitalker_fwd_biflow_n_packets_var  
-bitalker_fwd_biflow_n_packets_std  
 
 bitalker_bwd_biflow_n_packets_total  
 bitalker_bwd_biflow_n_packets_mean  
+bitalker_bwd_biflow_n_packets_std  
+bitalker_bwd_biflow_n_packets_var  
 bitalker_bwd_biflow_n_packets_max  
 bitalker_bwd_biflow_n_packets_min  
-bitalker_bwd_biflow_n_packets_var  
-bitalker_bwd_biflow_n_packets_std  
 
 **Time Features**  
 *BiFlow Durations*  

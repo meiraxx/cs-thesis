@@ -176,6 +176,10 @@ def iterator_to_str(iterator, separator="-"):
     """Convert biflow_id or bitalker_id iterables to string"""
     return separator.join(map(str,iterator))
 
+def str_to_iterator(string, separator="-"):
+    """Convert biflow_id or bitalker_id iterables to string"""
+    return string.split(separator)
+
 def datetime_to_unixtime(datetime_str):
     time_scale_factor = 1000.0
     datetime_format1 = "%Y-%m-%d %H:%M:%S.%f"
@@ -798,26 +802,35 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
     #tcp_biflows, tcp_biflow_ids = tmp_tcp_biflows, tmp_tcp_biflow_ids
     return udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features, n_disconected_rfc793_packets
 
-def get_biflow_header_by_type(protocol_stack):
-    """Use L3-L4 protocol stack to fetch correct biflow headers and return them as a list"""
-    # IPv4
-    if protocol_stack == "ipv4":
-        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "biflow-ipv4-header.txt"
-    # IPv4 and generic layer 4
-    elif protocol_stack == "ipv4-l4":
-        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "biflow-ipv4-l4-header.txt"
-    # IPv4 and TCP
-    elif protocol_stack == "ipv4-tcp":
-        biflow_genes_file = netmeter_globals.genes_dir + os.sep + "biflow-ipv4-tcp-header.txt"
-    else:
-        print("[!] Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4", file=sys.stderr, flush=True)
+def check_supported_network_objects(network_object_type):
+    """ Check if network object type is supported"""
+    if network_object_type not in ("biflow", "bitalker"):
+        print("[!] Network object type \"" + network_object_type + "\" not supported. Supported protocol stacks: ipv4",\
+            file=sys.stderr, flush=True)
         sys.exit(1)
 
-    f = open(biflow_genes_file, "r")
-    biflow_genes_header_lst = f.read().split("\n")
+def check_supported_protocol_stacks(protocol_stack):
+    """ Check if protocol stack is supported"""
+    if protocol_stack not in ("ipv4", "ipv4-l4", "ipv4-tcp"):
+        print("[!] Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4",\
+            file=sys.stderr, flush=True)
+        sys.exit(1)
+
+def get_network_object_header(network_object_type, protocol_stack):
+    """Use L3-L4 protocol stack to fetch correct biflow headers and return them as a list"""
+
+    # Check network object type
+    check_supported_network_objects(network_object_type)
+    # Check protocol stack
+    check_supported_protocol_stacks(protocol_stack)
+
+    # Get NetGenes header in the form of a list
+    net_genes_filepath = netmeter_globals.genes_dir + os.sep + "%s-%s-header.txt"%(network_object_type, protocol_stack)
+    f = open(net_genes_filepath, "r")
+    net_genes_header_lst = f.read().split("\n")
     f.close()
 
-    return biflow_genes_header_lst
+    return net_genes_header_lst
 
 def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4_tcp_biflows, ipv4_tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features):
     """Return L3-L4 biflow gene generators"""
@@ -827,15 +840,25 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
         # =================
         # IPv4 GENES HEADER
         # =================
-        ipv4_biflow_genes_header_list = get_biflow_header_by_type("ipv4")
+        ipv4_biflow_genes_header_list = get_network_object_header("biflow", "ipv4")
         # ===============
         # L4 GENES HEADER
         # ===============
-        ipv4_l4_biflow_genes_header_list = get_biflow_header_by_type("ipv4-l4")
+        ipv4_l4_biflow_genes_header_list = get_network_object_header("biflow", "ipv4-l4")
         # ================
         # TCP GENES HEADER
         # ================
-        ipv4_tcp_biflow_genes_header_list = get_biflow_header_by_type("ipv4-tcp")
+        ipv4_tcp_biflow_genes_header_list = get_network_object_header("biflow", "ipv4-tcp")
+
+        # IPv4 Header
+        ipv4_all_biflow_genes_header_list = ipv4_biflow_genes_header_list
+        if l4_protocol:
+            # IPv4-L4 Header
+            ipv4_all_biflow_genes_header_list += ipv4_l4_biflow_genes_header_list
+            if l4_protocol == "UDP":
+                pass
+            elif l4_protocol == "TCP":
+                ipv4_all_biflow_genes_header_list += ipv4_tcp_biflow_genes_header_list
 
         for biflow_id in biflow_ids:
             # DEV-NOTE: curr_biflow[packet_index][packet_gene_index]
@@ -846,19 +869,20 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                 # ====================================
                 # Set Local L4 Conceptual Feature Vars
                 # ====================================
-                biflow_eth_ipv4_tcp_initiation_two_way_handshake = curr_biflow_l4_conceptual_features[0]
-                biflow_eth_ipv4_tcp_full_duplex_connection_established = curr_biflow_l4_conceptual_features[1]
-                biflow_eth_ipv4_tcp_half_duplex_connection_established = curr_biflow_l4_conceptual_features[2]
-                biflow_eth_ipv4_tcp_connection_rejected = curr_biflow_l4_conceptual_features[3]
-                biflow_eth_ipv4_tcp_connection_dropped = curr_biflow_l4_conceptual_features[4]
-                biflow_eth_ipv4_tcp_termination_graceful = curr_biflow_l4_conceptual_features[5]
-                biflow_eth_ipv4_tcp_termination_abort = curr_biflow_l4_conceptual_features[6]
-                biflow_eth_ipv4_tcp_termination_null = curr_biflow_l4_conceptual_features[7]
+                # TCP
+                if l4_protocol == "TCP":
+                    biflow_eth_ipv4_tcp_initiation_two_way_handshake = curr_biflow_l4_conceptual_features[0]
+                    biflow_eth_ipv4_tcp_full_duplex_connection_established = curr_biflow_l4_conceptual_features[1]
+                    biflow_eth_ipv4_tcp_half_duplex_connection_established = curr_biflow_l4_conceptual_features[2]
+                    biflow_eth_ipv4_tcp_connection_rejected = curr_biflow_l4_conceptual_features[3]
+                    biflow_eth_ipv4_tcp_connection_dropped = curr_biflow_l4_conceptual_features[4]
+                    biflow_eth_ipv4_tcp_termination_graceful = curr_biflow_l4_conceptual_features[5]
+                    biflow_eth_ipv4_tcp_termination_abort = curr_biflow_l4_conceptual_features[6]
+                    biflow_eth_ipv4_tcp_termination_null = curr_biflow_l4_conceptual_features[7]
 
             # =========================
             # PREPARE DATA STRUCTURES |
             # =========================
-
             # ======
             # Packet
             # ======
@@ -868,6 +892,11 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             biflow_any_n_packets = len(curr_biflow)
             biflow_fwd_n_packets = 0
             biflow_bwd_n_packets = 0
+
+            # ================================
+            # Packet & Byte Frequency Features
+            # ================================
+            # done below
 
             # -------------------
             # Inter-arrival Times
@@ -1107,12 +1136,12 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             # ======================
             # ADDITIONAL INFORMATION
             # ======================
-            # Build bitalker_id and convert bitalker_id and biflow_id to strings
+            # Get bitalker_id and convert bitalker_id and biflow_id to strings
             bitalker_id = iterator_to_str(biflow_id_to_bitalker_id(biflow_id))
             biflow_id = iterator_to_str(biflow_id)
 
             first_packet = curr_biflow[0]
-            last_packet = curr_biflow[biflow_any_n_packets-1]
+            last_packet = curr_biflow[-1]
             first_packet_timestamp = first_packet[1]
             last_packet_timestamp = last_packet[1]
             biflow_any_first_packet_time = datetime_to_unixtime(first_packet_timestamp)
@@ -1136,8 +1165,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             biflow_fwd_eth_ipv4_data_len_min = round(min(biflow_fwd_eth_ipv4_data_lens), 3)
 
             if len(biflow_bwd_eth_ipv4_data_lens) == 0:
-                biflow_bwd_eth_ipv4_data_len_total = biflow_bwd_eth_ipv4_data_len_mean = biflow_bwd_eth_ipv4_data_len_std = \
-                    biflow_bwd_eth_ipv4_data_len_var = biflow_bwd_eth_ipv4_data_len_max = biflow_bwd_eth_ipv4_data_len_min = 0.0
+                biflow_bwd_eth_ipv4_data_len_total = biflow_bwd_eth_ipv4_data_len_max = biflow_bwd_eth_ipv4_data_len_min = 0
+                biflow_bwd_eth_ipv4_data_len_mean = biflow_bwd_eth_ipv4_data_len_std = biflow_bwd_eth_ipv4_data_len_var = 0.0
             else:
                 biflow_bwd_eth_ipv4_data_len_total = round(sum(biflow_bwd_eth_ipv4_data_lens), 3)
                 biflow_bwd_eth_ipv4_data_len_mean = round(np.mean(biflow_bwd_eth_ipv4_data_lens), 3)
@@ -1189,8 +1218,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             biflow_fwd_eth_ipv4_header_len_min = round(min(biflow_fwd_eth_ipv4_header_lens), 3)
 
             if len(biflow_bwd_eth_ipv4_header_lens) == 0:
-                biflow_bwd_eth_ipv4_header_len_total = biflow_bwd_eth_ipv4_header_len_mean = biflow_bwd_eth_ipv4_header_len_std = \
-                    biflow_bwd_eth_ipv4_header_len_var = biflow_bwd_eth_ipv4_header_len_max = biflow_bwd_eth_ipv4_header_len_min = 0.0
+                biflow_bwd_eth_ipv4_header_len_total = biflow_bwd_eth_ipv4_header_len_max = biflow_bwd_eth_ipv4_header_len_min = 0
+                biflow_bwd_eth_ipv4_header_len_mean = biflow_bwd_eth_ipv4_header_len_std = biflow_bwd_eth_ipv4_header_len_var = 0.0
             else:
                 biflow_bwd_eth_ipv4_header_len_total = round(sum(biflow_bwd_eth_ipv4_header_lens), 3)
                 biflow_bwd_eth_ipv4_header_len_mean = round(np.mean(biflow_bwd_eth_ipv4_header_lens), 3)
@@ -1205,7 +1234,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             # ==========================
             # Packet IATs need at least 2 packets to be properly populated
             if len(biflow_any_iats) == 0:
-                biflow_any_iat_total = biflow_any_iat_mean = biflow_any_iat_std = biflow_any_iat_var = biflow_any_iat_max = biflow_any_iat_min = 0.0
+                biflow_any_iat_total = biflow_any_iat_max = biflow_any_iat_min = 0.0
+                biflow_any_iat_mean = biflow_any_iat_std = biflow_any_iat_var = 0.0
             else:
                 biflow_any_iat_total = round(sum(biflow_any_iats), 3)
                 biflow_any_iat_mean = round(np.mean(biflow_any_iats), 3)
@@ -1216,7 +1246,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
 
             # Packet IATs need at least 2 packets to be properly populated
             if len(biflow_fwd_iats) == 0:
-                biflow_fwd_iat_total = biflow_fwd_iat_mean = biflow_fwd_iat_std = biflow_fwd_iat_var =biflow_fwd_iat_max = biflow_fwd_iat_min = 0.0
+                biflow_fwd_iat_total = biflow_fwd_iat_max = biflow_fwd_iat_min = 0.0
+                biflow_fwd_iat_mean = biflow_fwd_iat_std = biflow_fwd_iat_var = 0.0
             else:
                 biflow_fwd_iat_total = round(sum(biflow_fwd_iats), 3)
                 biflow_fwd_iat_mean = round(np.mean(biflow_fwd_iats), 3)
@@ -1227,7 +1258,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
 
             # Packet IATs need at least 2 packets to be properly populated
             if len(biflow_bwd_iats) == 0:
-                biflow_bwd_iat_total = biflow_bwd_iat_mean = biflow_bwd_iat_std = biflow_bwd_iat_var = biflow_bwd_iat_max = biflow_bwd_iat_min = 0.0
+                biflow_bwd_iat_total = biflow_bwd_iat_max = biflow_bwd_iat_min = 0.0
+                biflow_bwd_iat_mean = biflow_bwd_iat_std = biflow_bwd_iat_var = 0.0
             else:
                 biflow_bwd_iat_total = round(sum(biflow_bwd_iats), 3)
                 biflow_bwd_iat_mean = round(np.mean(biflow_bwd_iats), 3)
@@ -1254,8 +1286,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             biflow_fwd_eth_ip_df_flags_min = round(min(biflow_fwd_eth_ip_df_flags), 3)
 
             if len(biflow_bwd_eth_ip_df_flags) == 0:
-                biflow_bwd_eth_ip_df_flags_total = biflow_bwd_eth_ip_df_flags_mean = biflow_bwd_eth_ip_df_flags_std = \
-                    biflow_bwd_eth_ip_df_flags_var = biflow_bwd_eth_ip_df_flags_max = biflow_bwd_eth_ip_df_flags_min = 0
+                biflow_bwd_eth_ip_df_flags_total = biflow_bwd_eth_ip_df_flags_max = biflow_bwd_eth_ip_df_flags_min = 0
+                biflow_bwd_eth_ip_df_flags_mean = biflow_bwd_eth_ip_df_flags_std = biflow_bwd_eth_ip_df_flags_var = 0.0
             else:
                 biflow_bwd_eth_ip_df_flags_total = round(sum(biflow_bwd_eth_ip_df_flags), 3)
                 biflow_bwd_eth_ip_df_flags_mean = round(np.mean(biflow_bwd_eth_ip_df_flags), 3)
@@ -1279,8 +1311,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             biflow_fwd_eth_ip_mf_flags_min = round(min(biflow_fwd_eth_ip_mf_flags), 3)
 
             if len(biflow_bwd_eth_ip_mf_flags) == 0:
-                biflow_bwd_eth_ip_mf_flags_total = biflow_bwd_eth_ip_mf_flags_mean = biflow_bwd_eth_ip_mf_flags_std = \
-                    biflow_bwd_eth_ip_mf_flags_var = biflow_bwd_eth_ip_mf_flags_max = biflow_bwd_eth_ip_mf_flags_min = 0
+                biflow_bwd_eth_ip_mf_flags_total = biflow_bwd_eth_ip_mf_flags_max = biflow_bwd_eth_ip_mf_flags_min = 0
+                biflow_bwd_eth_ip_mf_flags_mean = biflow_bwd_eth_ip_mf_flags_std = biflow_bwd_eth_ip_mf_flags_var = 0.0
             else:
                 biflow_bwd_eth_ip_mf_flags_total = round(sum(biflow_bwd_eth_ip_mf_flags), 3)
                 biflow_bwd_eth_ip_mf_flags_mean = round(np.mean(biflow_bwd_eth_ip_mf_flags), 3)
@@ -1322,8 +1354,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                 biflow_fwd_eth_ipv4_l4_header_len_min = round(min(biflow_fwd_eth_ipv4_l4_header_lens), 3)
 
                 if len(biflow_bwd_eth_ipv4_l4_header_lens) == 0:
-                    biflow_bwd_eth_ipv4_l4_header_len_total = biflow_bwd_eth_ipv4_l4_header_len_mean = biflow_bwd_eth_ipv4_l4_header_len_std = \
-                        biflow_bwd_eth_ipv4_l4_header_len_var = biflow_bwd_eth_ipv4_l4_header_len_max = biflow_bwd_eth_ipv4_l4_header_len_min = 0
+                    biflow_bwd_eth_ipv4_l4_header_len_total = biflow_bwd_eth_ipv4_l4_header_len_max = biflow_bwd_eth_ipv4_l4_header_len_min = 0
+                    biflow_bwd_eth_ipv4_l4_header_len_mean = biflow_bwd_eth_ipv4_l4_header_len_std = biflow_bwd_eth_ipv4_l4_header_len_var = 0.0
                 else:
                     biflow_bwd_eth_ipv4_l4_header_len_total = round(sum(biflow_bwd_eth_ipv4_l4_header_lens), 3)
                     biflow_bwd_eth_ipv4_l4_header_len_mean = round(np.mean(biflow_bwd_eth_ipv4_l4_header_lens), 3)
@@ -1350,8 +1382,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                 biflow_fwd_eth_ipv4_l4_data_len_min = round(min(biflow_fwd_eth_ipv4_l4_data_lens), 3)
 
                 if len(biflow_bwd_eth_ipv4_l4_data_lens) == 0:
-                    biflow_bwd_eth_ipv4_l4_data_len_total = biflow_bwd_eth_ipv4_l4_data_len_mean = biflow_bwd_eth_ipv4_l4_data_len_std = \
-                        biflow_bwd_eth_ipv4_l4_data_len_var = biflow_bwd_eth_ipv4_l4_data_len_max = biflow_bwd_eth_ipv4_l4_data_len_min = 0
+                    biflow_bwd_eth_ipv4_l4_data_len_total = biflow_bwd_eth_ipv4_l4_data_len_max = biflow_bwd_eth_ipv4_l4_data_len_min = 0
+                    biflow_bwd_eth_ipv4_l4_data_len_mean = biflow_bwd_eth_ipv4_l4_data_len_std = biflow_bwd_eth_ipv4_l4_data_len_var = 0.0
                 else:
                     biflow_bwd_eth_ipv4_l4_data_len_total = round(sum(biflow_bwd_eth_ipv4_l4_data_lens), 3)
                     biflow_bwd_eth_ipv4_l4_data_len_mean = round(np.mean(biflow_bwd_eth_ipv4_l4_data_lens), 3)
@@ -1360,11 +1392,15 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                     biflow_bwd_eth_ipv4_l4_data_len_max = round(max(biflow_bwd_eth_ipv4_l4_data_lens), 3)
                     biflow_bwd_eth_ipv4_l4_data_len_min = round(min(biflow_bwd_eth_ipv4_l4_data_lens), 3)
 
-                ipv4_all_biflow_genes_header_list = ""
+                # =======================================
+                # UDP Protocol Specific Genes: COULD-TODO
+                # =======================================
+                if l4_protocol=="UDP":
+                    pass
                 # ===========================
                 # TCP Protocol Specific Genes
                 # ===========================
-                if l4_protocol == "TCP":
+                elif l4_protocol == "TCP":
                     # =========
                     # FIN FLAGS
                     # =========
@@ -1383,8 +1419,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                     biflow_fwd_eth_ipv4_tcp_fin_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_fin_flags), 3)
 
                     if len(biflow_bwd_eth_ipv4_tcp_fin_flags) == 0:
-                        biflow_bwd_eth_ipv4_tcp_fin_flags_total = biflow_bwd_eth_ipv4_tcp_fin_flags_mean = biflow_bwd_eth_ipv4_tcp_fin_flags_std = \
-                            biflow_bwd_eth_ipv4_tcp_fin_flags_var = biflow_bwd_eth_ipv4_tcp_fin_flags_max = biflow_bwd_eth_ipv4_tcp_fin_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_fin_flags_total = biflow_bwd_eth_ipv4_tcp_fin_flags_max = biflow_bwd_eth_ipv4_tcp_fin_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_fin_flags_mean = biflow_bwd_eth_ipv4_tcp_fin_flags_std = biflow_bwd_eth_ipv4_tcp_fin_flags_var = 0.0
                     else:
                         biflow_bwd_eth_ipv4_tcp_fin_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_fin_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_fin_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_fin_flags), 3)
@@ -1411,8 +1447,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                     biflow_fwd_eth_ipv4_tcp_syn_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_syn_flags), 3)
 
                     if len(biflow_bwd_eth_ipv4_tcp_syn_flags) == 0:
-                        biflow_bwd_eth_ipv4_tcp_syn_flags_total = biflow_bwd_eth_ipv4_tcp_syn_flags_mean = biflow_bwd_eth_ipv4_tcp_syn_flags_std = \
-                            biflow_bwd_eth_ipv4_tcp_syn_flags_var = biflow_bwd_eth_ipv4_tcp_syn_flags_max = biflow_bwd_eth_ipv4_tcp_syn_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_syn_flags_total = biflow_bwd_eth_ipv4_tcp_syn_flags_max = biflow_bwd_eth_ipv4_tcp_syn_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_syn_flags_mean = biflow_bwd_eth_ipv4_tcp_syn_flags_std = biflow_bwd_eth_ipv4_tcp_syn_flags_var = 0.0
                     else:
                         biflow_bwd_eth_ipv4_tcp_syn_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_syn_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_syn_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_syn_flags), 3)
@@ -1439,8 +1475,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                     biflow_fwd_eth_ipv4_tcp_rst_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_rst_flags), 3)
 
                     if len(biflow_bwd_eth_ipv4_tcp_rst_flags) == 0:
-                        biflow_bwd_eth_ipv4_tcp_rst_flags_total = biflow_bwd_eth_ipv4_tcp_rst_flags_mean = biflow_bwd_eth_ipv4_tcp_rst_flags_std = \
-                            biflow_bwd_eth_ipv4_tcp_rst_flags_var = biflow_bwd_eth_ipv4_tcp_rst_flags_max = biflow_bwd_eth_ipv4_tcp_rst_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_rst_flags_total = biflow_bwd_eth_ipv4_tcp_rst_flags_max = biflow_bwd_eth_ipv4_tcp_rst_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_rst_flags_mean = biflow_bwd_eth_ipv4_tcp_rst_flags_std = biflow_bwd_eth_ipv4_tcp_rst_flags_var = 0.0
                     else:
                         biflow_bwd_eth_ipv4_tcp_rst_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_rst_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_rst_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_rst_flags), 3)
@@ -1467,8 +1503,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                     biflow_fwd_eth_ipv4_tcp_psh_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_psh_flags), 3)
 
                     if len(biflow_bwd_eth_ipv4_tcp_psh_flags) == 0:
-                        biflow_bwd_eth_ipv4_tcp_psh_flags_total = biflow_bwd_eth_ipv4_tcp_psh_flags_mean = biflow_bwd_eth_ipv4_tcp_psh_flags_std = \
-                            biflow_bwd_eth_ipv4_tcp_psh_flags_var = biflow_bwd_eth_ipv4_tcp_psh_flags_max = biflow_bwd_eth_ipv4_tcp_psh_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_psh_flags_total = biflow_bwd_eth_ipv4_tcp_psh_flags_max = biflow_bwd_eth_ipv4_tcp_psh_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_psh_flags_mean = biflow_bwd_eth_ipv4_tcp_psh_flags_std = biflow_bwd_eth_ipv4_tcp_psh_flags_var = 0.0
                     else:
                         biflow_bwd_eth_ipv4_tcp_psh_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_psh_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_psh_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_psh_flags), 3)
@@ -1495,8 +1531,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                     biflow_fwd_eth_ipv4_tcp_ack_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_ack_flags), 3)
 
                     if len(biflow_bwd_eth_ipv4_tcp_ack_flags) == 0:
-                        biflow_bwd_eth_ipv4_tcp_ack_flags_total = biflow_bwd_eth_ipv4_tcp_ack_flags_mean = biflow_bwd_eth_ipv4_tcp_ack_flags_std = \
-                            biflow_bwd_eth_ipv4_tcp_ack_flags_var = biflow_bwd_eth_ipv4_tcp_ack_flags_max = biflow_bwd_eth_ipv4_tcp_ack_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_ack_flags_total = biflow_bwd_eth_ipv4_tcp_ack_flags_max = biflow_bwd_eth_ipv4_tcp_ack_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_ack_flags_mean = biflow_bwd_eth_ipv4_tcp_ack_flags_std = biflow_bwd_eth_ipv4_tcp_ack_flags_var = 0.0
                     else:
                         biflow_bwd_eth_ipv4_tcp_ack_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_ack_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_ack_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_ack_flags), 3)
@@ -1523,8 +1559,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                     biflow_fwd_eth_ipv4_tcp_urg_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_urg_flags), 3)
 
                     if len(biflow_bwd_eth_ipv4_tcp_urg_flags) == 0:
-                        biflow_bwd_eth_ipv4_tcp_urg_flags_total = biflow_bwd_eth_ipv4_tcp_urg_flags_mean = biflow_bwd_eth_ipv4_tcp_urg_flags_std = \
-                            biflow_bwd_eth_ipv4_tcp_urg_flags_var = biflow_bwd_eth_ipv4_tcp_urg_flags_max = biflow_bwd_eth_ipv4_tcp_urg_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_urg_flags_total = biflow_bwd_eth_ipv4_tcp_urg_flags_max = biflow_bwd_eth_ipv4_tcp_urg_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_urg_flags_mean = biflow_bwd_eth_ipv4_tcp_urg_flags_std = biflow_bwd_eth_ipv4_tcp_urg_flags_var = 0.0
                     else:
                         biflow_bwd_eth_ipv4_tcp_urg_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_urg_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_urg_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_urg_flags), 3)
@@ -1551,8 +1587,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                     biflow_fwd_eth_ipv4_tcp_ece_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_ece_flags), 3)
 
                     if len(biflow_bwd_eth_ipv4_tcp_ece_flags) == 0:
-                        biflow_bwd_eth_ipv4_tcp_ece_flags_total = biflow_bwd_eth_ipv4_tcp_ece_flags_mean = biflow_bwd_eth_ipv4_tcp_ece_flags_std = \
-                            biflow_bwd_eth_ipv4_tcp_ece_flags_var = biflow_bwd_eth_ipv4_tcp_ece_flags_max = biflow_bwd_eth_ipv4_tcp_ece_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_ece_flags_total = biflow_bwd_eth_ipv4_tcp_ece_flags_max = biflow_bwd_eth_ipv4_tcp_ece_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_ece_flags_mean = biflow_bwd_eth_ipv4_tcp_ece_flags_std = biflow_bwd_eth_ipv4_tcp_ece_flags_var = 0.0
                     else:
                         biflow_bwd_eth_ipv4_tcp_ece_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_ece_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_ece_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_ece_flags), 3)
@@ -1579,8 +1615,8 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                     biflow_fwd_eth_ipv4_tcp_cwr_flags_min = round(min(biflow_fwd_eth_ipv4_tcp_cwr_flags), 3)
 
                     if len(biflow_bwd_eth_ipv4_tcp_cwr_flags) == 0:
-                        biflow_bwd_eth_ipv4_tcp_cwr_flags_total = biflow_bwd_eth_ipv4_tcp_cwr_flags_mean = biflow_bwd_eth_ipv4_tcp_cwr_flags_std = \
-                            biflow_bwd_eth_ipv4_tcp_cwr_flags_var = biflow_bwd_eth_ipv4_tcp_cwr_flags_max = biflow_bwd_eth_ipv4_tcp_cwr_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_cwr_flags_total = biflow_bwd_eth_ipv4_tcp_cwr_flags_max = biflow_bwd_eth_ipv4_tcp_cwr_flags_min = 0
+                        biflow_bwd_eth_ipv4_tcp_cwr_flags_mean = biflow_bwd_eth_ipv4_tcp_cwr_flags_std = biflow_bwd_eth_ipv4_tcp_cwr_flags_var = 0.0
                     else:
                         biflow_bwd_eth_ipv4_tcp_cwr_flags_total = round(sum(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_cwr_flags_mean = round(np.mean(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
@@ -1588,12 +1624,6 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                         biflow_bwd_eth_ipv4_tcp_cwr_flags_var = round(np.var(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_cwr_flags_max = round(max(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
                         biflow_bwd_eth_ipv4_tcp_cwr_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
-                    # IPv4-TCP header
-                    ipv4_all_biflow_genes_header_list = ipv4_biflow_genes_header_list + ipv4_l4_biflow_genes_header_list +\
-                        ipv4_tcp_biflow_genes_header_list
-                elif l4_protocol=="UDP":
-                    # IPv4-UDP header
-                    ipv4_all_biflow_genes_header_list = ipv4_biflow_genes_header_list + ipv4_l4_biflow_genes_header_list
                 else:
                     print("No L4 protocol specified.", flush=True)
                     sys.exit(1)
@@ -1615,145 +1645,51 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
     # https://stackoverflow.com/questions/3487802/which-is-generally-faster-a-yield-or-an-append
     return list(ipv4_udp_biflow_genes_generator), list(ipv4_tcp_biflow_genes_generator)
 
-def output_biflow_genes(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst):
-    """
-    Output all flows and their genes with the following supported protocols, where important in:
-        - L1: Ethernet
-        - L2: Ethernet
-        - L3: IPv4
-        - L4: UDP, TCP
-    """
+def output_net_genes(ipv4_udp_net_genes_generator_lst, ipv4_tcp_net_genes_generator_lst, network_object_type):
+    """ Output all network objects present on a PCAP file: biflows, bitalkers and bihosts, along with
+    their respective genes (NetGenes): conceptual and statistical features. """
 
-    # ===============
-    # IPv4-UDP Header
-    # ===============
-    ipv4_udp_biflow_genes_header_lst = get_biflow_header_by_type("ipv4") + get_biflow_header_by_type("ipv4-l4")
-    # ===============
-    # IPv4-TCP Header
-    # ===============
-    ipv4_tcp_biflow_genes_header_lst = get_biflow_header_by_type("ipv4") + get_biflow_header_by_type("ipv4-l4") + get_biflow_header_by_type("ipv4-tcp")
+    ipv4_net_genes_header_lst = get_network_object_header(network_object_type, "ipv4")
+    ipv4_l4_net_genes_header_lst = get_network_object_header(network_object_type, "ipv4-l4")
+    ipv4_udp_net_genes_header_lst = ipv4_net_genes_header_lst + ipv4_l4_net_genes_header_lst
+    ipv4_tcp_net_genes_header_lst = ipv4_net_genes_header_lst + ipv4_l4_net_genes_header_lst +\
+        get_network_object_header(network_object_type, "ipv4-tcp")
 
     if args.output_type == "csv":
+        def save_csv_file(net_genes_header_lst, net_genes_generator_lst, csv_filename):
+            # CSV Header
+            net_genes_header_str = "|".join(net_genes_header_lst)
+            # CSV Rows
+            net_genes_str_lst = ["|".join(net_genes) for net_genes in net_genes_generator_lst]
+            net_genes_output = net_genes_header_str + "\n" + "\n".join(net_genes_str_lst)
+
+            # Save CSV File
+            f = open(netmeter_globals.csv_output_dir + os.sep + csv_filename, "w")
+            f.write(net_genes_output)
+            f.close()
+        # CSV Directory
         os.makedirs(netmeter_globals.csv_output_dir, exist_ok=True)
         print("[+] Output CSV directory:", cterminal.colors.BLUE + netmeter_globals.csv_output_dir + cterminal.colors.ENDC, flush=True)
-        # ===========
-        # CSV Headers
-        # ===========
-        ipv4_udp_biflow_genes_header_str = "|".join(ipv4_udp_biflow_genes_header_lst)
-        ipv4_tcp_biflow_genes_header_str = "|".join(ipv4_tcp_biflow_genes_header_lst)
+        # Save NetGenes
+        save_csv_file(ipv4_udp_net_genes_header_lst, ipv4_udp_net_genes_generator_lst, "ipv4-udp-%ss.csv"%(network_object_type))
+        save_csv_file(ipv4_tcp_net_genes_header_lst, ipv4_tcp_net_genes_generator_lst, "ipv4-tcp-%ss.csv"%(network_object_type))
 
-        # ========
-        # CSV Rows
-        # ========
-        # UDP
-        ipv4_udp_biflow_genes_str_lst = ["|".join(ipv4_udp_biflow_genes) for ipv4_udp_biflow_genes in ipv4_udp_biflow_genes_generator_lst]
-        ipv4_udp_biflow_genes_output = ipv4_udp_biflow_genes_header_str + "\n" + "\n".join(ipv4_udp_biflow_genes_str_lst)
-
-        # TCP
-        ipv4_tcp_biflow_genes_str_lst = ["|".join(ipv4_tcp_biflow_genes) for ipv4_tcp_biflow_genes in ipv4_tcp_biflow_genes_generator_lst]
-        ipv4_tcp_biflow_genes_output = ipv4_tcp_biflow_genes_header_str + "\n" + "\n".join(ipv4_tcp_biflow_genes_str_lst)
-
-        # =================
-        # IPv4-UDP CSV Save
-        # =================
-        f = open(netmeter_globals.csv_output_dir + os.sep + "ipv4-udp-biflows.csv", "w")
-        f.write(ipv4_udp_biflow_genes_output)
-        f.close()
-
-        # =================
-        # IPv4-TCP CSV Save
-        # =================
-        f = open(netmeter_globals.csv_output_dir + os.sep + "ipv4-tcp-biflows.csv", "w")
-        f.write(ipv4_tcp_biflow_genes_output)
-        f.close()
-
-def get_bitalker_header_by_type(protocol_stack):
-    """Use L3-L4 protocol stack to fetch correct bitalker headers and return them as a list"""
-    bitalker_genes_file = netmeter_globals.genes_dir + os.sep + "bitalker-ipv4-header.txt"
-
-    # IPv4
-    if protocol_stack == "ipv4":
-        bitalker_genes_header_lst = netmeter_globals.genes_dir + os.sep + "bitalker-ipv4-header.txt"
-    # IPv4 and generic layer 4
-    elif protocol_stack == "ipv4-l4":
-        bitalker_genes_header_lst = netmeter_globals.genes_dir + os.sep + "bitalker-ipv4-l4-header.txt"
-    # IPv4 and TCP
-    elif protocol_stack == "ipv4-tcp":
-        bitalker_genes_header_lst = netmeter_globals.genes_dir + os.sep + "bitalker-ipv4-tcp-header.txt"
-    else:
-        print("[!] Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4", file=sys.stderr, flush=True)
-        sys.exit(1)
-
-    f = open(bitalker_genes_file, "r")
-    bitalker_genes_header_lst = f.read().split("\n")
-    f.close()
-
-    return bitalker_genes_header_lst
-
-def calculate_bitalker_genes():
-    """Calculate BiTalker Genes from UDP and TCP BiFlow Genes"""
-    # ==============
-    # BiTalker Genes
-    # ==============
-    # Note: IP and TCP statistical features are not added because it's an exaggeration at this level  
-    """
-    bitalker_genes_header_lst = get_bitalker_header_by_type("ipv4")
-    first_biflow = ipv4_udp_biflow_genes[0]
-    last_biflow = ipv4_udp_biflow_genes[-1]
-
-    # ----------------------
-    # Additional Information
-    # ----------------------
-    bihost_id = bitalker_id_to_bihost_id()
-    # first_biflow_initiation_time: bitalker_iniation_time
-    bitalker_any_first_biflow_initiation_time = first_biflow[2]
-    # last_biflow_termination_time: bitalker_termination_time
-    bitalker_any_last_biflow_termination_time = last_biflow[3]
-    bitalker_any_duration = bitalker_any_last_biflow_termination_time - 
-    for ipv4_udp_biflow_genes in ipv4_udp_biflow_genes_generator_lst:
-        # ID
-        curr_biflow_id = ipv4_udp_biflow_genes[0]
-        curr_talker_id = biflow_id_to_bitalker_id(curr_biflow_id)
-
-        # Additional Info
-        bitalker_id = ipv4_udp_biflow_genes[1]
-        biflow_any_first_packet_time = ipv4_udp_biflow_genes[2]
-        biflow_any_last_packet_time = ipv4_udp_biflow_genes[3]
-
-        # ============
-        # BiFlow Genes
-        # ============
-        # Note: Only conceptual features are considered
-        biflow_any_duration = ipv4_udp_biflow_genes[4]
-        biflow_any_n_packets = ipv4_udp_biflow_genes[5]
-        biflow_fwd_n_packets = ipv4_udp_biflow_genes[6]
-        biflow_bwd_n_packets = ipv4_udp_biflow_genes[7]
-        biflow_any_packets_per_sec = ipv4_udp_biflow_genes[8]
-        biflow_fwd_packets_per_sec = ipv4_udp_biflow_genes[9]
-        biflow_bwd_packets_per_sec = ipv4_udp_biflow_genes[10]
-        biflow_any_bytes_per_sec = ipv4_udp_biflow_genes[11]
-        biflow_fwd_bytes_per_sec = ipv4_udp_biflow_genes[12]
-        biflow_bwd_bytes_per_sec = ipv4_udp_biflow_genes[13]
-
-        print(len(ipv4_udp_biflow_genes))
-    """
-    return
-
-def build_l4_bitalkers(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids):
+def build_l4_bitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids, ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids):
     """Build L4 BiTalkers"""
-    def build_bitalkers(biflows, biflow_ids):
+    def build_bitalkers(biflow_genes_generator_lst, biflow_ids):
         """Build BiTalkers"""
         bitalkers = dict()
         bitalker_ids = list()
+        biflow_id = biflow_genes_generator_lst[0]
 
-        for biflow_id in biflow_ids:
+        for biflow_genes in biflow_genes_generator_lst:
+            biflow_id = str_to_iterator(biflow_genes[0])
             bitalker_id = biflow_id_to_bitalker_id(biflow_id)
-            biflow = biflows[biflow_id]
             bitalker_ids.append(bitalker_id)
             try:
-                bitalkers[bitalker_id].append(biflow)
+                bitalkers[bitalker_id].append(biflow_genes)
             except:
-                bitalkers[bitalker_id] = [biflow]
+                bitalkers[bitalker_id] = [biflow_genes]
 
         #SHOULD-TODO: use right data structure from the start
         #remove duplicates mantaining order
@@ -1761,10 +1697,329 @@ def build_l4_bitalkers(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids)
 
         return bitalkers, bitalker_ids
 
-    udp_bitalkers, udp_bitalker_ids = build_bitalkers(udp_biflows, udp_biflow_ids)
-    tcp_bitalkers, tcp_bitalker_ids = build_bitalkers(tcp_biflows, tcp_biflow_ids)
+    udp_bitalkers, udp_bitalker_ids = build_bitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids)
+    tcp_bitalkers, tcp_bitalker_ids = build_bitalkers(ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids)
 
     return udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids
+
+def get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids):
+    """Return L3-L4 bitalker gene generators"""
+    def calculate_l3_l4_bitalker_genes(bitalkers, bitalker_ids, l4_protocol=None):
+        """Calculate and yield L3-L4 bitalker genes"""
+        time_scale_factor = 1000.0
+        # =================
+        # IPv4 GENES HEADER
+        # =================
+        ipv4_bitalker_genes_header_list = get_network_object_header("bitalker", "ipv4")
+        # ===============
+        # L4 GENES HEADER
+        # ===============
+        ipv4_l4_bitalker_genes_header_list = get_network_object_header("bitalker", "ipv4-l4")
+        # ================
+        # TCP GENES HEADER
+        # ================
+        ipv4_tcp_bitalker_genes_header_list = get_network_object_header("bitalker", "ipv4-tcp")
+
+        # IPv4 Header
+        ipv4_all_bitalker_genes_header_list = ipv4_bitalker_genes_header_list
+        if l4_protocol:
+            # IPv4-L4 Header
+            ipv4_all_bitalker_genes_header_list += ipv4_l4_bitalker_genes_header_list
+            if l4_protocol == "UDP":
+                pass
+            elif l4_protocol == "TCP":
+                ipv4_all_bitalker_genes_header_list += ipv4_tcp_bitalker_genes_header_list
+
+        for bitalker_id in bitalker_ids:
+            # ======================
+            # Additional Information
+            # ======================
+            curr_bitalker = bitalkers[bitalker_id]
+
+            first_biflow = curr_bitalker[0]
+            last_biflow = curr_bitalker[-1]
+            bitalker_any_first_biflow_initiation_time = first_biflow[2]
+            bitalker_any_last_biflow_termination_time = last_biflow[3]
+            bitalker_any_first_biflow_initiation_time = datetime_to_unixtime(bitalker_any_first_biflow_initiation_time)
+            bitalker_any_last_biflow_termination_time = datetime_to_unixtime(bitalker_any_last_biflow_termination_time)
+
+            # =========================
+            # PREPARE DATA STRUCTURES |
+            # =========================
+            # ======
+            # BiFlow
+            # ======
+            # ----------------------
+            # BiFlow Number Features
+            # ----------------------
+            bitalker_any_n_biflows = len(curr_bitalker)
+            bitalker_fwd_n_biflows = 0
+            bitalker_bwd_n_biflows = 0
+
+            # ================================
+            # BiFlow & Byte Frequency Features
+            # ================================
+            # done below
+
+            # =============
+            # Time Features
+            # =============
+            bitalker_any_duration = round(\
+                (bitalker_any_last_biflow_termination_time - bitalker_any_first_biflow_initiation_time)/time_scale_factor, 3)
+
+            # =========================
+            # Destination Port Features
+            # =========================
+            bitalker_any_biflow_dst_ports = list()
+            bitalker_fwd_biflow_dst_ports = list()
+            bitalker_bwd_biflow_dst_ports = list()
+
+            # ===============
+            # Packet Features
+            # ===============
+            bitalker_any_biflow_n_packets = list()
+            bitalker_fwd_biflow_n_packets = list()
+            bitalker_bwd_biflow_n_packets = list()
+
+            # =========================
+            # IPv4 Data Length Features
+            # =========================
+            bitalker_any_biflow_eth_ipv4_data_lens = list()
+            bitalker_fwd_biflow_eth_ipv4_data_lens = list()
+            bitalker_bwd_biflow_eth_ipv4_data_lens = list()
+
+            # =======================
+            # L4 Data Packet Features
+            # =======================
+            bitalker_any_eth_ipv4_l4_biflow_n_data_packets = list()
+            bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets = list()
+            bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets = list()
+
+            # =============
+            # Time Features
+            # =============
+            # ------------------------
+            # BiFlow Duration Features
+            # ------------------------
+            bitalker_any_biflow_durations = list()
+            bitalker_fwd_biflow_durations = list()
+            bitalker_bwd_biflow_durations = list()
+
+            # =================================
+            # Additional Information - Reformat
+            # =================================
+            # Get bihost_id and convert bitalker_id to strings
+            bihost_id = bitalker_id_to_bihost_id(bitalker_id)
+            bitalker_id = iterator_to_str(bitalker_id)
+            bitalker_any_first_biflow_initiation_time = unixtime_to_datetime(bitalker_any_first_biflow_initiation_time)
+            bitalker_any_last_biflow_termination_time = unixtime_to_datetime(bitalker_any_last_biflow_termination_time)
+
+            bitalker_any_biflow_n_unique_dst_ports = 0
+            bitalker_fwd_biflow_n_unique_dst_ports = 0
+            bitalker_bwd_biflow_n_unique_dst_ports = 0
+            # ==========================
+            # POPULATE DATA STRUCTURES |
+            # ==========================
+            curr_biflow_index = 0
+            while curr_biflow_index < bitalker_any_n_biflows:
+                # ===============
+                # BiFlow Concepts
+                # ===============
+                if curr_biflow_index >= 1:
+                    previous_biflow = curr_bitalker[curr_biflow_index-1]
+                    previous_biflow_bitalker_id = previous_biflow[1]
+                    previous_biflow_initiation_timestamp = previous_biflow[2]
+                    previous_biflow_termination_timestamp = previous_biflow[3]
+
+                curr_biflow = curr_bitalker[curr_biflow_index]
+                curr_biflow_id_str = curr_biflow[0]
+                curr_biflow_id = str_to_iterator(curr_biflow_id_str)
+                curr_biflow_bitalker_id_str = curr_biflow[1]
+                curr_biflow_initiation_timestamp = curr_biflow[2]
+                curr_biflow_termination_timestamp = curr_biflow[3]
+                curr_biflow_duration = curr_biflow[4]
+
+                # ===============
+                # Packet Concepts
+                # ===============
+                curr_biflow_any_n_packets = int(curr_biflow[5])
+                bitalker_any_biflow_n_packets.append(curr_biflow_any_n_packets)
+
+                # =============
+                # IPv4 Concepts
+                # =============
+                curr_biflow_ipv4_data_len_total = int(curr_biflow[50])
+                bitalker_any_biflow_eth_ipv4_data_lens.append(curr_biflow_ipv4_data_len_total)
+
+                if curr_biflow_bitalker_id_str == bitalker_id:
+                    # Statistical
+                    bitalker_fwd_biflow_eth_ipv4_data_lens.append(curr_biflow_ipv4_data_len_total)
+                    bitalker_fwd_biflow_n_packets.append(curr_biflow_any_n_packets)
+
+                    # Conceptual
+                    bitalker_fwd_n_biflows += 1
+                else:
+                    # Statistical
+                    bitalker_bwd_biflow_eth_ipv4_data_lens.append(curr_biflow_ipv4_data_len_total)
+                    bitalker_bwd_biflow_n_packets.append(curr_biflow_any_n_packets)
+
+                    # Conceptual
+                    bitalker_bwd_n_biflows += 1
+
+                # ===========
+                # L4 Concepts
+                # ===========
+                if l4_protocol:
+                    curr_biflow_dst_port = curr_biflow_id[3]
+                    curr_biflow_any_eth_ipv4_l4_n_data_packets = int(curr_biflow[104])
+
+                    bitalker_any_biflow_dst_ports.append(curr_biflow_dst_port)
+                    bitalker_any_eth_ipv4_l4_biflow_n_data_packets.append(curr_biflow_any_eth_ipv4_l4_n_data_packets)
+                    if curr_biflow_bitalker_id_str == bitalker_id:
+                        bitalker_fwd_biflow_dst_ports.append(curr_biflow_dst_port)
+                        bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets.append(curr_biflow_any_eth_ipv4_l4_n_data_packets)
+                    else:
+                        bitalker_bwd_biflow_dst_ports.append(curr_biflow_dst_port)
+                        bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets.append(curr_biflow_any_eth_ipv4_l4_n_data_packets)
+
+                # iterate the biflows inside a bitalker
+                curr_biflow_index += 1
+
+            # ====================
+            # Statistical Features
+            # ====================
+            # ------
+            # Packet
+            # ------
+            bitalker_any_biflow_n_packets_total = round(sum(bitalker_any_biflow_n_packets), 3)
+            bitalker_any_biflow_n_packets_mean = round(np.mean(bitalker_any_biflow_n_packets), 3)
+            bitalker_any_biflow_n_packets_std = round(np.std(bitalker_any_biflow_n_packets), 3)
+            bitalker_any_biflow_n_packets_var = round(np.var(bitalker_any_biflow_n_packets), 3)
+            bitalker_any_biflow_n_packets_max = round(max(bitalker_any_biflow_n_packets), 3)
+            bitalker_any_biflow_n_packets_min = round(min(bitalker_any_biflow_n_packets), 3)
+
+            bitalker_fwd_biflow_n_packets_total = round(sum(bitalker_fwd_biflow_n_packets), 3)
+            bitalker_fwd_biflow_n_packets_mean = round(np.mean(bitalker_fwd_biflow_n_packets), 3)
+            bitalker_fwd_biflow_n_packets_std = round(np.std(bitalker_fwd_biflow_n_packets), 3)
+            bitalker_fwd_biflow_n_packets_var = round(np.var(bitalker_fwd_biflow_n_packets), 3)
+            bitalker_fwd_biflow_n_packets_max = round(max(bitalker_fwd_biflow_n_packets), 3)
+            bitalker_fwd_biflow_n_packets_min = round(min(bitalker_fwd_biflow_n_packets), 3)
+
+            if len(bitalker_bwd_biflow_n_packets) == 0:
+                bitalker_bwd_biflow_n_packets_total = bitalker_bwd_biflow_n_packets_max = bitalker_bwd_biflow_n_packets_min = 0
+                bitalker_bwd_biflow_n_packets_mean = bitalker_bwd_biflow_n_packets_std = bitalker_bwd_biflow_n_packets_var = 0.0
+            else:
+                bitalker_bwd_biflow_n_packets_total = round(sum(bitalker_bwd_biflow_n_packets), 3)
+                bitalker_bwd_biflow_n_packets_mean = round(np.mean(bitalker_bwd_biflow_n_packets), 3)
+                bitalker_bwd_biflow_n_packets_std = round(np.std(bitalker_bwd_biflow_n_packets), 3)
+                bitalker_bwd_biflow_n_packets_var = round(np.var(bitalker_bwd_biflow_n_packets), 3)
+                bitalker_bwd_biflow_n_packets_max = round(max(bitalker_bwd_biflow_n_packets), 3)
+                bitalker_bwd_biflow_n_packets_min = round(min(bitalker_bwd_biflow_n_packets), 3)
+
+            # ------------------
+            # IPv4 Data Lengthes
+            # ------------------
+            bitalker_any_biflow_eth_ipv4_data_lens_total = round(sum(bitalker_any_biflow_eth_ipv4_data_lens), 3)
+            bitalker_any_biflow_eth_ipv4_data_lens_mean = round(np.mean(bitalker_any_biflow_eth_ipv4_data_lens), 3)
+            bitalker_any_biflow_eth_ipv4_data_lens_std = round(np.std(bitalker_any_biflow_eth_ipv4_data_lens), 3)
+            bitalker_any_biflow_eth_ipv4_data_lens_var = round(np.var(bitalker_any_biflow_eth_ipv4_data_lens), 3)
+            bitalker_any_biflow_eth_ipv4_data_lens_max = round(max(bitalker_any_biflow_eth_ipv4_data_lens), 3)
+            bitalker_any_biflow_eth_ipv4_data_lens_min = round(min(bitalker_any_biflow_eth_ipv4_data_lens), 3)
+
+            bitalker_fwd_biflow_eth_ipv4_data_lens_total = round(sum(bitalker_fwd_biflow_eth_ipv4_data_lens), 3)
+            bitalker_fwd_biflow_eth_ipv4_data_lens_mean = round(np.mean(bitalker_fwd_biflow_eth_ipv4_data_lens), 3)
+            bitalker_fwd_biflow_eth_ipv4_data_lens_std = round(np.std(bitalker_fwd_biflow_eth_ipv4_data_lens), 3)
+            bitalker_fwd_biflow_eth_ipv4_data_lens_var = round(np.var(bitalker_fwd_biflow_eth_ipv4_data_lens), 3)
+            bitalker_fwd_biflow_eth_ipv4_data_lens_max = round(max(bitalker_fwd_biflow_eth_ipv4_data_lens), 3)
+            bitalker_fwd_biflow_eth_ipv4_data_lens_min = round(min(bitalker_fwd_biflow_eth_ipv4_data_lens), 3)
+
+            if len(bitalker_bwd_biflow_eth_ipv4_data_lens) == 0:
+                bitalker_bwd_biflow_eth_ipv4_data_lens_total = bitalker_bwd_biflow_eth_ipv4_data_lens_max =\
+                    bitalker_bwd_biflow_eth_ipv4_data_lens_min = 0
+                bitalker_bwd_biflow_eth_ipv4_data_lens_mean = bitalker_bwd_biflow_eth_ipv4_data_lens_std =\
+                    bitalker_bwd_biflow_eth_ipv4_data_lens_var = 0.0
+            else:
+                bitalker_bwd_biflow_eth_ipv4_data_lens_total = round(sum(bitalker_bwd_biflow_eth_ipv4_data_lens), 3)
+                bitalker_bwd_biflow_eth_ipv4_data_lens_mean = round(np.mean(bitalker_bwd_biflow_eth_ipv4_data_lens), 3)
+                bitalker_bwd_biflow_eth_ipv4_data_lens_std = round(np.std(bitalker_bwd_biflow_eth_ipv4_data_lens), 3)
+                bitalker_bwd_biflow_eth_ipv4_data_lens_var = round(np.var(bitalker_bwd_biflow_eth_ipv4_data_lens), 3)
+                bitalker_bwd_biflow_eth_ipv4_data_lens_max = round(max(bitalker_bwd_biflow_eth_ipv4_data_lens), 3)
+                bitalker_bwd_biflow_eth_ipv4_data_lens_min = round(min(bitalker_bwd_biflow_eth_ipv4_data_lens), 3)
+
+            # ===========
+            # L4 Features
+            # ===========
+            if l4_protocol:
+                # -------------------
+                # L4 Unique Dst Ports
+                # -------------------
+                bitalker_any_biflow_unique_dst_ports = list(OrderedDict.fromkeys(bitalker_any_biflow_dst_ports))
+                bitalker_fwd_biflow_unique_dst_ports = list(OrderedDict.fromkeys(bitalker_fwd_biflow_dst_ports))
+                bitalker_bwd_biflow_unique_dst_ports = list(OrderedDict.fromkeys(bitalker_bwd_biflow_dst_ports))
+
+                bitalker_any_biflow_n_unique_dst_ports = len(bitalker_any_biflow_unique_dst_ports)
+                bitalker_fwd_biflow_n_unique_dst_ports = len(bitalker_fwd_biflow_unique_dst_ports)
+                bitalker_bwd_biflow_n_unique_dst_ports = len(bitalker_bwd_biflow_unique_dst_ports)
+
+                # ---------------
+                # L4 Data Packets
+                # ---------------
+                bitalker_any_eth_ipv4_l4_biflow_n_data_packets_total = round(sum(bitalker_any_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_any_eth_ipv4_l4_biflow_n_data_packets_mean = round(np.mean(bitalker_any_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_any_eth_ipv4_l4_biflow_n_data_packets_std = round(np.std(bitalker_any_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_any_eth_ipv4_l4_biflow_n_data_packets_var = round(np.var(bitalker_any_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_any_eth_ipv4_l4_biflow_n_data_packets_max = round(max(bitalker_any_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_any_eth_ipv4_l4_biflow_n_data_packets_min = round(min(bitalker_any_eth_ipv4_l4_biflow_n_data_packets), 3)
+
+                bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_total = round(sum(bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_mean = round(np.mean(bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_std = round(np.std(bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_var = round(np.var(bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_max = round(max(bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_min = round(min(bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+
+                if len(bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets) == 0:
+                    bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_total = bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_max =\
+                        bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_min = 0
+                    bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_mean = bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_std =\
+                        bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_var = 0.0
+                else:
+                    bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_total = round(sum(bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                    bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_mean = round(np.mean(bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                    bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_std = round(np.std(bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                    bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_var = round(np.var(bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                    bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_max = round(max(bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+                    bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_min = round(min(bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets), 3)
+
+            # =======================
+            # Conceptual Features (2)
+            # =======================
+            # --------------------------------
+            # BiFlow & Byte Frequency Features
+            # --------------------------------
+            if bitalker_any_duration == 0:
+                bitalker_any_biflows_per_sec = bitalker_fwd_biflows_per_sec = bitalker_bwd_biflows_per_sec = 0.0
+                bitalker_any_biflow_bytes_per_sec = bitalker_fwd_biflow_bytes_per_sec = bitalker_bwd_biflow_bytes_per_sec = 0.0
+            else:
+                bitalker_any_biflows_per_sec = round(bitalker_any_n_biflows/bitalker_any_duration, 3)
+                bitalker_fwd_biflows_per_sec = round(bitalker_fwd_n_biflows/bitalker_any_duration, 3)
+                bitalker_bwd_biflows_per_sec = round(bitalker_bwd_n_biflows/bitalker_any_duration, 3)
+                bitalker_any_biflow_bytes_per_sec = round(bitalker_any_biflow_eth_ipv4_data_lens_total/bitalker_any_duration, 3)
+                bitalker_fwd_biflow_bytes_per_sec = round(bitalker_fwd_biflow_eth_ipv4_data_lens_total/bitalker_any_duration, 3)
+                bitalker_bwd_biflow_bytes_per_sec = round(bitalker_bwd_biflow_eth_ipv4_data_lens_total/bitalker_any_duration, 3)
+
+            # ===============
+            # WRAP-UP RESULTS
+            # ===============
+            bitalker_local_vars = locals()
+            bitalker_genes = [str(bitalker_local_vars[var_name]) for var_name in ipv4_all_bitalker_genes_header_list]
+            
+            yield bitalker_genes
+
+    ipv4_udp_bitalker_genes_generator = calculate_l3_l4_bitalker_genes(udp_bitalkers, udp_bitalker_ids, "UDP")
+    ipv4_tcp_bitalker_genes_generator = calculate_l3_l4_bitalker_genes(tcp_bitalkers, tcp_bitalker_ids, "UDP")
+
+    return list(ipv4_udp_bitalker_genes_generator), list(ipv4_tcp_bitalker_genes_generator)
 
 def generate_network_objets(input_pcap_file):
     """
@@ -1780,7 +2035,7 @@ def generate_network_objets(input_pcap_file):
     packet_genes = build_packets(input_pcap_file, args)
 
     if args.verbose:
-        print(make_header_string("2. Bidirectional Flow Construction", separator="=", big_header=True), flush=True)
+        print(make_header_string("2. Layer-3/Layer-4 Bidirectional Flow Construction", separator="=", big_header=True), flush=True)
 
     # ====================
     # Unidirectional Flows
@@ -1824,7 +2079,7 @@ def generate_network_objets(input_pcap_file):
     # -------
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("2.3. Layer-4 Bidirectional Flows: UDP and TCP"), flush=True)
+        print(make_header_string("2.3. Layer-3/Layer-4 Bidirectional Flows: IPv4+GenericL4+(UDP|TCP)"), flush=True)
 
     udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features,\
         n_disconected_rfc793_packets = build_l4_biflows(l3_biflows, l3_biflow_ids, args)
@@ -1846,7 +2101,7 @@ def generate_network_objets(input_pcap_file):
     # IPv4-L4-(UDP|TCP) BiFlow Genes
     # ==============================
     if args.verbose:
-        print(make_header_string("3. Layer-3 and Layer-4 Bidirectional Flow Genes", separator="=", big_header=True), flush=True)
+        print(make_header_string("3. Layer-3/Layer-4 Bidirectional Flow Genes", separator="=", big_header=True), flush=True)
     # ------------------------------------------
     # IPv4-L4-(UDP|TCP) BiFlow Gene Calculations
     # ------------------------------------------
@@ -1856,19 +2111,22 @@ def generate_network_objets(input_pcap_file):
 
     ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst =\
         get_l3_l4_biflow_gene_generators(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features)
+    del(udp_biflows)
+    del(tcp_biflows)
+    del(rfc793_tcp_biflow_conceptual_features)
 
     if args.verbose:
         # minus 4 to remove biflow_id, bitalker_id, biflow_any_first_packet_time and biflow_any_last_packet_time
-        ipv4_flow_genes_count = len(get_biflow_header_by_type("ipv4")) - 4
-        ipv4_l4_genes_count = len(get_biflow_header_by_type("ipv4-l4"))
-        ipv4_tcp_genes_count = len(get_biflow_header_by_type("ipv4-tcp"))
+        ipv4_biflow_genes_count = len(get_network_object_header("biflow", "ipv4")) - 4
+        ipv4_l4_biflow_genes_count = len(get_network_object_header("biflow", "ipv4-l4"))
+        ipv4_tcp_biflow_genes_count = len(get_network_object_header("biflow", "ipv4-tcp"))
 
-        print("[+] Calculated IPv4 BiFlow Genes:", ipv4_flow_genes_count, "BiFlow Genes", flush=True)
-        print("[+] Calculated IPv4+GenericL4 BiFlow Genes:", ipv4_flow_genes_count + ipv4_l4_genes_count, "BiFlow Genes", flush=True)
+        print("[+] Calculated IPv4 BiFlow Genes:", ipv4_biflow_genes_count, "BiFlow Genes", flush=True)
+        print("[+] Calculated IPv4+GenericL4 BiFlow Genes:", ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count, "BiFlow Genes", flush=True)
         print("[+] Calculated IPv4+GenericL4+UDP BiFlow Genes:" + cterminal.colors.GREEN, \
-            ipv4_flow_genes_count + ipv4_l4_genes_count, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
+            ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
         print("[+] Calculated IPv4+GenericL4+TCP BiFlow Genes:" + cterminal.colors.GREEN, \
-            ipv4_flow_genes_count + ipv4_l4_genes_count + ipv4_tcp_genes_count, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
+            ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count + ipv4_tcp_biflow_genes_count, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
         print("[T] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
 
     # ------------------------------------
@@ -1877,7 +2135,8 @@ def generate_network_objets(input_pcap_file):
     if args.verbose:
         module_init_time = time.time()
 
-    output_biflow_genes(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst)
+    # Output BiFlows
+    output_net_genes(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst, "biflow")
 
     if args.verbose:
         print("[T] Saved in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
@@ -1886,13 +2145,14 @@ def generate_network_objets(input_pcap_file):
     # Bidirectional Talkers
     # =====================
     if args.verbose:
-        print(make_header_string("4. Bidirectional Talker Construction", separator="=", big_header=True), flush=True)
+        print(make_header_string("4. Layer-3/Layer-4 Bidirectional Talker Construction", separator="=", big_header=True), flush=True)
 
     if args.verbose:
         module_init_time = time.time()
-        print(make_header_string("4.1. Layer-4 BiTalkers: UDP and TCP"), flush=True)
+        print(make_header_string("4.1. IPv4+GenericL4+(UDP|TCP) Bidirectional Talkers"), flush=True)
 
-    udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids = build_l4_bitalkers(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids)
+    udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids = build_l4_bitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids,\
+        ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids)
     if args.verbose:
         n_contemplated_ipv4_udp_biflows = sum([len(udp_bitalkers[udp_bitalker_id]) for udp_bitalker_id in udp_bitalker_ids])
         n_contemplated_ipv4_tcp_biflows = sum([len(tcp_bitalkers[tcp_bitalker_id]) for tcp_bitalker_id in tcp_bitalker_ids])
@@ -1909,10 +2169,36 @@ def generate_network_objets(input_pcap_file):
     # IPv4-L4-(UDP|TCP) BiTalker Genes
     # ================================
     if args.verbose:
-        print(make_header_string("5. BiTalker Construction", separator="=", big_header=True), flush=True)
+        print(make_header_string("5. Layer-3/Layer-4 Bidirectional Talker Genes", separator="=", big_header=True), flush=True)
 
-    # TODO: do bitalker genes and use rfc793_tcp_biflow_conceptual_features
-    
+    # --------------------------------------------
+    # IPv4-L4-(UDP|TCP) BiTalker Gene Calculations
+    # --------------------------------------------
+    if args.verbose:
+        module_init_time = time.time()
+        print(make_header_string("5.1. IPv4+GenericL4+(UDP|TCP) BiTalker Genes"), flush=True)
+
+    ipv4_udp_bitalker_genes_generator_lst, ipv4_tcp_bitalker_genes_generator_lst =\
+        get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids)
+
+    if args.verbose:
+        # minus 4 to remove bitalker_id, bihost_id, bitalker_any_first_biflow_initiation_time
+        # and bitalker_any_last_biflow_termination_time
+        ipv4_bitalker_genes_count = len(get_network_object_header("bitalker", "ipv4")) - 4
+        ipv4_l4_bitalker_genes_count = len(get_network_object_header("bitalker", "ipv4-l4"))
+        ipv4_tcp_bitalker_genes_count = len(get_network_object_header("bitalker", "ipv4-tcp"))
+
+        print("[+] Calculated IPv4 BiTalker Genes:", ipv4_bitalker_genes_count, "BiTalker Genes", flush=True)
+        print("[+] Calculated IPv4+GenericL4 BiTalker Genes:", ipv4_bitalker_genes_count + ipv4_l4_bitalker_genes_count, "BiTalker Genes", flush=True)
+        print("[+] Calculated IPv4+GenericL4+UDP BiTalker Genes:" + cterminal.colors.GREEN, \
+            ipv4_bitalker_genes_count + ipv4_l4_bitalker_genes_count, "BiTalker Genes" + cterminal.colors.ENDC, flush=True)
+        print("[+] Calculated IPv4+GenericL4+TCP BiTalker Genes:" + cterminal.colors.GREEN, \
+            ipv4_bitalker_genes_count + ipv4_l4_bitalker_genes_count + ipv4_tcp_bitalker_genes_count, "BiTalker Genes" + cterminal.colors.ENDC, flush=True)
+        print("[T] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
+
+    # Output BiTalkers
+    output_net_genes(ipv4_udp_bitalker_genes_generator_lst, ipv4_tcp_bitalker_genes_generator_lst, "bitalker")
+
     # ========
     # FINISHED
     # ========
@@ -1920,6 +2206,11 @@ def generate_network_objets(input_pcap_file):
         print(make_header_string("Total Extraction Time", separator="=", big_header=True), flush=True)
         print("[T] Script took" + cterminal.colors.YELLOW, round(time.time() - run_init_time, 3), "seconds" + cterminal.colors.ENDC, "to complete", flush=True)
 
+
+
+##====##
+##MAIN##
+##====##
 def run():
     os.makedirs(netmeter_globals.pcap_files_dir, exist_ok=True)
     os.makedirs(netmeter_globals.csv_files_dir, exist_ok=True)

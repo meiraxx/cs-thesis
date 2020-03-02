@@ -1,32 +1,36 @@
 # IPv4-L4 BiTalker
 ## CURRENT NUMBER OF GENES
-**18 BiTalker Genes:**  
-- 0 Conceptual Features
+**21 BiTalker Genes:**  
+- 3 Conceptual Features
 - 18 Statistical Features
 
 ## GENES
 ### Conceptual Features
-None contemplated  
+**L4 Destination Port Features**  
+bitalker_any_biflow_n_unique_dst_ports  
+bitalker_fwd_biflow_n_unique_dst_ports  
+bitalker_bwd_biflow_n_unique_dst_ports  
 
 ### Statistical Features
+
 **L4 Data Packet Features**  
 bitalker_any_eth_ipv4_l4_biflow_n_data_packets_total  
 bitalker_any_eth_ipv4_l4_biflow_n_data_packets_mean  
+bitalker_any_eth_ipv4_l4_biflow_n_data_packets_std  
+bitalker_any_eth_ipv4_l4_biflow_n_data_packets_var  
 bitalker_any_eth_ipv4_l4_biflow_n_data_packets_max  
 bitalker_any_eth_ipv4_l4_biflow_n_data_packets_min  
-bitalker_any_eth_ipv4_l4_biflow_n_data_packets_var  
-bitalker_any_eth_ipv4_l4_biflow_n_data_packets_std  
 
 bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_total  
 bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_mean  
+bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_std  
+bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_var  
 bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_max  
 bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_min  
-bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_var  
-bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets_std  
 
 bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_total  
 bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_mean  
+bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_std  
+bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_var  
 bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_max  
 bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_min  
-bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_var  
-bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets_std  
