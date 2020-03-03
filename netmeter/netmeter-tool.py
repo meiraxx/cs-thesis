@@ -136,6 +136,18 @@ class NetMeterGlobals:
 def now():
     return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
+def get_opposite_biflow_id(biflow_id):
+    """ Get a biflow_id's correspondent biflow_id in the opposite direction """
+    src_ip = biflow_id[0]
+    src_port = biflow_id[1]
+    dst_ip = biflow_id[2]
+    dst_port = biflow_id[3]
+    protocol_stack = biflow_id[4]
+    inner_sep_counter = biflow_id[5]
+
+    opposite_biflow_id = (biflow_id[2], biflow_id[3], biflow_id[0], biflow_id[1], biflow_id[4], biflow_id[5])
+    return opposite_biflow_id
+
 def biflow_id_to_pcap_filter(biflow_id):
     """ Auxiliary function to convert a biflow id to a pcap filter. Right now, just used for debugging."""
     src_ip = biflow_id[0]
@@ -1011,12 +1023,11 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                 curr_packet_eth_ip_df_flag = curr_packet[4]
                 curr_packet_eth_ip_mf_flag = curr_packet[5]
 
-                # IAT requires that there's at least two packets.
+                # Packet IAT requires that there's at least two packets
                 if curr_packet_index >= 1:
-                    # STATISTICAL
-                    curr_packet_time = datetime_to_unixtime(previous_packet_timestamp)
-                    next_packet_time = datetime_to_unixtime(curr_packet_timestamp)
-                    curr_packet_iat = (next_packet_time - curr_packet_time)/time_scale_factor
+                    previous_packet_time = datetime_to_unixtime(previous_packet_timestamp)
+                    curr_packet_time = datetime_to_unixtime(curr_packet_timestamp)
+                    curr_packet_iat = (curr_packet_time - previous_packet_time)/time_scale_factor
                     biflow_any_iats.append(curr_packet_iat)
                     if previous_packet_biflow_id == biflow_id:
                         biflow_fwd_iats.append(curr_packet_iat)
@@ -1680,20 +1691,21 @@ def build_l4_bitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids, ipv4
         """Build BiTalkers"""
         bitalkers = dict()
         bitalker_ids = list()
-        biflow_id = biflow_genes_generator_lst[0]
 
         for biflow_genes in biflow_genes_generator_lst:
-            biflow_id = str_to_iterator(biflow_genes[0])
+            biflow_id_str = biflow_genes[0]
+            biflow_id = str_to_iterator(biflow_id_str)
             bitalker_id = biflow_id_to_bitalker_id(biflow_id)
-            bitalker_ids.append(bitalker_id)
+            
+
+            #opposite_biflow_id = get_opposite_biflow_id(biflow_id)
+            #opposite_bitalker_id = biflow_id_to_bitalker_id(opposite_biflow_id)
+
             try:
                 bitalkers[bitalker_id].append(biflow_genes)
             except:
+                bitalker_ids.append(bitalker_id)
                 bitalkers[bitalker_id] = [biflow_genes]
-
-        #SHOULD-TODO: use right data structure from the start
-        #remove duplicates mantaining order
-        bitalker_ids = list(OrderedDict.fromkeys(bitalker_ids))
 
         return bitalkers, bitalker_ids
 
@@ -1798,12 +1810,26 @@ def get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bita
             # =============
             # Time Features
             # =============
-            # ------------------------
-            # BiFlow Duration Features
-            # ------------------------
+            # ----------------
+            # BiFlow Durations
+            # ----------------
             bitalker_any_biflow_durations = list()
             bitalker_fwd_biflow_durations = list()
             bitalker_bwd_biflow_durations = list()
+
+            # -----------------------------
+            # BiFlow Inter-Initiation Times
+            # -----------------------------
+            bitalker_any_biflow_iits = list()
+            bitalker_fwd_biflow_iits = list()
+            bitalker_bwd_biflow_iits = list()
+
+            # ------------------------------
+            # BiFlow Inter-Termination Times
+            # ------------------------------
+            bitalker_any_biflow_itts = list()
+            bitalker_fwd_biflow_itts = list()
+            bitalker_bwd_biflow_itts = list()
 
             # =================================
             # Additional Information - Reformat
@@ -1822,9 +1848,9 @@ def get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bita
             # ==========================
             curr_biflow_index = 0
             while curr_biflow_index < bitalker_any_n_biflows:
-                # ===============
-                # BiFlow Concepts
-                # ===============
+                # =================
+                # BiFlow Concepts |
+                # =================
                 if curr_biflow_index >= 1:
                     previous_biflow = curr_bitalker[curr_biflow_index-1]
                     previous_biflow_bitalker_id = previous_biflow[1]
@@ -1837,7 +1863,31 @@ def get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bita
                 curr_biflow_bitalker_id_str = curr_biflow[1]
                 curr_biflow_initiation_timestamp = curr_biflow[2]
                 curr_biflow_termination_timestamp = curr_biflow[3]
-                curr_biflow_duration = curr_biflow[4]
+
+                # BiFlow IIT and ITT require that there's at least two biflows
+                if curr_biflow_index >= 1:
+                    previous_biflow_initiation_time = datetime_to_unixtime(previous_biflow_initiation_timestamp)
+                    curr_biflow_initiation_time = datetime_to_unixtime(curr_biflow_initiation_timestamp)
+                    curr_biflow_iit = (curr_biflow_initiation_time - previous_biflow_initiation_time)/time_scale_factor
+                    bitalker_any_biflow_iits.append(curr_biflow_iit)
+
+                    previous_biflow_termination_time = datetime_to_unixtime(previous_biflow_termination_timestamp)
+                    curr_biflow_termination_time = datetime_to_unixtime(curr_biflow_termination_timestamp)
+                    curr_biflow_itt = (curr_biflow_termination_time - previous_biflow_termination_time)/time_scale_factor
+                    bitalker_any_biflow_itts.append(curr_biflow_itt)
+
+                    if previous_biflow_bitalker_id == bitalker_id:
+                        bitalker_fwd_biflow_iits.append(curr_biflow_iit)
+                        bitalker_fwd_biflow_itts.append(curr_biflow_itt)
+                    else:
+                        bitalker_bwd_biflow_iits.append(curr_biflow_iit)
+                        bitalker_bwd_biflow_itts.append(curr_biflow_itt)
+
+                # =============
+                # Time Concepts
+                # =============
+                curr_biflow_duration = float(curr_biflow[4])
+                bitalker_any_biflow_durations.append(curr_biflow_duration)
 
                 # ===============
                 # Packet Concepts
@@ -1855,6 +1905,7 @@ def get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bita
                     # Statistical
                     bitalker_fwd_biflow_eth_ipv4_data_lens.append(curr_biflow_ipv4_data_len_total)
                     bitalker_fwd_biflow_n_packets.append(curr_biflow_any_n_packets)
+                    bitalker_fwd_biflow_durations.append(curr_biflow_duration)
 
                     # Conceptual
                     bitalker_fwd_n_biflows += 1
@@ -1862,6 +1913,7 @@ def get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bita
                     # Statistical
                     bitalker_bwd_biflow_eth_ipv4_data_lens.append(curr_biflow_ipv4_data_len_total)
                     bitalker_bwd_biflow_n_packets.append(curr_biflow_any_n_packets)
+                    bitalker_bwd_biflow_durations.append(curr_biflow_duration)
 
                     # Conceptual
                     bitalker_bwd_n_biflows += 1
@@ -1945,6 +1997,109 @@ def get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bita
                 bitalker_bwd_biflow_eth_ipv4_data_lens_var = round(np.var(bitalker_bwd_biflow_eth_ipv4_data_lens), 3)
                 bitalker_bwd_biflow_eth_ipv4_data_lens_max = round(max(bitalker_bwd_biflow_eth_ipv4_data_lens), 3)
                 bitalker_bwd_biflow_eth_ipv4_data_lens_min = round(min(bitalker_bwd_biflow_eth_ipv4_data_lens), 3)
+
+            # ----------------
+            # BiFlow Durations
+            # ----------------
+            bitalker_any_biflow_duration_total = round(sum(bitalker_any_biflow_durations), 3)
+            bitalker_any_biflow_duration_mean = round(np.mean(bitalker_any_biflow_durations), 3)
+            bitalker_any_biflow_duration_std = round(np.std(bitalker_any_biflow_durations), 3)
+            bitalker_any_biflow_duration_var = round(np.var(bitalker_any_biflow_durations), 3)
+            bitalker_any_biflow_duration_max = round(max(bitalker_any_biflow_durations), 3)
+            bitalker_any_biflow_duration_min = round(min(bitalker_any_biflow_durations), 3)
+
+            bitalker_fwd_biflow_duration_total = round(sum(bitalker_fwd_biflow_durations), 3)
+            bitalker_fwd_biflow_duration_mean = round(np.mean(bitalker_fwd_biflow_durations), 3)
+            bitalker_fwd_biflow_duration_std = round(np.std(bitalker_fwd_biflow_durations), 3)
+            bitalker_fwd_biflow_duration_var = round(np.var(bitalker_fwd_biflow_durations), 3)
+            bitalker_fwd_biflow_duration_max = round(max(bitalker_fwd_biflow_durations), 3)
+            bitalker_fwd_biflow_duration_min = round(min(bitalker_fwd_biflow_durations), 3)
+
+            if len(bitalker_bwd_biflow_durations) == 0:
+                bitalker_bwd_biflow_duration_total = bitalker_bwd_biflow_duration_max = bitalker_bwd_biflow_duration_min = 0
+                bitalker_bwd_biflow_duration_mean = bitalker_bwd_biflow_duration_std = bitalker_bwd_biflow_duration_var = 0.0
+            else:
+                bitalker_bwd_biflow_duration_total = round(sum(bitalker_bwd_biflow_durations), 3)
+                bitalker_bwd_biflow_duration_mean = round(np.mean(bitalker_bwd_biflow_durations), 3)
+                bitalker_bwd_biflow_duration_std = round(np.std(bitalker_bwd_biflow_durations), 3)
+                bitalker_bwd_biflow_duration_var = round(np.var(bitalker_bwd_biflow_durations), 3)
+                bitalker_bwd_biflow_duration_max = round(max(bitalker_bwd_biflow_durations), 3)
+                bitalker_bwd_biflow_duration_min = round(min(bitalker_bwd_biflow_durations), 3)
+
+            # -----------------------------
+            # BiFlow Inter-Initiation Times
+            # -----------------------------
+            # Note: need at least 2 BiFlows to populate BiFlow IITs
+
+            if len(bitalker_any_biflow_iits) == 0:
+                bitalker_any_biflow_iit_total = bitalker_any_biflow_iit_max = bitalker_any_biflow_iit_min = 0
+                bitalker_any_biflow_iit_mean = bitalker_any_biflow_iit_std = bitalker_any_biflow_iit_var = 0.0
+            else:
+                bitalker_any_biflow_iit_total = round(sum(bitalker_any_biflow_iits), 3)
+                bitalker_any_biflow_iit_mean = round(np.mean(bitalker_any_biflow_iits), 3)
+                bitalker_any_biflow_iit_std = round(np.std(bitalker_any_biflow_iits), 3)
+                bitalker_any_biflow_iit_var = round(np.var(bitalker_any_biflow_iits), 3)
+                bitalker_any_biflow_iit_max = round(max(bitalker_any_biflow_iits), 3)
+                bitalker_any_biflow_iit_min = round(min(bitalker_any_biflow_iits), 3)
+
+            if len(bitalker_fwd_biflow_iits) == 0:
+                bitalker_fwd_biflow_iit_total = bitalker_fwd_biflow_iit_max = bitalker_fwd_biflow_iit_min = 0
+                bitalker_fwd_biflow_iit_mean = bitalker_fwd_biflow_iit_std = bitalker_fwd_biflow_iit_var = 0.0
+            else:
+                bitalker_fwd_biflow_iit_total = round(sum(bitalker_fwd_biflow_iits), 3)
+                bitalker_fwd_biflow_iit_mean = round(np.mean(bitalker_fwd_biflow_iits), 3)
+                bitalker_fwd_biflow_iit_std = round(np.std(bitalker_fwd_biflow_iits), 3)
+                bitalker_fwd_biflow_iit_var = round(np.var(bitalker_fwd_biflow_iits), 3)
+                bitalker_fwd_biflow_iit_max = round(max(bitalker_fwd_biflow_iits), 3)
+                bitalker_fwd_biflow_iit_min = round(min(bitalker_fwd_biflow_iits), 3)
+
+            if len(bitalker_bwd_biflow_iits) == 0:
+                bitalker_bwd_biflow_iit_total = bitalker_bwd_biflow_iit_max = bitalker_bwd_biflow_iit_min = 0
+                bitalker_bwd_biflow_iit_mean = bitalker_bwd_biflow_iit_std = bitalker_bwd_biflow_iit_var = 0.0
+            else:
+                bitalker_bwd_biflow_iit_total = round(sum(bitalker_bwd_biflow_iits), 3)
+                bitalker_bwd_biflow_iit_mean = round(np.mean(bitalker_bwd_biflow_iits), 3)
+                bitalker_bwd_biflow_iit_std = round(np.std(bitalker_bwd_biflow_iits), 3)
+                bitalker_bwd_biflow_iit_var = round(np.var(bitalker_bwd_biflow_iits), 3)
+                bitalker_bwd_biflow_iit_max = round(max(bitalker_bwd_biflow_iits), 3)
+                bitalker_bwd_biflow_iit_min = round(min(bitalker_bwd_biflow_iits), 3)
+
+            # ------------------------------
+            # BiFlow Inter-Termination Times
+            # ------------------------------
+            # Note: need at least 2 BiFlows to populate BiFlow ITTs
+            if len(bitalker_any_biflow_itts) == 0:
+                bitalker_any_biflow_itt_total = bitalker_any_biflow_itt_max = bitalker_any_biflow_itt_min = 0
+                bitalker_any_biflow_itt_mean = bitalker_any_biflow_itt_std = bitalker_any_biflow_itt_var = 0.0
+            else:
+                bitalker_any_biflow_itt_total = round(sum(bitalker_any_biflow_itts), 3)
+                bitalker_any_biflow_itt_mean = round(np.mean(bitalker_any_biflow_itts), 3)
+                bitalker_any_biflow_itt_std = round(np.std(bitalker_any_biflow_itts), 3)
+                bitalker_any_biflow_itt_var = round(np.var(bitalker_any_biflow_itts), 3)
+                bitalker_any_biflow_itt_max = round(max(bitalker_any_biflow_itts), 3)
+                bitalker_any_biflow_itt_min = round(min(bitalker_any_biflow_itts), 3)
+
+            if len(bitalker_fwd_biflow_itts) == 0:
+                bitalker_fwd_biflow_itt_total = bitalker_fwd_biflow_itt_max = bitalker_fwd_biflow_itt_min = 0
+                bitalker_fwd_biflow_itt_mean = bitalker_fwd_biflow_itt_std = bitalker_fwd_biflow_itt_var = 0.0
+            else:
+                bitalker_fwd_biflow_itt_total = round(sum(bitalker_fwd_biflow_itts), 3)
+                bitalker_fwd_biflow_itt_mean = round(np.mean(bitalker_fwd_biflow_itts), 3)
+                bitalker_fwd_biflow_itt_std = round(np.std(bitalker_fwd_biflow_itts), 3)
+                bitalker_fwd_biflow_itt_var = round(np.var(bitalker_fwd_biflow_itts), 3)
+                bitalker_fwd_biflow_itt_max = round(max(bitalker_fwd_biflow_itts), 3)
+                bitalker_fwd_biflow_itt_min = round(min(bitalker_fwd_biflow_itts), 3)
+
+            if len(bitalker_bwd_biflow_itts) == 0:
+                bitalker_bwd_biflow_itt_total = bitalker_bwd_biflow_itt_max = bitalker_bwd_biflow_itt_min = 0
+                bitalker_bwd_biflow_itt_mean = bitalker_bwd_biflow_itt_std = bitalker_bwd_biflow_itt_var = 0.0
+            else:
+                bitalker_bwd_biflow_itt_total = round(sum(bitalker_bwd_biflow_itts), 3)
+                bitalker_bwd_biflow_itt_mean = round(np.mean(bitalker_bwd_biflow_itts), 3)
+                bitalker_bwd_biflow_itt_std = round(np.std(bitalker_bwd_biflow_itts), 3)
+                bitalker_bwd_biflow_itt_var = round(np.var(bitalker_bwd_biflow_itts), 3)
+                bitalker_bwd_biflow_itt_max = round(max(bitalker_bwd_biflow_itts), 3)
+                bitalker_bwd_biflow_itt_min = round(min(bitalker_bwd_biflow_itts), 3)
 
             # ===========
             # L4 Features
