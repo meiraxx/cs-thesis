@@ -7,8 +7,8 @@
 
 ## IDENTIFIER
 **biflow_id (joined 6-tuple):**  
-- (**source_ip**, **source_port**, destination_ip, destination_port, protocol_stack, inner_sep_counter)  
-- (source_ip, source_port, **destination_ip**, **destination_port**, protocol_stack, inner_sep_counter)  
+- (**source_ip**, **source_port**, destination_ip, destination_port, protocol_stack, inner_sep_counter)
+- (source_ip, source_port, **destination_ip**, **destination_port**, protocol_stack, inner_sep_counter)
 
 ## ADDITIONAL INFORMATION
 bitalker_id

@@ -102,7 +102,7 @@ class NetMeterArgs:
         oparser.add_argument("-d", metavar="Debug Verbose", help="Specify debug output: 1 (packet), 2 (flow)", dest="debug")
         oparser.add_argument("-v", "--verbose", action="store_true", help="Verbose output", dest="verbose")
         oparser.add_argument("-D", metavar="Data Directory", help="Specify data directory: store inputs (e.g. PCAP) and outputs (e.g. CSV)", dest="data_dir", default="data-files")
-        oparser.add_argument("-T", metavar="Output Type", help="Specify output type: mongo, csv, ...", dest="output_type", type=str.lower, default="csv")
+        oparser.add_argument("-T", metavar="Output Type", help="Specify output type: csv, json, ...", dest="output_type", type=str.lower, default="csv")
         optional_args_noreq_header = "Optional arguments (does not require other arguments)"
         optional_args_noreq_repr = ":\n  -h, -H, --help     See this help message\n  -V, --version      See NetMeter version"
         optional_args_req_header = "Optional arguments (requires a PCAP file)"
@@ -165,11 +165,15 @@ def biflow_id_to_bitalker_id(biflow_id):
     bitalker_id = (biflow_id[0], biflow_id[2], biflow_id[4])
     return bitalker_id
 
-def bitalker_id_to_bihost_id(bitalker_id):
+def bitalker_id_to_bihost_id(bitalker_id, _reversed=False):
     """Get bitalker_id's correspondent bihost_id"""
-    # Note: the researcher will keep this network object definition without the protocol_stack because BiTalkers do not have
-    # too much protocol_stack-dependent genes, which means there won't be too many different genes at this level
-    bihost_id = bitalker_id[0]
+    # Note: the researcher will keep the protocol_stack in this network object definition because we want to analyze
+    # each protocol_stack independently (for now, at least)
+    if not _reversed:
+        bihost_id = (bitalker_id[0], bitalker_id[2])
+    else:
+        bihost_id = (bitalker_id[1], bitalker_id[2])
+
     return bihost_id
 
 def iterator_to_str(iterator, separator="-"):
@@ -1685,7 +1689,7 @@ def build_l4_unitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids, ipv
 
             try:
                 unitalkers[unitalker_id].append(biflow_genes)
-            except:
+            except KeyError:
                 unitalker_ids.append(unitalker_id)
                 unitalkers[unitalker_id] = [biflow_genes]
 
@@ -1716,23 +1720,6 @@ def build_l4_bitalkers(udp_unitalkers, udp_unitalker_ids, tcp_unitalkers, tcp_un
                         l4_fwd_talker_ids.append(l4_unitalker_id)
                         matching_l4_unitalker_ids_dict[l4_unitalker_id] = False
             return matching_l4_unitalker_ids_dict, l4_fwd_talker_ids
-            """
-            unitalkers = dict()
-            unitalker_ids = list()
-
-            for biflow_genes in biflow_genes_generator_lst:
-                biflow_id_str = biflow_genes[0]
-                biflow_id = str_to_iterator(biflow_id_str)
-                unitalker_id = biflow_id_to_bitalker_id(biflow_id)
-
-                try:
-                    unitalkers[unitalker_id].append(biflow_genes)
-                except:
-                    unitalker_ids.append(unitalker_id)
-                    unitalkers[unitalker_id] = [biflow_genes]
-
-            return unitalkers, unitalker_ids
-            """
 
         matching_l4_unitalker_ids_dict, l4_fwd_talker_ids = get_unique_matching_l4_unitalker_ids(l4_unitalker_ids)
         l4_bitalkers = dict()
@@ -1896,7 +1883,7 @@ def get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bita
             # Additional Information - Reformat
             # =================================
             # Get bihost_id and convert bitalker_id to strings
-            bihost_id = bitalker_id_to_bihost_id(bitalker_id)
+            bihost_id = iterator_to_str(bitalker_id_to_bihost_id(bitalker_id))
             bitalker_id = iterator_to_str(bitalker_id)
             bitalker_any_first_biflow_initiation_time = unixtime_to_datetime(bitalker_any_first_biflow_initiation_time)
             bitalker_any_last_biflow_termination_time = unixtime_to_datetime(bitalker_any_last_biflow_termination_time)
@@ -2342,6 +2329,84 @@ def get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bita
 
     return list(ipv4_udp_bitalker_genes_generator), list(ipv4_tcp_bitalker_genes_generator)
 
+def build_l4_unihosts(ipv4_udp_bitalker_genes_generator_lst, udp_bitalker_ids, ipv4_tcp_bitalker_genes_generator_lst, tcp_bitalker_ids):
+    """Build L4 UniHosts"""
+    def build_unihosts(bitalker_genes_generator_lst, bitalker_ids):
+        """Build UniHosts"""
+        # Note: l4_unihost_ids in both directions are the same as l4_bihost_ids
+        unihosts = dict()
+        unihost_ids = list()
+
+        for bitalker_genes in bitalker_genes_generator_lst:
+            bitalker_id_str = bitalker_genes[0]
+            bitalker_id = str_to_iterator(bitalker_id_str)
+            fwd_unihost_id = bitalker_id_to_bihost_id(bitalker_id)
+            bwd_unihost_id = bitalker_id_to_bihost_id(bitalker_id, _reversed=True)
+
+            try:
+                unihosts[fwd_unihost_id].append(bitalker_genes)
+            except KeyError:
+                unihost_ids.append(fwd_unihost_id)
+                unihosts[fwd_unihost_id] = [bitalker_genes]
+
+            try:
+                unihosts[bwd_unihost_id].append(bitalker_genes)
+            except KeyError:
+                unihost_ids.append(bwd_unihost_id)
+                unihosts[bwd_unihost_id] = [bitalker_genes]
+
+        return unihosts, unihost_ids
+
+    udp_unihosts, udp_unihost_ids = build_unihosts(ipv4_udp_bitalker_genes_generator_lst, udp_bitalker_ids)
+    tcp_unihosts, tcp_unihost_ids = build_unihosts(ipv4_tcp_bitalker_genes_generator_lst, tcp_bitalker_ids)
+
+    return udp_unihosts, udp_unihost_ids, tcp_unihosts, tcp_unihost_ids
+
+def build_l4_bihosts(udp_unihosts, udp_unihost_ids, tcp_unihosts, tcp_unihost_ids):
+    """Build L4 BiHosts"""
+    def build_bihosts(l4_unihosts, l4_unihost_ids):
+        """Build BiHosts"""
+        # Note: l4_unihost_ids in both directions are the same as l4_bihost_ids
+        def get_unique_matching_l4_unihost_ids(l4_unihost_ids):
+            """Local helper function to return matching unidirectional host ids, with l4_fwd_host_id
+            as key and l4_bwd_host_id as value, and not vice-versa"""
+            matching_l4_unihost_ids_dict = dict()
+            l4_fwd_host_ids = list()
+            for l4_unihost_id in l4_unihost_ids:
+                reversed_l4_unihost_id = (l4_unihost_id[0], l4_unihost_id[1])
+                if reversed_l4_unihost_id in l4_unihost_ids:
+                    if reversed_l4_unihost_id not in matching_l4_unihost_ids_dict:
+                        l4_fwd_host_ids.append(l4_unihost_id)
+                        matching_l4_unihost_ids_dict[l4_unihost_id] = reversed_l4_unihost_id
+                else:
+                    if reversed_l4_unihost_id not in matching_l4_unihost_ids_dict:
+                        l4_fwd_host_ids.append(l4_unihost_id)
+                        matching_l4_unihost_ids_dict[l4_unihost_id] = False
+
+            return matching_l4_unihost_ids_dict, l4_fwd_host_ids
+
+        matching_l4_unihost_ids_dict, l4_fwd_host_ids = get_unique_matching_l4_unihost_ids(l4_unihost_ids)
+        l4_bihosts = dict()
+        l4_bihost_ids = list()
+
+        for l4_fwd_host_id in l4_fwd_host_ids:
+            # have in mind every l4_unihost_id in this list will have been constituted by the first talker ever recorded in that host,
+            # so the researcher defines l4_bihost_id = l4_fwd_host_id, which will also be l4_bwd_host_id
+            l4_bwd_host_id = matching_l4_unihost_ids_dict[l4_fwd_host_id]
+            l4_bihost_ids.append(l4_fwd_host_id)
+            if l4_bwd_host_id:
+                l4_bihosts[l4_fwd_host_id] = l4_unihosts[l4_fwd_host_id] + l4_unihosts[l4_bwd_host_id]
+            else:
+                l4_bihosts[l4_fwd_host_id] = l4_unihosts[l4_fwd_host_id]
+
+        return l4_bihosts, l4_bihost_ids
+
+    udp_bihosts, udp_bihost_ids = build_bihosts(udp_unihosts, udp_unihost_ids)
+    tcp_bihosts, tcp_bihost_ids = build_bihosts(tcp_unihosts, tcp_unihost_ids)
+
+    return udp_bihosts, udp_bihost_ids, tcp_bihosts, tcp_bihost_ids
+
+
 def generate_network_objets(input_pcap_file):
     """
     Build all network objects: packets, flows, bitalkers and hosts
@@ -2476,6 +2541,8 @@ def generate_network_objets(input_pcap_file):
 
     udp_unitalkers, udp_unitalker_ids, tcp_unitalkers, tcp_unitalker_ids = build_l4_unitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids,\
         ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids)
+    del(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids, ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids)
+
     if args.verbose:
         n_contemplated_ipv4_udp_biflows = sum([len(udp_unitalkers[udp_unitalker_id]) for udp_unitalker_id in udp_unitalker_ids])
         n_contemplated_ipv4_tcp_biflows = sum([len(tcp_unitalkers[tcp_unitalker_id]) for tcp_unitalker_id in tcp_unitalker_ids])
@@ -2497,7 +2564,7 @@ def generate_network_objets(input_pcap_file):
 
     udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids = build_l4_bitalkers(udp_unitalkers, udp_unitalker_ids,\
         tcp_unitalkers, tcp_unitalker_ids)
-    del(udp_unitalkers, udp_unitalker_ids,tcp_unitalkers, tcp_unitalker_ids)
+    del(udp_unitalkers, udp_unitalker_ids, tcp_unitalkers, tcp_unitalker_ids)
 
     if args.verbose:
         n_contemplated_ipv4_udp_biflows = sum([len(udp_bitalkers[udp_bitalker_id]) for udp_bitalker_id in udp_bitalker_ids])
@@ -2526,6 +2593,7 @@ def generate_network_objets(input_pcap_file):
 
     ipv4_udp_bitalker_genes_generator_lst, ipv4_tcp_bitalker_genes_generator_lst =\
         get_l3_l4_bitalker_gene_generators(udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids)
+    del(udp_bitalkers, tcp_bitalkers)
 
     if args.verbose:
         # minus 4 to remove bitalker_id, bihost_id, bitalker_any_first_biflow_initiation_time
@@ -2544,6 +2612,57 @@ def generate_network_objets(input_pcap_file):
 
     # Output BiTalkers
     output_net_genes(ipv4_udp_bitalker_genes_generator_lst, ipv4_tcp_bitalker_genes_generator_lst, "bitalker")
+
+    # =======
+    # Hosts |
+    # =======
+    if args.verbose:
+        print(make_header_string("6. Layer-3/Layer-4 Host Construction", separator="=", big_header=True), flush=True)
+
+    # ====================
+    # Unidirectional Hosts
+    # ====================
+    if args.verbose:
+        module_init_time = time.time()
+        print(make_header_string("6.1. IPv4+GenericL4+(UDP|TCP) Unidirectional Hosts"), flush=True)
+
+    udp_unihosts, udp_unihost_ids, tcp_unihosts, tcp_unihost_ids = build_l4_unihosts(ipv4_udp_bitalker_genes_generator_lst, udp_bitalker_ids,\
+        ipv4_tcp_bitalker_genes_generator_lst, tcp_bitalker_ids)
+    del(ipv4_udp_bitalker_genes_generator_lst, udp_bitalker_ids, ipv4_tcp_bitalker_genes_generator_lst, tcp_bitalker_ids)
+
+    if args.verbose:
+        n_contemplated_ipv4_udp_bitalkers = sum([len(udp_unihosts[udp_unihost_id]) for udp_unihost_id in udp_unihost_ids])
+        n_contemplated_ipv4_tcp_bitalkers = sum([len(tcp_unihosts[tcp_unihost_id]) for tcp_unihost_id in tcp_unihost_ids])
+        n_ipv4_udp_unihosts = len(udp_unihost_ids)
+        n_ipv4_tcp_unihosts = len(tcp_unihost_ids)
+
+        print("[+] IPv4-UDP BiTalkers contemplated:", n_contemplated_ipv4_udp_bitalkers, "IPv4-UDP BiTalkers", flush=True)
+        print("[+] IPv4-TCP BiTalkers contemplated:", n_contemplated_ipv4_tcp_bitalkers, "IPv4-TCP BiTalkers", flush=True)
+        print("[+] IPv4-UDP UniHosts detected:" + cterminal.colors.GREEN, n_ipv4_udp_unihosts, "IPv4-UDP UniHosts" + cterminal.colors.ENDC, flush=True)
+        print("[+] IPv4-TCP UniHosts detected:" + cterminal.colors.GREEN, n_ipv4_tcp_unihosts, "IPv4-TCP UniHosts" + cterminal.colors.ENDC, flush=True)
+        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+
+    # ====================
+    # Bidirectional Hosts
+    # ====================
+    if args.verbose:
+        module_init_time = time.time()
+        print(make_header_string("6.2. IPv4+GenericL4+(UDP|TCP) Bidirectional Hosts"), flush=True)
+
+    udp_bihosts, udp_bihost_ids, tcp_bihosts, tcp_bihost_ids = build_l4_bihosts(udp_unihosts, udp_unihost_ids, tcp_unihosts, tcp_unihost_ids)
+    del(udp_unihosts, udp_unihost_ids, tcp_unihosts, tcp_unihost_ids)
+
+    if args.verbose:
+        n_contemplated_ipv4_udp_bitalkers = sum([len(udp_bihosts[udp_bihost_id]) for udp_bihost_id in udp_bihost_ids])
+        n_contemplated_ipv4_tcp_bitalkers = sum([len(tcp_bihosts[tcp_bihost_id]) for tcp_bihost_id in tcp_bihost_ids])
+        n_ipv4_udp_bihosts = len(udp_bihost_ids)
+        n_ipv4_tcp_bihosts = len(tcp_bihost_ids)
+
+        print("[+] IPv4-UDP BiTalkers contemplated:", n_contemplated_ipv4_udp_bitalkers, "IPv4-UDP BiTalkers", flush=True)
+        print("[+] IPv4-TCP BiTalkers contemplated:", n_contemplated_ipv4_tcp_bitalkers, "IPv4-TCP BiTalkers", flush=True)
+        print("[+] IPv4-UDP BiHosts detected:" + cterminal.colors.GREEN, n_ipv4_udp_bihosts, "IPv4-UDP BiHosts" + cterminal.colors.ENDC, flush=True)
+        print("[+] IPv4-TCP BiHosts detected:" + cterminal.colors.GREEN, n_ipv4_tcp_bihosts, "IPv4-TCP BiHosts" + cterminal.colors.ENDC, flush=True)
+        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
 
     # ========
     # FINISHED

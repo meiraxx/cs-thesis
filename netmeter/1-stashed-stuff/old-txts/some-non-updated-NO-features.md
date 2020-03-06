@@ -7,7 +7,7 @@ flag_rate = float(flag_count/n_pkts)
 fwd_flag_rate = float(fwd_flag_count/fwd_n_pkts)  
 bwd_flag_rate = float(bwd_flag_count/bwd_n_pkts)  
 
-(flow connection type)  
+(biflow connection type)  
 connection_requested  
 connection_established  
 connection_refused  
@@ -22,22 +22,22 @@ termination_null
 termination_graceful  
 termination_abort  
 
-**The following flow features have less probability of being added**  
+**The following biflow features have less probability of being added**  
 
-(flow activeness)  
-flow_active_time_total  
-flow_active_time_mean  
-flow_active_time_min  
-flow_active_time_max  
-flow_active_time_var  
-flow_active_time_std  
+(biflow activeness)  
+biflow_active_time_total  
+biflow_active_time_mean  
+biflow_active_time_min  
+biflow_active_time_max  
+biflow_active_time_var  
+biflow_active_time_std  
 
-flow_idle_time_total  
-flow_idle_time_mean  
-flow_idle_time_min  
-flow_idle_time_max  
-flow_idle_time_var  
-flow_idle_time_std  
+biflow_idle_time_total  
+biflow_idle_time_mean  
+biflow_idle_time_min  
+biflow_idle_time_max  
+biflow_idle_time_var  
+biflow_idle_time_std  
 
 (layer-7 protocol existence - ftp, ssh, telnet, http, https, irc, etc.; might introduce bias, introduce with care, consider protocol fingerprinting... except this might be hard to achieve for too many protocols right now. But we'll see. There are other priorities.)  
 port-21  
@@ -48,7 +48,7 @@ port-443
 port-6697  
 
 
-### Dialogue  
+### Talker  
 (tcp-connections)  
 fwd_n_connections_requested  
 fwd_n_connections_established  
@@ -81,13 +81,13 @@ bwd_diff_port_n_connections_refused
 n_unique_dst_ports  
 n_diff_dst_ports  
 
-(flow inter-initiation time)  
-flow_iit_total  
-flow_iit_mean  
-flow_iit_min  
-flow_iit_max  
-flow_iit_var  
-flow_iit_std  
+(biflow inter-initiation time)  
+biflow_iit_total  
+biflow_iit_mean  
+biflow_iit_min  
+biflow_iit_max  
+biflow_iit_var  
+biflow_iit_std  
 
 (direction)  
 private_to_public  
@@ -96,44 +96,44 @@ public_to_private
 public_to_public  
 
 (n)  
-n_flows  
+n_biflows  
 
-(type of flow)  
-n_tcp_flows  
-n_udp_flows  
-n_icmp_flows  
-n_fwd_tcp_flows  
-n_fwd_udp_flows  
-n_fwd_icmp_flows  
-n_bwd_tcp_flows  
-n_bwd_udp_flows  
-n_bwd_icmp_flows  
->flow_active  
->flow_idle  
+(type of biflow)  
+n_tcp_biflows  
+n_udp_biflows  
+n_icmp_biflows  
+n_fwd_tcp_biflows  
+n_fwd_udp_biflows  
+n_fwd_icmp_biflows  
+n_bwd_tcp_biflows  
+n_bwd_udp_biflows  
+n_bwd_icmp_biflows  
+>biflow_active  
+>biflow_idle  
 
 ## Host  
 Country  
 Operating System  
 Known LAN Host  
 
-dialogue_iat_total  
-dialogue_iat_mean  
-dialogue_iat_min  
-dialogue_iat_max  
-dialogue_iat_var  
-dialogue_iat_std  
+bitalker_iat_total  
+bitalker_iat_mean  
+bitalker_iat_min  
+bitalker_iat_max  
+bitalker_iat_var  
+bitalker_iat_std  
 
 public_address  
 private_address  
 
-dialogue_private_to_public_total  
-dialogue_private_to_public_ratio  
-dialogue_private_to_private_total  
-dialogue_private_to_private_ratio  
-dialogue_public_to_private_total  
-dialogue_public_to_private_ratio  
-dialogue_public_to_public_total  
-dialogue_public_to_public_ratio  
+bitalker_private_to_public_total  
+bitalker_private_to_public_ratio  
+bitalker_private_to_private_total  
+bitalker_private_to_private_ratio  
+bitalker_public_to_private_total  
+bitalker_public_to_private_ratio  
+bitalker_public_to_public_total  
+bitalker_public_to_public_ratio  
 
->flow_active  
->flow_idle  
+>biflow_active  
+>biflow_idle  

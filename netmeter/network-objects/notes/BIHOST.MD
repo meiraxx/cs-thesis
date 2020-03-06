@@ -7,9 +7,9 @@
 - 126 Statistical Features
 
 ## IDENTIFIER
-bihost_id (joined 1-tuple):  
-- (**source_ip**)  
-- (**destination_ip**)  
+bihost_id (joined 2-tuple):  
+- (**source_ip**, protocol_stack)
+- (**destination_ip**, protocol_stack)
 
 ## ADDITIONAL INFORMATION
 first_talker_time  
