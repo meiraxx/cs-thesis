@@ -12,6 +12,7 @@ None contemplated
 **TCP Previous Statistical Features**  
 Not added because it's an exaggeration at this level  
 
+**TCP BiFlow Conceptual Features**  
 *TCP BiFlow Initiation Types*  
 bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_total  
 bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_mean  
@@ -20,7 +21,6 @@ bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_var
 bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_max  
 bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_min  
 
-**TCP BiFlow Conceptual Features**  
 *TCP BiFlow Connection Types*  
 bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established_total  
 bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established_mean  

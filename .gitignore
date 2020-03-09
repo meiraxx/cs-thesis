@@ -1,3 +1,7 @@
-#netmeter/__pycache__/
+# Pycache Files
 netmeter/auxiliary-python-modules/__pycache__/
+
+
+# Data Files (PCAPs, CSVs, JSONs, etc.)
 netmeter/data-files/
+data-files/

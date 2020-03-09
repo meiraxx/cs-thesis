@@ -1,0 +1,32 @@
+# IPv4-L4 UniHost
+## CURRENT NUMBER OF GENES
+**18 UniHost Genes:**  
+- 0 Conceptual Features
+- 18 Statistical Features
+
+## GENES
+### Conceptual Features
+None contemplated  
+
+### Statistical Features
+**L4 Destination Port Features**  
+unihost_bitalker_any_biflow_n_unique_dst_ports_total  
+unihost_bitalker_any_biflow_n_unique_dst_ports_mean  
+unihost_bitalker_any_biflow_n_unique_dst_ports_std  
+unihost_bitalker_any_biflow_n_unique_dst_ports_var  
+unihost_bitalker_any_biflow_n_unique_dst_ports_max  
+unihost_bitalker_any_biflow_n_unique_dst_ports_min  
+
+unihost_bitalker_fwd_biflow_n_unique_dst_ports_total  
+unihost_bitalker_fwd_biflow_n_unique_dst_ports_mean  
+unihost_bitalker_fwd_biflow_n_unique_dst_ports_std  
+unihost_bitalker_fwd_biflow_n_unique_dst_ports_var  
+unihost_bitalker_fwd_biflow_n_unique_dst_ports_max  
+unihost_bitalker_fwd_biflow_n_unique_dst_ports_min  
+
+unihost_bitalker_bwd_biflow_n_unique_dst_ports_total  
+unihost_bitalker_bwd_biflow_n_unique_dst_ports_mean  
+unihost_bitalker_bwd_biflow_n_unique_dst_ports_std  
+unihost_bitalker_bwd_biflow_n_unique_dst_ports_var  
+unihost_bitalker_bwd_biflow_n_unique_dst_ports_max  
+unihost_bitalker_bwd_biflow_n_unique_dst_ports_min  

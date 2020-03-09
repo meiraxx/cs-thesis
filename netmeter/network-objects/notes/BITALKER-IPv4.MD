@@ -1,4 +1,4 @@
-# BiTalker
+# IPv4-BiTalker
 ## Extended by: BiTalker-IPv4-L4, BiTalker-IPv4-TCP
 ## CURRENT NUMBER OF GENES
 **100 BiTalker Genes:**  
@@ -13,7 +13,7 @@ Note: forward/backward BiFlows are not considered, forward/backward BiTalkers ar
 - (source_ip, **destination_ip**, protocol_stack)
 
 ## ADDITIONAL INFORMATION
-bihost_id
+unihost_id
 bitalker_any_first_biflow_initiation_time  
 bitalker_any_last_biflow_termination_time  
 
