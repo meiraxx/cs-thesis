@@ -2380,15 +2380,6 @@ def build_l4_unihosts(ipv4_udp_bitalker_genes_generator_lst, udp_bitalker_ids, i
             except KeyError:
                 unihost_ids.append(fwd_unihost_id)
                 unihosts[fwd_unihost_id] = [bitalker_genes]
-            
-            # Note: BWD Hosts will not be contemplated (inclusion code below)
-            """
-            try:
-                unihosts[bwd_unihost_id].append(bitalker_genes)
-            except KeyError:
-                unihost_ids.append(bwd_unihost_id)
-                unihosts[bwd_unihost_id] = [bitalker_genes]
-            """
 
         return unihosts, unihost_ids
 

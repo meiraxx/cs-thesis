@@ -43,7 +43,6 @@ def build_l4_bihosts(udp_unihosts, udp_unihost_ids, tcp_unihosts, tcp_unihost_id
     return udp_bihosts, udp_bihost_ids, tcp_bihosts, tcp_bihost_ids
 
 
-
 # ====================
 # Bidirectional Hosts
 # ====================
@@ -65,3 +64,19 @@ if args.verbose:
     print("[+] IPv4-UDP BiHosts detected:" + cterminal.colors.GREEN, n_ipv4_udp_bihosts, "IPv4-UDP BiHosts" + cterminal.colors.ENDC, flush=True)
     print("[+] IPv4-TCP BiHosts detected:" + cterminal.colors.GREEN, n_ipv4_tcp_bihosts, "IPv4-TCP BiHosts" + cterminal.colors.ENDC, flush=True)
     print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+
+
+
+
+
+""" This code could be included in the build_l4_unihosts function to get bihosts,
+but would need some work to get it working afterwards in the gene extraction phase.
+Furthermore, bihosts do not, apparently, offer much advantage in a network analysis
+point of view for detecting threats, at least for the ones I've been researching.
+If it is in fact needed, this code should be used"""
+# Note: BWD Hosts will not be contemplated (inclusion code below)
+try:
+    unihosts[bwd_unihost_id].append(bitalker_genes)
+except KeyError:
+    unihost_ids.append(bwd_unihost_id)
+    unihosts[bwd_unihost_id] = [bitalker_genes]

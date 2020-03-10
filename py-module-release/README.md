@@ -1,0 +1,2 @@
+## Python Module Release for Operating Systems
+This folder includes simple scripts to create Linux (and Windows) executables from source code, as well as its output. The researcher used *Pyinstaller*, but other compilers can be used (e.g. *Nuitka*, *Freeze*, etc.).
