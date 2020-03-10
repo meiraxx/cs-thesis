@@ -35,36 +35,37 @@ Joao Meira <joao.meira.cs@gmail.com>
 # [L4] TCP: https://tools.ietf.org/html/rfc793
 # ===============================================================
 
-# ===================
-# Third-party Modules
-# ===================
+# =================
+# Library Imports |
+# =================
+
+# ===============================
+# Standard Python Library Modules
+# ===============================
+import socket, ipaddress
+import datetime, time
+import argparse
+import os, sys
+from collections import OrderedDict
+
+# ==========================
+# Third-party Python Modules
+# ==========================
 try:
     import dpkt
-    import socket, ipaddress, datetime
     import numpy as np
-    import time
-    import argparse
-    import os, sys
-
     from dpkt.compat import compat_ord
-    from collections import OrderedDict
 except ImportError:
     raise ImportError("You need to do 'pip3 install -r requirements.txt' to be able to use this program.")
 
-# =================
-# Auxiliary Modules
-# =================
-try:
-    this_script_dirpath = os.path.dirname(os.path.realpath(__file__))
-    sys.path.insert(0, this_script_dirpath + os.sep + "auxiliary-python-modules")
-    import cterminal
-except ImportError:
-    raise ImportError("You need to do 'pip3 install -r requirements.txt' to be able to use this program.")
+# ===============================
+# Custom Auxiliary Python Modules
+# ===============================
+from pyaux.cterminal import Colors
 
-
-# ==================
-# NetMeter Arguments
-# ==================
+# ====================
+# NetMeter Arguments |
+# ====================
 class NetMeterArgs:
     class HelpFormatter(argparse.HelpFormatter):
         def add_usage(self, usage, actions, groups, prefix=None):
@@ -79,8 +80,8 @@ class NetMeterArgs:
                 print(help_message, file=sys.stderr, flush=True)
                 sys.exit(1)
             elif args.pcap_path=="":
-                help_message = help_message.replace("PCAP-File-Path", cterminal.colors.YELLOW + "PCAP-File-Path <-- " + cterminal.colors.ENDC + \
-                    cterminal.colors.RED + "Please give me a PCAP file as an input!" + cterminal.colors.ENDC)
+                help_message = help_message.replace("PCAP-File-Path", Colors.YELLOW + "PCAP-File-Path <-- " + Colors.ENDC + \
+                    Colors.RED + "Please give me a PCAP file as an input!" + Colors.ENDC)
                 print(help_message, file=sys.stderr, flush=True)
                 sys.exit(1)
 
@@ -88,9 +89,9 @@ class NetMeterArgs:
             """Local helper function to verify output type: csv, mongo, etc."""
             supported_output_types = ("csv",)
             if args.output_type not in supported_output_types:
-                print("[!] Specified output type", cterminal.colors.RED + args.output_type + cterminal.colors.ENDC,
-                    "is not a valid output type. Valid output types:"  + cterminal.colors.BLUE,
-                    ",".join(supported_output_types) + cterminal.colors.ENDC, flush=True)
+                print("[!] Specified output type", Colors.RED + args.output_type + Colors.ENDC,
+                    "is not a valid output type. Valid output types:"  + Colors.BLUE,
+                    ",".join(supported_output_types) + Colors.ENDC, flush=True)
                 sys.exit(1)
 
         oparser = argparse.ArgumentParser(prog="NetMeter", description="Description: NetGene extraction tool", \
@@ -118,9 +119,9 @@ class NetMeterArgs:
         verify_output_type(args)
         self.args = args
 
-# ================
-# NetMeter Globals
-# ================
+# ==================
+# NetMeter Globals |
+# ==================
 class NetMeterGlobals:
     def __init__(self, args):
         self.pcap_files_dir = args.data_dir + os.sep + "pcap"
@@ -129,9 +130,9 @@ class NetMeterGlobals:
         self.csv_output_dir = self.csv_files_dir + os.sep + os.path.splitext(os.path.basename(args.pcap_path))[0]
         self.genes_dir = "network-objects" + os.sep + "genes"
 
-# ==========================
-# START: Auxiliary Functions
-# ==========================
+# ============================
+# START: Auxiliary Functions |
+# ============================
 
 # https://stackoverflow.com/questions/1392413/calculating-a-directorys-size-using-python
 def get_dir_size(start_path):
@@ -152,9 +153,6 @@ def get_size_str(size_bytes):
         else (str(round(size_bytes/(1024**3), 3)) + " GBs (gigabytes)")
 
     return size_str
-
-def now():
-    return datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
 
 def biflow_id_to_pcap_filter(biflow_id):
     """ Auxiliary function to convert a biflow id to a pcap filter. Right now, just used for debugging."""
@@ -261,22 +259,36 @@ def make_header_string(string, fwd_separator="#", bwd_separator="#", big_header_
     fwd_separator_line = fwd_separator*len(string)
     bwd_separator_line = bwd_separator*len(string)
 
-    header_string = cterminal.colors.BOLD + fwd_separator_line*big_header_factor + "\n" +\
-        string + "\n" + bwd_separator_line*big_header_factor + cterminal.colors.ENDC
+    header_string = Colors.BOLD + fwd_separator_line*big_header_factor + "\n" +\
+        string + "\n" + bwd_separator_line*big_header_factor + Colors.ENDC
     return header_string
 
-# ========================
-# END: Auxiliary Functions
-# ========================
+# ==========================
+# END: Auxiliary Functions |
+# ==========================
 
-def build_packets(input_pcap_file, args):
-    """Process PCAP and build packets"""
+
+
+# ==========================================
+# START: Generating PCAP Intel - Net Genes |
+# ==========================================
+
+def build_packets(input_file, args):
+    """Process PCAP/PCAPNG file and build packets"""
 
     if args.verbose:
         module_init_time = time.time()
         print(make_header_string("1.1. Packets"), flush=True)
-    input_pcap_file.seek(0)
-    pcap = dpkt.pcap.Reader(input_pcap_file)
+    #input_file.seek(0)
+    #print(input_file.name)
+    if input_file.name.endswith('.pcapng'):
+        buffered_file_reader = dpkt.pcapng.Reader(input_file)
+    elif input_file.name.endswith('.pcap'):
+        buffered_file_reader = dpkt.pcap.Reader(input_file)
+    else:
+        print("File format '%s' is not recognized." %(input_file.name.split(".")[-1]))
+        sys.exit(1)
+
     packet_no = 0
     n_packets_eth_ipv4_igmp = 0
     n_packets_eth_ipv4_icmp = 0
@@ -296,7 +308,7 @@ def build_packets(input_pcap_file, args):
     packets = []
     
     # [+] PARSE ALL PACKETS
-    for timestamp, buf in pcap:
+    for timestamp, buf in buffered_file_reader:
         # ================
         # LAYER1: ETHERNET
         # ================
@@ -454,16 +466,16 @@ def build_packets(input_pcap_file, args):
         packets.append(packet_genes)
 
     if args.verbose:
-        print("[-] EthL1-ARP packets:" + cterminal.colors.RED, n_packets_arp, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[-] EthL1-LLC packets:" + cterminal.colors.RED, n_packets_llc, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[-] EthL1-EthL2-IPv4-ICMP packets:" + cterminal.colors.RED, n_packets_eth_ipv4_icmp, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[-] EthL1-EthL2-IPv4-IGMP packets:" + cterminal.colors.RED, n_packets_eth_ipv4_igmp, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[+] EthL1-EthL2-IPv4-TCP packets:" + cterminal.colors.GREEN, n_packets_eth_ipv4_tcp, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[+] EthL1-EthL2-IPv4-UDP packets:" + cterminal.colors.GREEN, n_packets_eth_ipv4_udp, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[-] EthL1-EthL2-IPv4-<Other L4> packets:" + cterminal.colors.RED, n_packets_eth_ipv4_others, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[-] EthL1-EthL2-IPv6 packets:" + cterminal.colors.RED, n_packets_eth_ipv6, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets:" + cterminal.colors.RED, n_packets_others, "packets" + cterminal.colors.ENDC, flush=True)
-        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[-] EthL1-ARP packets:" + Colors.RED, n_packets_arp, "packets" + Colors.ENDC, flush=True)
+        print("[-] EthL1-LLC packets:" + Colors.RED, n_packets_llc, "packets" + Colors.ENDC, flush=True)
+        print("[-] EthL1-EthL2-IPv4-ICMP packets:" + Colors.RED, n_packets_eth_ipv4_icmp, "packets" + Colors.ENDC, flush=True)
+        print("[-] EthL1-EthL2-IPv4-IGMP packets:" + Colors.RED, n_packets_eth_ipv4_igmp, "packets" + Colors.ENDC, flush=True)
+        print("[+] EthL1-EthL2-IPv4-TCP packets:" + Colors.GREEN, n_packets_eth_ipv4_tcp, "packets" + Colors.ENDC, flush=True)
+        print("[+] EthL1-EthL2-IPv4-UDP packets:" + Colors.GREEN, n_packets_eth_ipv4_udp, "packets" + Colors.ENDC, flush=True)
+        print("[-] EthL1-EthL2-IPv4-<Other L4> packets:" + Colors.RED, n_packets_eth_ipv4_others, "packets" + Colors.ENDC, flush=True)
+        print("[-] EthL1-EthL2-IPv6 packets:" + Colors.RED, n_packets_eth_ipv6, "packets" + Colors.ENDC, flush=True)
+        print("[-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets:" + Colors.RED, n_packets_others, "packets" + Colors.ENDC, flush=True)
+        print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
     # Verify some safe conditions
     if args.safe_check:
         if ipv4_header_len < 20 or ipv4_header_len > 60:
@@ -2701,7 +2713,7 @@ def get_l3_l4_unihost_gene_generators(udp_unihosts, udp_unihost_ids, tcp_unihost
 
     return list(ipv4_udp_unihost_genes_generator), list(ipv4_tcp_unihost_genes_generator)
 
-def generate_network_objets(input_pcap_file):
+def generate_network_objets(input_file):
     """
     Build all network objects: packets, flows, bitalkers and hosts
     """
@@ -2712,7 +2724,7 @@ def generate_network_objets(input_pcap_file):
     # =======
     # Packets
     # =======
-    packet_genes = build_packets(input_pcap_file, args)
+    packet_genes = build_packets(input_file, args)
 
     # =====
     # Flows
@@ -2733,8 +2745,8 @@ def generate_network_objets(input_pcap_file):
     if args.verbose:
         n_preserved_packets = sum([len(l3_uniflows[l3_uniflow_id]) for l3_uniflow_id in l3_uniflow_ids])
         print("[+] Packets preserved:", n_preserved_packets, "IPv4 Packets", flush=True)
-        print("[+] Flows detected:" + cterminal.colors.GREEN, len(l3_uniflow_ids), "IPv4 UniFlows" + cterminal.colors.ENDC, flush=True)
-        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[+] Flows detected:" + Colors.GREEN, len(l3_uniflow_ids), "IPv4 UniFlows" + Colors.ENDC, flush=True)
+        print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # ===================
     # Bidirectional Flows
@@ -2753,8 +2765,8 @@ def generate_network_objets(input_pcap_file):
     if args.verbose:
         n_preserved_packets = sum([len(l3_biflows[l3_biflow_id]) for l3_biflow_id in l3_biflow_ids])
         print("[+] IPv4 Packets preserved:", n_preserved_packets, "IPv4 Packets", flush=True)
-        print("[+] IPv4 BiFlows detected:" + cterminal.colors.GREEN, len(l3_biflows), "IPv4 BiFlows" + cterminal.colors.ENDC, flush=True)
-        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[+] IPv4 BiFlows detected:" + Colors.GREEN, len(l3_biflows), "IPv4 BiFlows" + Colors.ENDC, flush=True)
+        print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # -------
     # Layer 4
@@ -2774,9 +2786,9 @@ def generate_network_objets(input_pcap_file):
         print("[+] IPv4-UDP Packets preserved:", n_preserved_udp_packets, "IPv4-UDP OK Packets", flush=True)
         print("[+] IPv4-TCP Packets preserved:", n_preserved_tcp_packets, "IPv4-TCP OK Packets", flush=True)
         print("[+] IPv4-TCP Packets disconected:", n_disconected_rfc793_packets, "IPv4-TCP DCed Packets", flush=True)
-        print("[+] IPv4-UDP BiFlows detected:" + cterminal.colors.GREEN, len(udp_biflows), "IPv4-UDP BiFlows" + cterminal.colors.ENDC, flush=True)
-        print("[+] IPv4-TCP BiFlows detected:" + cterminal.colors.GREEN, len(tcp_biflows), "IPv4-TCP BiFlows" + cterminal.colors.ENDC, flush=True)
-        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[+] IPv4-UDP BiFlows detected:" + Colors.GREEN, len(udp_biflows), "IPv4-UDP BiFlows" + Colors.ENDC, flush=True)
+        print("[+] IPv4-TCP BiFlows detected:" + Colors.GREEN, len(tcp_biflows), "IPv4-TCP BiFlows" + Colors.ENDC, flush=True)
+        print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # ==============================
     # IPv4-L4-(UDP|TCP) BiFlow Genes
@@ -2802,11 +2814,11 @@ def generate_network_objets(input_pcap_file):
 
         print("[+] Calculated IPv4 BiFlow Genes:", ipv4_biflow_genes_count, "BiFlow Genes", flush=True)
         print("[+] Calculated IPv4+GenericL4 BiFlow Genes:", ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count, "BiFlow Genes", flush=True)
-        print("[+] Calculated IPv4+GenericL4+UDP BiFlow Genes:" + cterminal.colors.GREEN, \
-            ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
-        print("[+] Calculated IPv4+GenericL4+TCP BiFlow Genes:" + cterminal.colors.GREEN, \
-            ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count + ipv4_tcp_biflow_genes_count, "BiFlow Genes" + cterminal.colors.ENDC, flush=True)
-        print("[T] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True)
+        print("[+] Calculated IPv4+GenericL4+UDP BiFlow Genes:" + Colors.GREEN, \
+            ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count, "BiFlow Genes" + Colors.ENDC, flush=True)
+        print("[+] Calculated IPv4+GenericL4+TCP BiFlow Genes:" + Colors.GREEN, \
+            ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count + ipv4_tcp_biflow_genes_count, "BiFlow Genes" + Colors.ENDC, flush=True)
+        print("[T] Calculated in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True)
 
     # ------------------------------------
     # IPv4-L4-(UDP|TCP) BiFlow Gene Output
@@ -2818,7 +2830,7 @@ def generate_network_objets(input_pcap_file):
     output_net_genes(ipv4_udp_biflow_genes_generator_lst, ipv4_tcp_biflow_genes_generator_lst, "biflow")
 
     if args.verbose:
-        print("[T] Saved in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[T] Saved in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # =========
     # Talkers |
@@ -2845,9 +2857,9 @@ def generate_network_objets(input_pcap_file):
 
         print("[+] IPv4-UDP BiFlows contemplated:", n_contemplated_ipv4_udp_biflows, "IPv4-UDP BiFlows", flush=True)
         print("[+] IPv4-TCP BiFlows contemplated:", n_contemplated_ipv4_tcp_biflows, "IPv4-TCP BiFlows", flush=True)
-        print("[+] IPv4-UDP UniTalkers detected:" + cterminal.colors.GREEN, n_ipv4_udp_unitalkers, "IPv4-UDP UniTalkers" + cterminal.colors.ENDC, flush=True)
-        print("[+] IPv4-TCP UniTalkers detected:" + cterminal.colors.GREEN, n_ipv4_tcp_unitalkers, "IPv4-TCP UniTalkers" + cterminal.colors.ENDC, flush=True)
-        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[+] IPv4-UDP UniTalkers detected:" + Colors.GREEN, n_ipv4_udp_unitalkers, "IPv4-UDP UniTalkers" + Colors.ENDC, flush=True)
+        print("[+] IPv4-TCP UniTalkers detected:" + Colors.GREEN, n_ipv4_tcp_unitalkers, "IPv4-TCP UniTalkers" + Colors.ENDC, flush=True)
+        print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # =====================
     # Bidirectional Talkers
@@ -2868,9 +2880,9 @@ def generate_network_objets(input_pcap_file):
 
         print("[+] IPv4-UDP BiFlows contemplated:", n_contemplated_ipv4_udp_biflows, "IPv4-UDP BiFlows", flush=True)
         print("[+] IPv4-TCP BiFlows contemplated:", n_contemplated_ipv4_tcp_biflows, "IPv4-TCP BiFlows", flush=True)
-        print("[+] IPv4-UDP BiTalkers detected:" + cterminal.colors.GREEN, n_ipv4_udp_bitalkers, "IPv4-UDP BiTalkers" + cterminal.colors.ENDC, flush=True)
-        print("[+] IPv4-TCP BiTalkers detected:" + cterminal.colors.GREEN, n_ipv4_tcp_bitalkers, "IPv4-TCP BiTalkers" + cterminal.colors.ENDC, flush=True)
-        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[+] IPv4-UDP BiTalkers detected:" + Colors.GREEN, n_ipv4_udp_bitalkers, "IPv4-UDP BiTalkers" + Colors.ENDC, flush=True)
+        print("[+] IPv4-TCP BiTalkers detected:" + Colors.GREEN, n_ipv4_tcp_bitalkers, "IPv4-TCP BiTalkers" + Colors.ENDC, flush=True)
+        print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # ================================
     # IPv4-L4-(UDP|TCP) BiTalker Genes
@@ -2898,11 +2910,11 @@ def generate_network_objets(input_pcap_file):
 
         print("[+] Calculated IPv4 BiTalker Genes:", ipv4_bitalker_genes_count, "BiTalker Genes", flush=True)
         print("[+] Calculated IPv4+GenericL4 BiTalker Genes:", ipv4_bitalker_genes_count + ipv4_l4_bitalker_genes_count, "BiTalker Genes", flush=True)
-        print("[+] Calculated IPv4+GenericL4+UDP BiTalker Genes:" + cterminal.colors.GREEN, \
-            ipv4_bitalker_genes_count + ipv4_l4_bitalker_genes_count, "BiTalker Genes" + cterminal.colors.ENDC, flush=True)
-        print("[+] Calculated IPv4+GenericL4+TCP BiTalker Genes:" + cterminal.colors.GREEN, \
-            ipv4_bitalker_genes_count + ipv4_l4_bitalker_genes_count + ipv4_tcp_bitalker_genes_count, "BiTalker Genes" + cterminal.colors.ENDC, flush=True)
-        print("[T] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[+] Calculated IPv4+GenericL4+UDP BiTalker Genes:" + Colors.GREEN, \
+            ipv4_bitalker_genes_count + ipv4_l4_bitalker_genes_count, "BiTalker Genes" + Colors.ENDC, flush=True)
+        print("[+] Calculated IPv4+GenericL4+TCP BiTalker Genes:" + Colors.GREEN, \
+            ipv4_bitalker_genes_count + ipv4_l4_bitalker_genes_count + ipv4_tcp_bitalker_genes_count, "BiTalker Genes" + Colors.ENDC, flush=True)
+        print("[T] Calculated in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # Output BiTalkers
     output_net_genes(ipv4_udp_bitalker_genes_generator_lst, ipv4_tcp_bitalker_genes_generator_lst, "bitalker")
@@ -2932,9 +2944,9 @@ def generate_network_objets(input_pcap_file):
 
         print("[+] IPv4-UDP BiTalkers contemplated:", n_contemplated_ipv4_udp_bitalkers, "IPv4-UDP BiTalkers", flush=True)
         print("[+] IPv4-TCP BiTalkers contemplated:", n_contemplated_ipv4_tcp_bitalkers, "IPv4-TCP BiTalkers", flush=True)
-        print("[+] IPv4-UDP UniHosts detected:" + cterminal.colors.GREEN, n_ipv4_udp_unihosts, "IPv4-UDP UniHosts" + cterminal.colors.ENDC, flush=True)
-        print("[+] IPv4-TCP UniHosts detected:" + cterminal.colors.GREEN, n_ipv4_tcp_unihosts, "IPv4-TCP UniHosts" + cterminal.colors.ENDC, flush=True)
-        print("[T] Built in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[+] IPv4-UDP UniHosts detected:" + Colors.GREEN, n_ipv4_udp_unihosts, "IPv4-UDP UniHosts" + Colors.ENDC, flush=True)
+        print("[+] IPv4-TCP UniHosts detected:" + Colors.GREEN, n_ipv4_tcp_unihosts, "IPv4-TCP UniHosts" + Colors.ENDC, flush=True)
+        print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # ================================
     # IPv4-L4-(UDP|TCP) UniHost Genes
@@ -2962,11 +2974,11 @@ def generate_network_objets(input_pcap_file):
 
         print("[+] Calculated IPv4 UniHost Genes:", ipv4_unihost_genes_count, "UniHost Genes", flush=True)
         print("[+] Calculated IPv4+GenericL4 UniHost Genes:", ipv4_unihost_genes_count + ipv4_l4_unihost_genes_count, "UniHost Genes", flush=True)
-        print("[+] Calculated IPv4+GenericL4+UDP UniHost Genes:" + cterminal.colors.GREEN, \
-            ipv4_unihost_genes_count + ipv4_l4_unihost_genes_count, "UniHost Genes" + cterminal.colors.ENDC, flush=True)
-        print("[+] Calculated IPv4+GenericL4+TCP UniHost Genes:" + cterminal.colors.GREEN, \
-            ipv4_unihost_genes_count + ipv4_l4_unihost_genes_count + ipv4_tcp_unihost_genes_count, "UniHost Genes" + cterminal.colors.ENDC, flush=True)
-        print("[T] Calculated in:" + cterminal.colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[+] Calculated IPv4+GenericL4+UDP UniHost Genes:" + Colors.GREEN, \
+            ipv4_unihost_genes_count + ipv4_l4_unihost_genes_count, "UniHost Genes" + Colors.ENDC, flush=True)
+        print("[+] Calculated IPv4+GenericL4+TCP UniHost Genes:" + Colors.GREEN, \
+            ipv4_unihost_genes_count + ipv4_l4_unihost_genes_count + ipv4_tcp_unihost_genes_count, "UniHost Genes" + Colors.ENDC, flush=True)
+        print("[T] Calculated in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # Output UniHosts
     output_net_genes(ipv4_udp_unihost_genes_generator_lst, ipv4_tcp_unihost_genes_generator_lst, "unihost")
@@ -2976,8 +2988,13 @@ def generate_network_objets(input_pcap_file):
     # ==========
     if args.verbose:
         print(make_header_string("Total Extraction Time", "=", "=", big_header_factor=2), flush=True)
-        print("[T] Script took" + cterminal.colors.YELLOW, round(time.time() - run_init_time, 3), "seconds" +\
-            cterminal.colors.ENDC, "to complete", flush=True, end="\n\n")
+        print("[T] Script took" + Colors.YELLOW, round(time.time() - run_init_time, 3), "seconds" +\
+            Colors.ENDC, "to complete", flush=True, end="\n\n")
+
+
+# ========================================
+# END: Generating PCAP Intel - Net Genes |
+# ========================================
 
 ##====##
 ##MAIN##
@@ -2987,13 +3004,13 @@ def run():
     os.makedirs(netmeter_globals.csv_files_dir, exist_ok=True)
 
     print(make_header_string("NetMeter I/O Info", "»", "«", big_header_factor=2), flush=True)
-    print("[+] Input PCAP file:"  + cterminal.colors.BLUE, args.pcap_path + cterminal.colors.ENDC, flush=True)
+    print("[+] Input PCAP file:"  + Colors.BLUE, args.pcap_path + Colors.ENDC, flush=True)
     pcap_size_bytes = os.path.getsize(args.pcap_path)
     pcap_size_str = get_size_str(pcap_size_bytes)
     if args.output_type == "csv":
-        print("[+] Output CSV directory:", cterminal.colors.BLUE + netmeter_globals.csv_output_dir +\
-            cterminal.colors.ENDC, flush=True)
-    print("[+] Parsing and working on", cterminal.colors.BLUE + pcap_size_str + cterminal.colors.ENDC, "of data. Please wait.", flush=True)
+        print("[+] Output CSV directory:", Colors.BLUE + netmeter_globals.csv_output_dir +\
+            Colors.ENDC, flush=True)
+    print("[+] Parsing and working on", Colors.BLUE + pcap_size_str + Colors.ENDC, "of data. Please wait.", flush=True)
 
     if args.verbose:
         print("")
@@ -3005,14 +3022,14 @@ def run():
         print("[-] Layer 3+: ICMPv4, IGMPv4", flush=True)
         print("[+] Layer 4: TCP, UDP", flush=True, end="\n\n")
 
-    with open(args.pcap_path, "rb") as input_pcap_file:
-        generate_network_objets(input_pcap_file)
+    with open(args.pcap_path, "rb") as input_file:
+        generate_network_objets(input_file)
 
     if args.output_type == "csv":
         csv_output_dir_size = get_dir_size(netmeter_globals.csv_output_dir)
         csv_size_str = get_size_str(csv_output_dir_size)
-        print("[+] Network-object (BiFlows, BiTalkers and UniHosts) genes extracted:" + cterminal.colors.BLUE,
-            csv_size_str + cterminal.colors.ENDC, flush=True, end="\n\n")
+        print("[+] Network-object (BiFlows, BiTalkers and UniHosts) genes extracted:" + Colors.BLUE,
+            csv_size_str + Colors.ENDC, flush=True, end="\n\n")
     
 
 # Reading Command-Line Output:

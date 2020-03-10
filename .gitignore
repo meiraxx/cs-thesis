@@ -1,7 +1,10 @@
 # Pycache Files
-netmeter/auxiliary-python-modules/__pycache__/
+netmeter/pyaux/__pycache__/
 
 
-# Data Files (PCAPs, CSVs, JSONs, etc.)
+# Prepared Data Files (PCAPNGs, PCAPs, CSVs, JSONs, etc.)
 netmeter/data-files/
 data-files/
+
+# Raw Datasets and MD5s (PCAPNGs, MD5s)
+UNB-CICIDS-Datasets/

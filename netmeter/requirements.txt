@@ -1,3 +1,2 @@
 dpkt
 numpy
-mysql-connector-python
