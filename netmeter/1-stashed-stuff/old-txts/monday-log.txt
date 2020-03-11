@@ -1,0 +1,94 @@
+[joao.meira@localhost netmeter]$ ./netmeter-tool.py data-files/pcapng/Monday-WorkingHours.pcapng -sv
+»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»
+NetMeter I/O Info
+««««««««««««««««««««««««««««««««««
+[+] Input PCAP file: data-files/pcapng/Monday-WorkingHours.pcapng
+[+] Output CSV directory: data-files/csv/Monday-WorkingHours
+[+] Parsing and working on 10.079 GBs (gigabytes) of data. Please wait.
+
+++++++++++++++++++++++++++++++++++++++++++++++++
+VERBOSE OUTPUT ACTIVATED
+++++++++++++++++++++++++++++++++++++++++++++++++
+------------------------------------------------------------------------------------------------------
+NetMeter Supported Protocols for NetGene Extraction
+------------------------------------------------------------------------------------------------------
+[+] Layer 1: Ethernet
+[+] Layer 2: Ethernet
+[+] Layer 3: IPv4
+[-] Layer 3+: ICMPv4, IGMPv4
+[+] Layer 4: TCP, UDP
+
+============================================
+1. Packet Construction
+============================================
+############
+1.1. Packets
+############
+[-] EthL1-ARP packets: 46971 packets
+[-] EthL1-LLC packets: 7353 packets
+[-] EthL1-EthL2-IPv4-ICMP packets: 671 packets
+[-] EthL1-EthL2-IPv4-IGMP packets: 53 packets
+[+] EthL1-EthL2-IPv4-TCP packets: 10718469 packets
+[+] EthL1-EthL2-IPv4-UDP packets: 907039 packets
+[-] EthL1-EthL2-IPv4-<Other L4> packets: 260 packets
+[-] EthL1-EthL2-IPv6 packets: 29054 packets
+[-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets: 101 packets
+[T] Built in: 455.501 seconds
+
+====================================================================================================
+2. Layer-3/Layer-4 Bidirectional Flow Construction
+====================================================================================================
+#######################################
+2.1. Layer-3 Unidirectional Flows: IPv4
+#######################################
+[+] Packets preserved: 11625508 IPv4 Packets
+[+] Flows detected: 496849 IPv4 UniFlows
+[T] Built in: 6.587 seconds
+
+######################################
+2.2. Layer-3 Bidirectional Flows: IPv4
+######################################
+[+] IPv4 Packets preserved: 11625508 IPv4 Packets
+[+] IPv4 BiFlows detected: 249044 IPv4 BiFlows
+[T] Built in: 18786.131 seconds
+
+##################################################################
+2.3. Layer-3/Layer-4 Bidirectional Flows: IPv4+GenericL4+(UDP|TCP)
+##################################################################
+[+] IPv4-UDP Packets preserved: 907039 IPv4-UDP OK Packets
+[+] IPv4-TCP Packets preserved: 10834382 IPv4-TCP OK Packets
+[+] IPv4-TCP Packets disconected: 379 IPv4-TCP DCed Packets
+[+] IPv4-UDP BiFlows detected: 117367 IPv4-UDP BiFlows
+[+] IPv4-TCP BiFlows detected: 132256 IPv4-TCP BiFlows
+[T] Built in: 20.134 seconds
+
+======================================================================================
+3. Layer-3/Layer-4 Bidirectional Flow Genes
+======================================================================================
+##########################################
+3.1. IPv4+GenericL4+(UDP|TCP) BiFlow Genes
+##########################################
+/usr/local/lib64/python3.7/site-packages/numpy/core/fromnumeric.py:3257: RuntimeWarning: Mean of empty slice.
+  out=out, **kwargs)
+/usr/local/lib64/python3.7/site-packages/numpy/core/_methods.py:161: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+/usr/local/lib64/python3.7/site-packages/numpy/core/_methods.py:217: RuntimeWarning: Degrees of freedom <= 0 for slice
+  keepdims=keepdims)
+/usr/local/lib64/python3.7/site-packages/numpy/core/_methods.py:186: RuntimeWarning: invalid value encountered in true_divide
+  arrmean, rcount, out=arrmean, casting='unsafe', subok=False)
+/usr/local/lib64/python3.7/site-packages/numpy/core/_methods.py:209: RuntimeWarning: invalid value encountered in double_scalars
+  ret = ret.dtype.type(ret / rcount)
+/usr/local/lib64/python3.7/site-packages/numpy/core/fromnumeric.py:3506: RuntimeWarning: Degrees of freedom <= 0 for slice
+  **kwargs)
+Traceback (most recent call last):
+  File "./netmeter-tool.py", line 3034, in <module>
+    # [T]: Time Information
+  File "./netmeter-tool.py", line 3017, in run
+    print("[+] Layer 3: IPv4", flush=True)
+  File "./netmeter-tool.py", line 2797, in generate_network_objets
+    if args.verbose:
+  File "./netmeter-tool.py", line 1679, in get_l3_l4_biflow_gene_generators
+    l4_protocol="TCP", l4_conceptual_features=rfc793_tcp_biflow_conceptual_features)
+  File "./netmeter-tool.py", line 1197, in calculate_l3_l4_biflow_genes
+    biflow_fwd_eth_ipv4_data_len_total = round(sum(biflow_fwd_eth_ipv4_data_lens), 3)
+ValueError: max() arg is an empty sequence

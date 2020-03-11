@@ -47,6 +47,8 @@ import datetime, time
 import argparse
 import os, sys
 from collections import OrderedDict
+# for debugging code
+import code
 
 # ==========================
 # Third-party Python Modules
@@ -124,7 +126,7 @@ class NetMeterArgs:
 # ==================
 class NetMeterGlobals:
     def __init__(self, args):
-        self.pcap_files_dir = args.data_dir + os.sep + "pcap"
+        self.pcapng_files_dir = args.data_dir + os.sep + "pcapng"
         self.csv_files_dir = args.data_dir + os.sep + "csv"
         # csv output dir is only created when needed
         self.csv_output_dir = self.csv_files_dir + os.sep + os.path.splitext(os.path.basename(args.pcap_path))[0]
@@ -275,12 +277,13 @@ def make_header_string(string, fwd_separator="#", bwd_separator="#", big_header_
 
 def build_packets(input_file, args):
     """Process PCAP/PCAPNG file and build packets"""
+    # Note: not using yielder due to outputting packet-level information 
 
     if args.verbose:
         module_init_time = time.time()
         print(make_header_string("1.1. Packets"), flush=True)
-    #input_file.seek(0)
-    #print(input_file.name)
+
+
     if input_file.name.endswith('.pcapng'):
         buffered_file_reader = dpkt.pcapng.Reader(input_file)
     elif input_file.name.endswith('.pcap'):
@@ -307,7 +310,11 @@ def build_packets(input_file, args):
     # when introducing mixed NetGenes (l3biflows/l4biflows/bitalkers/unihosts)
     packets = []
     
-    # [+] PARSE ALL PACKETS
+    # ===================
+    # PARSE ALL PACKETS |
+    # ===================
+    # SHOULD-TODO: optimize this the best possible - no ideas for now except for using a listed yielder, but I lose nice verbose output
+    # doing this, and it's not a significant performance
     for timestamp, buf in buffered_file_reader:
         # ================
         # LAYER1: ETHERNET
@@ -476,6 +483,7 @@ def build_packets(input_file, args):
         print("[-] EthL1-EthL2-IPv6 packets:" + Colors.RED, n_packets_eth_ipv6, "packets" + Colors.ENDC, flush=True)
         print("[-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets:" + Colors.RED, n_packets_others, "packets" + Colors.ENDC, flush=True)
         print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
+    
     # Verify some safe conditions
     if args.safe_check:
         if ipv4_header_len < 20 or ipv4_header_len > 60:
@@ -500,7 +508,7 @@ def build_l3_uniflows(packets):
 
 def build_l3_biflows(l3_uniflows, l3_uniflow_ids):
     """Join unidirectional flow information into its bidirectional flow equivalent"""
-    def get_unique_matching_l3_uniflow_ids(l3_uniflow_ids):
+    def get_unique_matching_l3_uniflow_ids(l3_uniflows, l3_uniflow_ids):
         """Local helper function to return matching unidirectional flow ids, with l3_fwd_flow_id
         as key and l3_bwd_flow_id as value, and not vice-versa"""
         matching_l3_uniflow_ids_dict = dict()
@@ -508,7 +516,9 @@ def build_l3_biflows(l3_uniflows, l3_uniflow_ids):
         for l3_uniflow_id in l3_uniflow_ids:
             reversed_l3_uniflow_id = (l3_uniflow_id[2], l3_uniflow_id[3], l3_uniflow_id[0],
                 l3_uniflow_id[1], l3_uniflow_id[4], l3_uniflow_id[5])
-            if reversed_l3_uniflow_id in l3_uniflow_ids:
+
+            # Note: O(n**2) --> O(n) optimization done using dictionary search
+            if reversed_l3_uniflow_id in l3_uniflows:
                 if reversed_l3_uniflow_id not in matching_l3_uniflow_ids_dict:
                     l3_fwd_flow_ids.append(l3_uniflow_id)
                     matching_l3_uniflow_ids_dict[l3_uniflow_id] = reversed_l3_uniflow_id
@@ -518,7 +528,7 @@ def build_l3_biflows(l3_uniflows, l3_uniflow_ids):
                     matching_l3_uniflow_ids_dict[l3_uniflow_id] = False
         return matching_l3_uniflow_ids_dict, l3_fwd_flow_ids
 
-    matching_l3_uniflow_ids_dict, l3_fwd_flow_ids = get_unique_matching_l3_uniflow_ids(l3_uniflow_ids)
+    matching_l3_uniflow_ids_dict, l3_fwd_flow_ids = get_unique_matching_l3_uniflow_ids(l3_uniflows, l3_uniflow_ids)
     l3_biflows = dict()
     l3_biflow_ids = list()
 
@@ -1183,20 +1193,25 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             # =================
             # IPv4 Data Lengths
             # =================
-            biflow_any_eth_ipv4_data_len_total = round(sum(biflow_any_eth_ipv4_data_lens), 3)
-            biflow_any_eth_ipv4_data_len_mean = round(np.mean(biflow_any_eth_ipv4_data_lens), 3)
-            biflow_any_eth_ipv4_data_len_std = round(np.std(biflow_any_eth_ipv4_data_lens), 3)
-            biflow_any_eth_ipv4_data_len_var = round(np.var(biflow_any_eth_ipv4_data_lens), 3)
-            biflow_any_eth_ipv4_data_len_max = round(max(biflow_any_eth_ipv4_data_lens), 3)
-            biflow_any_eth_ipv4_data_len_min = round(min(biflow_any_eth_ipv4_data_lens), 3)
+            try:
+                biflow_any_eth_ipv4_data_len_total = round(sum(biflow_any_eth_ipv4_data_lens), 3)
+                biflow_any_eth_ipv4_data_len_mean = round(np.mean(biflow_any_eth_ipv4_data_lens), 3)
+                biflow_any_eth_ipv4_data_len_std = round(np.std(biflow_any_eth_ipv4_data_lens), 3)
+                biflow_any_eth_ipv4_data_len_var = round(np.var(biflow_any_eth_ipv4_data_lens), 3)
+                biflow_any_eth_ipv4_data_len_max = round(max(biflow_any_eth_ipv4_data_lens), 3)
+                biflow_any_eth_ipv4_data_len_min = round(min(biflow_any_eth_ipv4_data_lens), 3)
 
-            biflow_fwd_eth_ipv4_data_len_total = round(sum(biflow_fwd_eth_ipv4_data_lens), 3)
-            biflow_fwd_eth_ipv4_data_len_mean = round(np.mean(biflow_fwd_eth_ipv4_data_lens), 3)
-            biflow_fwd_eth_ipv4_data_len_std = round(np.std(biflow_fwd_eth_ipv4_data_lens), 3)
-            biflow_fwd_eth_ipv4_data_len_var = round(np.var(biflow_fwd_eth_ipv4_data_lens), 3)
-            biflow_fwd_eth_ipv4_data_len_max = round(max(biflow_fwd_eth_ipv4_data_lens), 3)
-            biflow_fwd_eth_ipv4_data_len_min = round(min(biflow_fwd_eth_ipv4_data_lens), 3)
-
+                biflow_fwd_eth_ipv4_data_len_total = round(sum(biflow_fwd_eth_ipv4_data_lens), 3)
+                biflow_fwd_eth_ipv4_data_len_mean = round(np.mean(biflow_fwd_eth_ipv4_data_lens), 3)
+                biflow_fwd_eth_ipv4_data_len_std = round(np.std(biflow_fwd_eth_ipv4_data_lens), 3)
+                biflow_fwd_eth_ipv4_data_len_var = round(np.var(biflow_fwd_eth_ipv4_data_lens), 3)
+                biflow_fwd_eth_ipv4_data_len_max = round(max(biflow_fwd_eth_ipv4_data_lens), 3)
+                biflow_fwd_eth_ipv4_data_len_min = round(min(biflow_fwd_eth_ipv4_data_lens), 3)
+            except ValueError:
+                code.interact(local=locals())
+                print("Any: %s" %(biflow_any_eth_ipv4_data_lens))
+                print("Fwd: %s" %(biflow_fwd_eth_ipv4_data_lens))
+            
             if len(biflow_bwd_eth_ipv4_data_lens) == 0:
                 biflow_bwd_eth_ipv4_data_len_total = biflow_bwd_eth_ipv4_data_len_max = biflow_bwd_eth_ipv4_data_len_min = 0
                 biflow_bwd_eth_ipv4_data_len_mean = biflow_bwd_eth_ipv4_data_len_std = biflow_bwd_eth_ipv4_data_len_var = 0.0
@@ -1736,14 +1751,16 @@ def build_l4_bitalkers(udp_unitalkers, udp_unitalker_ids, tcp_unitalkers, tcp_un
     """Build L4 BiTalkers"""
     def build_bitalkers(l4_unitalkers, l4_unitalker_ids):
         """Build BiTalkers"""
-        def get_unique_matching_l4_unitalker_ids(l4_unitalker_ids):
+        def get_unique_matching_l4_unitalker_ids(l4_unitalkers, l4_unitalker_ids):
             """Local helper function to return matching unidirectional talker ids, with l4_fwd_talker_id
             as key and l4_bwd_talker_id as value, and not vice-versa"""
             matching_l4_unitalker_ids_dict = dict()
             l4_fwd_talker_ids = list()
             for l4_unitalker_id in l4_unitalker_ids:
                 reversed_l4_unitalker_id = (l4_unitalker_id[1], l4_unitalker_id[0], l4_unitalker_id[2])
-                if reversed_l4_unitalker_id in l4_unitalker_ids:
+
+                # Note: O(n**2) --> O(n) optimization done using dictionary search
+                if reversed_l4_unitalker_id in l4_unitalkers:
                     if reversed_l4_unitalker_id not in matching_l4_unitalker_ids_dict:
                         l4_fwd_talker_ids.append(l4_unitalker_id)
                         matching_l4_unitalker_ids_dict[l4_unitalker_id] = reversed_l4_unitalker_id
@@ -1753,7 +1770,7 @@ def build_l4_bitalkers(udp_unitalkers, udp_unitalker_ids, tcp_unitalkers, tcp_un
                         matching_l4_unitalker_ids_dict[l4_unitalker_id] = False
             return matching_l4_unitalker_ids_dict, l4_fwd_talker_ids
 
-        matching_l4_unitalker_ids_dict, l4_fwd_talker_ids = get_unique_matching_l4_unitalker_ids(l4_unitalker_ids)
+        matching_l4_unitalker_ids_dict, l4_fwd_talker_ids = get_unique_matching_l4_unitalker_ids(l4_unitalkers, l4_unitalker_ids)
         l4_bitalkers = dict()
         l4_bitalker_ids = list()
 
@@ -2991,7 +3008,7 @@ def generate_network_objets(input_file):
 ##MAIN##
 ##====##
 def run():
-    os.makedirs(netmeter_globals.pcap_files_dir, exist_ok=True)
+    os.makedirs(netmeter_globals.pcapng_files_dir, exist_ok=True)
     os.makedirs(netmeter_globals.csv_files_dir, exist_ok=True)
 
     print(make_header_string("NetMeter I/O Info", "»", "«", big_header_factor=2), flush=True)
