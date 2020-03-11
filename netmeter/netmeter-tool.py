@@ -430,7 +430,7 @@ def build_packets(input_file, args):
 
         # IPv4-L4 Flow Identifier: 6-tuple -> (src ip, src port, dst ip, dst port, protocol_stack, inner_sep_counter)
         # note: inner_sep_counter is incremented whenever a flow reaches its end, which is defined by the protocol used
-        flow_id = (src_ip, src_port, dst_ip, dst_port, l4_protocol_name, 0)
+        flow_id = [src_ip, src_port, dst_ip, dst_port, l4_protocol_name, 0]
 
         # Packet-level debug Info
         if args.debug == "1":
@@ -497,7 +497,7 @@ def build_l3_uniflows(packets):
     l3_uniflows = dict()
     l3_uniflow_ids = list()
     for packet in packets:
-        flow_id = packet[0]
+        flow_id = tuple(packet[0])
         try:
             l3_uniflows[flow_id].append(packet)
         except KeyError:
@@ -615,6 +615,14 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
     build layer-4 bidirectional flows according to TCP and UDP RFCs"""
     def build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids, args):
         """Local helper function to build TCP BiFlows according to RFC793"""
+        def set_inner_sep_counter(packet_list, inner_sep_counter):
+            """Local helper function to update flows' packets to the right inner_sep_counter,
+            thus correcting its flow_id"""
+            for i, packet in enumerate(packet_list):
+                # set each packet's inner_sep_counter
+                packet_list[i][0][5] = inner_sep_counter
+            
+            return packet_list
         # COULD-TODO: validate using tcp_seq
         rfc793_tcp_biflow_conceptual_features = dict()
         rfc793_tcp_biflows = dict()
@@ -741,6 +749,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
 
                     # the flow end conditions are r1 and r2, (fin,fin-ack,ack)/(rst,!rst,---),
                     # or if the packet is the last one of the existing communication
+                    # SHOULD-TODO: Improve this spaghetti hardcoded code
                     if rfc793.flow_initiated:
                         rfc793_tcp_biflow_id = (tmp_tcp_biflow_id[0], tmp_tcp_biflow_id[1], tmp_tcp_biflow_id[2],\
                             tmp_tcp_biflow_id[3], tmp_tcp_biflow_id[4], tmp_tcp_biflow_id[5] + inner_sep_counter)
@@ -753,9 +762,11 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                             rfc793.flow_initiated = False
                             rfc793.flow_terminated = True
                             rfc793.biflow_eth_ipv4_tcp_termination_graceful = True
-                            # keep tcp biflow
+                            # keep tcp biflow and packets
                             rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = rfc793.get_rfc793_tcp_biflow_conceptual_features()
-                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+3]
+                            packet_list = curr_flow[previous_packet_index:curr_packet_index+3]
+                            packet_list = set_inner_sep_counter(packet_list, inner_sep_counter)
+                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = packet_list
                             rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
                             previous_packet_index = curr_packet_index + 3
                             inner_sep_counter += 1
@@ -764,9 +775,11 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                             rfc793.flow_initiated = False
                             rfc793.flow_terminated = True
                             rfc793.biflow_eth_ipv4_tcp_termination_abort = True
-                            # keep tcp biflow
+                            # keep tcp biflow and packets
                             rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = rfc793.get_rfc793_tcp_biflow_conceptual_features()
-                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
+                            packet_list = curr_flow[previous_packet_index:curr_packet_index+1]
+                            packet_list = set_inner_sep_counter(packet_list, inner_sep_counter)
+                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = packet_list
                             rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
                             previous_packet_index = curr_packet_index + 1
                             inner_sep_counter += 1
@@ -775,19 +788,21 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                             rfc793.flow_initiated = False
                             rfc793.flow_terminated = True
                             rfc793.biflow_eth_ipv4_tcp_termination_null = True
-                            # keep tcp biflow
+                            # keep tcp biflow and packets
                             rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = rfc793.get_rfc793_tcp_biflow_conceptual_features()
-                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = curr_flow[previous_packet_index:curr_packet_index+1]
+                            packet_list = curr_flow[previous_packet_index:curr_packet_index+1]
+                            packet_list = set_inner_sep_counter(packet_list, inner_sep_counter)
+                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = packet_list
                             rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
                             previous_packet_index = curr_packet_index + 1
                             inner_sep_counter += 1
+                    elif not rfc793_tcp_biflow_id:
+                        # disconected packet
+                        n_disconected_rfc793_packets += 1
                     else:
-                        if rfc793_tcp_biflow_id:
-                            # keep packet
-                            rfc793_tcp_biflows[rfc793_tcp_biflow_id].append(curr_flow[curr_packet_index])
-                        else:
-                            # disconected packet
-                            n_disconected_rfc793_packets += 1
+                        # just packets
+                        pass
+
                     # =====================
                     # TCP BiFlow Debug Info
                     # =====================
@@ -1044,11 +1059,11 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                 # ===============
                 if curr_packet_index >= 1:
                     previous_packet = curr_biflow[curr_packet_index-1]
-                    previous_packet_biflow_id = previous_packet[0]
+                    previous_packet_biflow_id = tuple(previous_packet[0])
                     previous_packet_timestamp = previous_packet[1]
 
                 curr_packet = curr_biflow[curr_packet_index]
-                curr_packet_biflow_id = curr_packet[0]
+                curr_packet_biflow_id = tuple(curr_packet[0])
                 curr_packet_timestamp = curr_packet[1]
                 curr_packet_eth_ipv4_header_len = curr_packet[2]
                 curr_packet_eth_ipv4_data_len = curr_packet[3]
@@ -1209,9 +1224,7 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                 biflow_fwd_eth_ipv4_data_len_min = round(min(biflow_fwd_eth_ipv4_data_lens), 3)
             except ValueError:
                 code.interact(local=locals())
-                print("Any: %s" %(biflow_any_eth_ipv4_data_lens))
-                print("Fwd: %s" %(biflow_fwd_eth_ipv4_data_lens))
-            
+
             if len(biflow_bwd_eth_ipv4_data_lens) == 0:
                 biflow_bwd_eth_ipv4_data_len_total = biflow_bwd_eth_ipv4_data_len_max = biflow_bwd_eth_ipv4_data_len_min = 0
                 biflow_bwd_eth_ipv4_data_len_mean = biflow_bwd_eth_ipv4_data_len_std = biflow_bwd_eth_ipv4_data_len_var = 0.0
