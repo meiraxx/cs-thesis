@@ -1,0 +1,5 @@
+It might be useful to merge pcaps to analyze these as a whole or, alternatively,
+split a big pcap file into a lot of smaller ones, analyze these separately and, finally,
+merge all the processed data into the three main types of files (biflows, bitalkers and unihosts).
+
+https://blog.packet-foo.com/2018/07/pcap-split-and-merge/

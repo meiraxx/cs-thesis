@@ -13,7 +13,7 @@ if [[ -d "$script_name" ]]; then
 fi
 
 # Installing/upgrading pyinstaller
-pip install --upgrade pyinstaller
+#pip install --upgrade pyinstaller
 
 # Running pyinstaller
 pyinstaller "$py_path"

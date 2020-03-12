@@ -156,6 +156,20 @@ def get_size_str(size_bytes):
 
     return size_str
 
+def bitalker_id_to_pcap_filter(bitalker_id):
+    """ Auxiliary function to convert a biflow id to a pcap filter. Right now, just used for debugging."""
+    src_ip = bitalker_id[0]
+    dst_ip = bitalker_id[1]
+
+    src_ip_filter = "(" +\
+        "(ip.addr==" + src_ip + ")" +\
+        "&&" +\
+        "(ip.addr==" + dst_ip + ")" +\
+        ")"
+
+    pcap_filter = src_ip_filter
+    return pcap_filter
+
 def biflow_id_to_pcap_filter(biflow_id):
     """ Auxiliary function to convert a biflow id to a pcap filter. Right now, just used for debugging."""
     src_ip = biflow_id[0]
@@ -1187,6 +1201,32 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
                 # keep iterating through the packets
                 curr_packet_index+=1
 
+            # TCP BiFlow direction
+            if biflow_fwd_n_packets == 0:
+                # -------------------------------------------------------------------
+                # Note 1: In case this is reached, TCP BiFlow direction got messed up
+                # This sometimes happens for an unknown reason in datasets.
+                # The researcher speculates it might have something to do with
+                # the dataset creators having merged small pcap files from different
+                # endpoints or the fact that the network interface itself registered
+                # the two packets in a different order relatively to their respective
+                # sending and receival times.
+                # An example of this is the Thursday-WorkingHours file of the CICIDS-2017
+                # dataset, in the afternoon, when a Windows Vista endpoint (192.168.10.8)
+                # performs a portscan on all other network clients. The eBPF filter for the
+                # bitalker is '((ip.addr==192.168.10.8)&&(ip.addr==192.168.10.9))', and
+                # for the specific biflow where this happens is
+                # '((ip.addr==192.168.10.8)&&(ip.addr==192.168.10.9))&&((tcp.srcport==45500&&tcp.dstport==407)||(tcp.srcport==407&&tcp.dstport==45500))'
+                # --------------------------------------------------------------------------------------------------------------------------------------
+                # Note 2: in case this happens, we will ignore this biflow by continuing to process other biflows.
+                # SHOULD-TODO: Despite this, we are ignoring the 6-tuple biflow when we should be ignoring the whole
+                # 5-tuple biflow instead. I don't currently know how to implement this effectively in the current code
+                # and, thus, will ignore it for now because there aren't many biflows that encounter this "mistiming"
+                # (only found it in the Thursday capture, for portscans)
+                if args.verbose:
+                    print(Colors.RED + iterator_to_str(biflow_id), "is an out-of-order BiFlow. Ignoring..." + Colors.ENDC)
+                continue
+
             # ================================
             # ENRICH AND EXTRACT INFORMATION |
             # ================================
@@ -1208,22 +1248,19 @@ def get_l3_l4_biflow_gene_generators(ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4
             # =================
             # IPv4 Data Lengths
             # =================
-            try:
-                biflow_any_eth_ipv4_data_len_total = round(sum(biflow_any_eth_ipv4_data_lens), 3)
-                biflow_any_eth_ipv4_data_len_mean = round(np.mean(biflow_any_eth_ipv4_data_lens), 3)
-                biflow_any_eth_ipv4_data_len_std = round(np.std(biflow_any_eth_ipv4_data_lens), 3)
-                biflow_any_eth_ipv4_data_len_var = round(np.var(biflow_any_eth_ipv4_data_lens), 3)
-                biflow_any_eth_ipv4_data_len_max = round(max(biflow_any_eth_ipv4_data_lens), 3)
-                biflow_any_eth_ipv4_data_len_min = round(min(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_total = round(sum(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_mean = round(np.mean(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_std = round(np.std(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_var = round(np.var(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_max = round(max(biflow_any_eth_ipv4_data_lens), 3)
+            biflow_any_eth_ipv4_data_len_min = round(min(biflow_any_eth_ipv4_data_lens), 3)
 
-                biflow_fwd_eth_ipv4_data_len_total = round(sum(biflow_fwd_eth_ipv4_data_lens), 3)
-                biflow_fwd_eth_ipv4_data_len_mean = round(np.mean(biflow_fwd_eth_ipv4_data_lens), 3)
-                biflow_fwd_eth_ipv4_data_len_std = round(np.std(biflow_fwd_eth_ipv4_data_lens), 3)
-                biflow_fwd_eth_ipv4_data_len_var = round(np.var(biflow_fwd_eth_ipv4_data_lens), 3)
-                biflow_fwd_eth_ipv4_data_len_max = round(max(biflow_fwd_eth_ipv4_data_lens), 3)
-                biflow_fwd_eth_ipv4_data_len_min = round(min(biflow_fwd_eth_ipv4_data_lens), 3)
-            except ValueError:
-                code.interact(local=locals())
+            biflow_fwd_eth_ipv4_data_len_total = round(sum(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_mean = round(np.mean(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_std = round(np.std(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_var = round(np.var(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_max = round(max(biflow_fwd_eth_ipv4_data_lens), 3)
+            biflow_fwd_eth_ipv4_data_len_min = round(min(biflow_fwd_eth_ipv4_data_lens), 3)
 
             if len(biflow_bwd_eth_ipv4_data_lens) == 0:
                 biflow_bwd_eth_ipv4_data_len_total = biflow_bwd_eth_ipv4_data_len_max = biflow_bwd_eth_ipv4_data_len_min = 0
