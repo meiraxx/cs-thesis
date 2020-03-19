@@ -1,5 +1,9 @@
 ## NetMeter Tool
-This tool has the objective of extracting useful conceptual and statistical features from a PCAP file
+### Description
+This tool grabs a PCAP/PCAPNG file and extracts useful conceptual and statistical network-object features, called NetGenes. NetGenes refer to three different types of network objects:
+- Flows (bidirectional - BiFlows)
+- Talkers (bidirectional - BiTalkers)
+- Hosts (unidirectional - UniHosts)
 
 ### What you can do with this tool
 - Create new datasets with your capture files (the community thanks you if you label and share them)
@@ -13,5 +17,9 @@ This tool has the objective of extracting useful conceptual and statistical feat
 ### How to use it
 ```pip3 install -r requirements.txt```  
 ```python3 netmeter-tool.py```  
+
+### Supported platforms
+Any Linux or Windows platform with python >=3.6 should work.  
+If you want to work with big files, it is advisable to increase your RAM as this tool saves pretty much everything on memory. It is also advisable that you have a performant CPU.
 
 Enjoy :)
