@@ -3,6 +3,8 @@
 # =============
 # Normal Runs
 netmeter/pyaux/__pycache__/
+netmeter/pynet/__pycache__/
+
 # PyInstaller
 netmeter/__pycache__/
 
