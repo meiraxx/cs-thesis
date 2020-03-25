@@ -8,6 +8,6 @@ then
 	do
 		pcapng_fullpath="$pcapng_dir/$pcapng_file"
 		# Verbose; Output = CSV
-		./netmeter-tool.py $pcapng_fullpath -v -T CSV
+		./netgenes-tool.py $pcapng_fullpath -v -T CSV
 	done
 fi

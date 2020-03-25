@@ -1,5 +1,5 @@
 »»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»
-NetMeter I/O Info
+NetGenes I/O Info
 ««««««««««««««««««««««««««««««««««
 [+] Input PCAP file: data-files/pcapng/Thursday-WorkingHours.pcapng
 [+] Output CSV directory: data-files/csv/Thursday-WorkingHours
@@ -8,9 +8,9 @@ NetMeter I/O Info
 ++++++++++++++++++++++++++++++++++++++++++++++++
 VERBOSE OUTPUT ACTIVATED
 ++++++++++++++++++++++++++++++++++++++++++++++++
-------------------------------------------------------------------------------------------------------
-NetMeter Supported Protocols for NetGene Extraction
-------------------------------------------------------------------------------------------------------
+--------------------------------------------------------
+NetGenes Supported Protocols
+--------------------------------------------------------
 [+] Layer 1: Ethernet
 [+] Layer 2: Ethernet
 [+] Layer 3: IPv4

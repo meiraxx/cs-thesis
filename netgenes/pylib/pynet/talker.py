@@ -1,4 +1,4 @@
-from pynet.netobject_utils import *
+from pylib.pynet.netobject_utils import *
 
 def build_l4_unitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids, ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids):
     """Build L4 UniTalkers"""

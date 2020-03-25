@@ -1,13 +1,13 @@
 ## NetHunter Tool
 ### Pre-conditions
-Before using this tool, you should have prepared your raw network datasets (PCAP/PCAPNG) by preprocessing them using NetMeter tool in an environment with:
-- A RAM that can handle those datasets
+Before using this tool, you should have preprocessed your raw network datasets (PCAP/PCAPNG) using the NetGene extractor tool, preferably in an environment with:
+- A RAM that can handle those raw datasets
 - A performant CPU
 
-The processed datasets are then usable by NetMeter for post-processing work.
+The resultant NetGenes are then usable by the NetHunter software for post-processing work.
 
 ### Description
-This tool has the objective of helping users work on NetMeter-processed datasets by:
+NetHunter has the objective of helping normal users work on NetGenes-based datasets by:
 - Facilitating network-object visualization in unlabeled datasets
 - Providing suggestions and controls for creating labeled datasets based on:
 	- Network Object

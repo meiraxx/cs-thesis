@@ -1,4 +1,4 @@
-from pynet.netobject_utils import *
+from pylib.pynet.netobject_utils import *
 
 def build_l3_uniflows(packets):
     """Associate layer-3 uniflow ids to packets"""

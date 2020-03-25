@@ -7,8 +7,8 @@ and their respective conceptual and statistical features to build a dataset. The
 network objects are meant to perform a logical packet aggregation having a bidirectional
 view at all times, hence the 'bi' prefix. For simplicity, the generated conceptual and
 statistical network object features are called, in their combination, network object genes.
-NetMeter will take a PCAP as an input and will output NetGenes in a specified output format.
-NetMeter is the first of the four (1/4) main tasks of my thesis.
+NetGenes will take a PCAP as an input and will output NetGenes in a specified output format.
+NetGenes is the first of the four (1/4) main tasks of my thesis.
 
 AUTHORSHIP:
 Joao Meira <joao.meira.cs@gmail.com>
@@ -18,7 +18,7 @@ Joao Meira <joao.meira.cs@gmail.com>
 # ===============================================================
 # OSI-layer protocols: https://en.wikipedia.org/wiki/List_of_network_protocols_(OSI_model)
 # L0 (physical methods of propagation): Copper, Fiber, Wireless
-# NetMeter Protocols
+# NetGenes Protocols
 # L1-protocols: Ethernet (Physical Layer)
 # L2-protocols: **Ethernet**, ++ARP++
 # L2plus-protocols: ++LLC++
@@ -64,19 +64,19 @@ except ImportError:
 # ===============================
 # Custom Auxiliary Python Modules
 # ===============================
-from pyaux.utils import Colors, OperatingSystem
-from pyaux.utils import datetime_to_unixtime, unixtime_to_datetime
-from pyaux.utils import mac_addr, inet_to_str, ipv4_dotted_to_int
+from pylib.pyaux.utils import Colors, OperatingSystem
+from pylib.pyaux.utils import datetime_to_unixtime, unixtime_to_datetime
+from pylib.pyaux.utils import mac_addr, inet_to_str, ipv4_dotted_to_int
 
-from pynet.netobject_utils import *
-from pynet.flow import *
-from pynet.talker import *
-from pynet.host import *
+from pylib.pynet.netobject_utils import *
+from pylib.pynet.flow import *
+from pylib.pynet.talker import *
+from pylib.pynet.host import *
 
 # ====================
-# NetMeter Arguments |
+# NetGenes Arguments |
 # ====================
-class NetMeterArgs:
+class NetGenesArgs:
     class HelpFormatter(argparse.HelpFormatter):
         def add_usage(self, usage, actions, groups, prefix=None):
             if prefix is None:
@@ -104,18 +104,18 @@ class NetMeterArgs:
                     ",".join(supported_output_types) + Colors.ENDC, flush=True)
                 sys.exit(1)
 
-        oparser = argparse.ArgumentParser(prog="NetMeter", description="Description: NetGene extraction tool", \
+        oparser = argparse.ArgumentParser(prog="NetGenes", description="Description: NetGene extraction tool", \
             epilog="For any enquiries, please contact me at joao[dot]meira[dot]cs[at]gmail[dot]com", add_help=False)
         oparser.add_argument("pcap_path", metavar="PCAP-File-Path", nargs="?", help="Input PCAP file", default="")
         oparser.add_argument("-h", "-H", "--help", action="store_true", help="See this help message", dest="print_help")
-        oparser.add_argument("-V", "--version", action="version", help="See NetMeter version", version="%(prog)s 1.0")
+        oparser.add_argument("-V", "--version", action="version", help="See NetGenes version", version="%(prog)s 1.0")
         oparser.add_argument("-s", "--safe-check", action="store_true", help="Perform safe checks", dest="safe_check")
         oparser.add_argument("-d", metavar="Debug Verbose", help="Specify debug output: 1 (packet), 2 (flow)", dest="debug")
         oparser.add_argument("-v", "--verbose", action="store_true", help="Verbose output", dest="verbose")
         oparser.add_argument("-D", metavar="Data Directory", help="Specify data directory: store inputs (e.g. PCAP) and outputs (e.g. CSV)", dest="data_dir", default="data-files")
         oparser.add_argument("-T", metavar="Output Type", help="Specify output type: csv, json, ...", dest="output_type", type=str.lower, default="csv")
         optional_args_noreq_header = "Optional arguments (does not require other arguments)"
-        optional_args_noreq_repr = ":\n  -h, -H, --help     See this help message\n  -V, --version      See NetMeter version"
+        optional_args_noreq_repr = ":\n  -h, -H, --help     See this help message\n  -V, --version      See NetGenes version"
         optional_args_req_header = "Optional arguments (requires a PCAP file)"
         oparser._positionals.title = "Positional arguments"
         oparser._optionals.title = optional_args_noreq_header
@@ -130,9 +130,9 @@ class NetMeterArgs:
         self.args = args
 
 # ==================
-# NetMeter Globals |
+# NetGenes Globals |
 # ==================
-class NetMeterGlobals:
+class NetGenesGlobals:
     def __init__(self, args):
         self.pcapng_files_dir = args.data_dir + os.sep + "pcapng"
         self.csv_files_dir = args.data_dir + os.sep + "csv"
@@ -176,7 +176,7 @@ def get_network_object_header(network_object_type, protocol_stack):
     check_supported_protocol_stacks(protocol_stack)
 
     # Get NetGenes header in the form of a list
-    net_genes_filepath = netmeter_globals.genes_dir + os.sep + "%s-%s-header.txt"%(network_object_type, protocol_stack)
+    net_genes_filepath = netgenes_globals.genes_dir + os.sep + "%s-%s-header.txt"%(network_object_type, protocol_stack)
     f = open(net_genes_filepath, "r")
     net_genes_header_lst = f.read().split("\n")
     f.close()
@@ -203,11 +203,11 @@ def output_net_genes(ipv4_udp_net_genes_generator_lst, ipv4_tcp_net_genes_genera
             net_genes_output = net_genes_header_str + "\n" + "\n".join(net_genes_str_lst)
 
             # Save CSV File
-            f = open(netmeter_globals.csv_output_dir + os.sep + csv_filename, "w")
+            f = open(netgenes_globals.csv_output_dir + os.sep + csv_filename, "w")
             f.write(net_genes_output)
             f.close()
         # CSV Directory
-        os.makedirs(netmeter_globals.csv_output_dir, exist_ok=True)
+        os.makedirs(netgenes_globals.csv_output_dir, exist_ok=True)
         # Save NetGenes
         save_csv_file(ipv4_udp_net_genes_header_lst, ipv4_udp_net_genes_generator_lst, "ipv4-udp-%ss.csv"%(network_object_type))
         save_csv_file(ipv4_tcp_net_genes_header_lst, ipv4_tcp_net_genes_generator_lst, "ipv4-tcp-%ss.csv"%(network_object_type))
@@ -2467,22 +2467,22 @@ def generate_network_objets(input_file):
 ##MAIN##
 ##====##
 def run():
-    #os.makedirs(netmeter_globals.pcapng_files_dir, exist_ok=True)
-    os.makedirs(netmeter_globals.csv_files_dir, exist_ok=True)
+    #os.makedirs(netgenes_globals.pcapng_files_dir, exist_ok=True)
+    os.makedirs(netgenes_globals.csv_files_dir, exist_ok=True)
 
-    print(make_header_string("NetMeter I/O Info", "»", "«", big_header_factor=2), flush=True)
+    print(make_header_string("NetGenes I/O Info", "»", "«", big_header_factor=2), flush=True)
     print("[+] Input PCAP file:"  + Colors.BLUE, args.pcap_path + Colors.ENDC, flush=True)
     pcap_size_bytes = os.path.getsize(args.pcap_path)
     pcap_size_str = OperatingSystem.get_size_str(pcap_size_bytes)
     if args.output_type == "csv":
-        print("[+] Output CSV directory:", Colors.BLUE + netmeter_globals.csv_output_dir +\
+        print("[+] Output CSV directory:", Colors.BLUE + netgenes_globals.csv_output_dir +\
             Colors.ENDC, flush=True)
     print("[+] Parsing and working on", Colors.BLUE + pcap_size_str + Colors.ENDC, "of data. Please wait.", flush=True)
 
     if args.verbose:
         print("")
         print(make_header_string("VERBOSE OUTPUT ACTIVATED", "+", "+", big_header_factor=2), flush=True)
-        print(make_header_string("NetMeter Supported Protocols for NetGene Extraction", "-", "-", big_header_factor=2), flush=True)
+        print(make_header_string("NetGenes Supported Protocols", "-", "-", big_header_factor=2), flush=True)
         print("[+] Layer 1: Ethernet", flush=True)
         print("[+] Layer 2: Ethernet", flush=True)
         print("[+] Layer 3: IPv4", flush=True)
@@ -2493,7 +2493,7 @@ def run():
         generate_network_objets(input_file)
 
     if args.output_type == "csv":
-        csv_output_dir_size = OperatingSystem.get_dir_size(netmeter_globals.csv_output_dir)
+        csv_output_dir_size = OperatingSystem.get_dir_size(netgenes_globals.csv_output_dir)
         csv_size_str = OperatingSystem.get_size_str(csv_output_dir_size)
         print("[+] Network-object (BiFlows, BiTalkers and UniHosts) genes extracted:" + Colors.BLUE,
             csv_size_str + Colors.ENDC, flush=True, end="\n\n")
@@ -2505,6 +2505,6 @@ def run():
 # [T]: Time Information
 # [D]: Debug Information
 if __name__ == "__main__":
-    args = NetMeterArgs().args
-    netmeter_globals = NetMeterGlobals(args)
+    args = NetGenesArgs().args
+    netgenes_globals = NetGenesGlobals(args)
     run()

@@ -1,16 +1,16 @@
 »»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»
-NetMeter I/O Info
+NetGenes I/O Info
 ««««««««««««««««««««««««««««««««««
-[+] Input PCAP file: data-files/pcapng/Tuesday-WorkingHours.pcapng
-[+] Output CSV directory: data-files/csv/Tuesday-WorkingHours
-[+] Parsing and working on 10.29 GBs (gigabytes) of data. Please wait.
+[+] Input PCAP file: data-files/pcapng/Monday-WorkingHours.pcapng
+[+] Output CSV directory: data-files/csv/Monday-WorkingHours
+[+] Parsing and working on 10.079 GBs (gigabytes) of data. Please wait.
 
 ++++++++++++++++++++++++++++++++++++++++++++++++
 VERBOSE OUTPUT ACTIVATED
 ++++++++++++++++++++++++++++++++++++++++++++++++
-------------------------------------------------------------------------------------------------------
-NetMeter Supported Protocols for NetGene Extraction
-------------------------------------------------------------------------------------------------------
+--------------------------------------------------------
+NetGenes Supported Protocols
+--------------------------------------------------------
 [+] Layer 1: Ethernet
 [+] Layer 2: Ethernet
 [+] Layer 3: IPv4
@@ -23,16 +23,16 @@ NetMeter Supported Protocols for NetGene Extraction
 ############
 1.1. Packets
 ############
-[-] EthL1-ARP packets: 45243 packets
-[-] EthL1-LLC packets: 7322 packets
-[-] EthL1-EthL2-IPv4-ICMP packets: 444 packets
-[-] EthL1-EthL2-IPv4-IGMP packets: 40 packets
-[+] EthL1-EthL2-IPv4-TCP packets: 10710230 packets
-[+] EthL1-EthL2-IPv4-UDP packets: 758756 packets
-[-] EthL1-EthL2-IPv4-<Other L4> packets: 266 packets
-[-] EthL1-EthL2-IPv6 packets: 29552 packets
+[-] EthL1-ARP packets: 46971 packets
+[-] EthL1-LLC packets: 7353 packets
+[-] EthL1-EthL2-IPv4-ICMP packets: 671 packets
+[-] EthL1-EthL2-IPv4-IGMP packets: 53 packets
+[+] EthL1-EthL2-IPv4-TCP packets: 10718469 packets
+[+] EthL1-EthL2-IPv4-UDP packets: 907039 packets
+[-] EthL1-EthL2-IPv4-<Other L4> packets: 260 packets
+[-] EthL1-EthL2-IPv6 packets: 29054 packets
 [-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets: 101 packets
-[T] Built in: 430.442 seconds
+[T] Built in: 409.674 seconds
 
 ====================================================================================================
 2. Layer-3/Layer-4 Bidirectional Flow Construction
@@ -40,26 +40,26 @@ NetMeter Supported Protocols for NetGene Extraction
 #######################################
 2.1. Layer-3 Unidirectional Flows: IPv4
 #######################################
-[+] Packets preserved: 11468986 IPv4 Packets
-[+] Flows detected: 421863 IPv4 UniFlows
-[T] Built in: 7.389 seconds
+[+] Packets preserved: 11625508 IPv4 Packets
+[+] Flows detected: 496849 IPv4 UniFlows
+[T] Built in: 7.322 seconds
 
 ######################################
 2.2. Layer-3 Bidirectional Flows: IPv4
 ######################################
-[+] IPv4 Packets preserved: 11468986 IPv4 Packets
-[+] IPv4 BiFlows detected: 211624 IPv4 BiFlows
-[T] Built in: 2.137 seconds
+[+] IPv4 Packets preserved: 11625508 IPv4 Packets
+[+] IPv4 BiFlows detected: 249044 IPv4 BiFlows
+[T] Built in: 2.176 seconds
 
 ##################################################################
 2.3. Layer-3/Layer-4 Bidirectional Flows: IPv4+GenericL4+(UDP|TCP)
 ##################################################################
-[+] IPv4-UDP Packets preserved: 758756 IPv4-UDP OK Packets
-[+] IPv4-TCP Packets preserved: 10648238 IPv4-TCP OK Packets
-[+] IPv4-TCP Packets disconected: 218 IPv4-TCP DCed Packets
-[+] IPv4-UDP BiFlows detected: 103434 IPv4-UDP BiFlows
-[+] IPv4-TCP BiFlows detected: 109163 IPv4-TCP BiFlows
-[T] Built in: 20.638 seconds
+[+] IPv4-UDP Packets preserved: 907039 IPv4-UDP OK Packets
+[+] IPv4-TCP Packets preserved: 10645839 IPv4-TCP OK Packets
+[+] IPv4-TCP Packets disconected: 379 IPv4-TCP DCed Packets
+[+] IPv4-UDP BiFlows detected: 117367 IPv4-UDP BiFlows
+[+] IPv4-TCP BiFlows detected: 132256 IPv4-TCP BiFlows
+[T] Built in: 20.128 seconds
 
 ======================================================================================
 3. Layer-3/Layer-4 Bidirectional Flow Genes
@@ -71,8 +71,8 @@ NetMeter Supported Protocols for NetGene Extraction
 [+] Calculated IPv4+GenericL4 BiFlow Genes: 142 BiFlow Genes
 [+] Calculated IPv4+GenericL4+UDP BiFlow Genes: 142 BiFlow Genes
 [+] Calculated IPv4+GenericL4+TCP BiFlow Genes: 294 BiFlow Genes
-[T] Calculated in: 994.224 seconds
-[T] Saved in: 1.121 seconds
+[T] Calculated in: 1037.206 seconds
+[T] Saved in: 1.557 seconds
 
 ============================================================================
 4. Layer-3/Layer-4 Talker Construction
@@ -80,20 +80,20 @@ NetMeter Supported Protocols for NetGene Extraction
 ####################################################
 4.1. IPv4+GenericL4+(UDP|TCP) Unidirectional Talkers
 ####################################################
-[+] IPv4-UDP BiFlows contemplated: 103434 IPv4-UDP BiFlows
-[+] IPv4-TCP BiFlows contemplated: 109163 IPv4-TCP BiFlows
-[+] IPv4-UDP UniTalkers detected: 606 IPv4-UDP UniTalkers
-[+] IPv4-TCP UniTalkers detected: 19188 IPv4-TCP UniTalkers
-[T] Built in: 0.265 seconds
+[+] IPv4-UDP BiFlows contemplated: 117367 IPv4-UDP BiFlows
+[+] IPv4-TCP BiFlows contemplated: 132256 IPv4-TCP BiFlows
+[+] IPv4-UDP UniTalkers detected: 648 IPv4-UDP UniTalkers
+[+] IPv4-TCP UniTalkers detected: 21564 IPv4-TCP UniTalkers
+[T] Built in: 0.27 seconds
 
 ###################################################
 4.2. IPv4+GenericL4+(UDP|TCP) Bidirectional Talkers
 ###################################################
-[+] IPv4-UDP BiFlows contemplated: 103434 IPv4-UDP BiFlows
-[+] IPv4-TCP BiFlows contemplated: 109163 IPv4-TCP BiFlows
-[+] IPv4-UDP BiTalkers detected: 594 IPv4-UDP BiTalkers
-[+] IPv4-TCP BiTalkers detected: 19183 IPv4-TCP BiTalkers
-[T] Built in: 0.025 seconds
+[+] IPv4-UDP BiFlows contemplated: 117367 IPv4-UDP BiFlows
+[+] IPv4-TCP BiFlows contemplated: 132256 IPv4-TCP BiFlows
+[+] IPv4-UDP BiTalkers detected: 638 IPv4-UDP BiTalkers
+[+] IPv4-TCP BiTalkers detected: 21557 IPv4-TCP BiTalkers
+[T] Built in: 0.027 seconds
 
 ==========================================================================================
 5. Layer-3/Layer-4 Bidirectional Talker Genes
@@ -105,7 +105,7 @@ NetMeter Supported Protocols for NetGene Extraction
 [+] Calculated IPv4+GenericL4 BiTalker Genes: 121 BiTalker Genes
 [+] Calculated IPv4+GenericL4+UDP BiTalker Genes: 121 BiTalker Genes
 [+] Calculated IPv4+GenericL4+TCP BiTalker Genes: 169 BiTalker Genes
-[T] Calculated in: 45.287 seconds
+[T] Calculated in: 47.405 seconds
 
 ========================================================================
 6. Layer-3/Layer-4 Host Construction
@@ -113,11 +113,11 @@ NetMeter Supported Protocols for NetGene Extraction
 ##################################################
 6.1. IPv4+GenericL4+(UDP|TCP) Unidirectional Hosts
 ##################################################
-[+] IPv4-UDP BiTalkers contemplated: 594 IPv4-UDP BiTalkers
-[+] IPv4-TCP BiTalkers contemplated: 19183 IPv4-TCP BiTalkers
+[+] IPv4-UDP BiTalkers contemplated: 638 IPv4-UDP BiTalkers
+[+] IPv4-TCP BiTalkers contemplated: 21557 IPv4-TCP BiTalkers
 [+] IPv4-UDP UniHosts detected: 13 IPv4-UDP UniHosts
-[+] IPv4-TCP UniHosts detected: 14 IPv4-TCP UniHosts
-[T] Built in: 0.02 seconds
+[+] IPv4-TCP UniHosts detected: 13 IPv4-TCP UniHosts
+[T] Built in: 0.021 seconds
 
 ========================================================================================
 7. Layer-3/Layer-4 Unidirectional Host Genes
@@ -129,11 +129,11 @@ NetMeter Supported Protocols for NetGene Extraction
 [+] Calculated IPv4+GenericL4 UniHost Genes: 22 UniHost Genes
 [+] Calculated IPv4+GenericL4+UDP UniHost Genes: 22 UniHost Genes
 [+] Calculated IPv4+GenericL4+TCP UniHost Genes: 70 UniHost Genes
-[T] Calculated in: 0.181 seconds
+[T] Calculated in: 0.199 seconds
 
 ==========================================
 Total Extraction Time
 ==========================================
-[T] Script took 1501.795 seconds to complete
+[T] Script took 1526.056 seconds to complete
 
-[+] Network-object (BiFlows, BiTalkers and UniHosts) genes extracted: 220.677 MBs (megabytes)
+[+] Network-object (BiFlows, BiTalkers and UniHosts) genes extracted: 261.744 MBs (megabytes)

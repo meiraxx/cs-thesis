@@ -1,4 +1,4 @@
-from pynet.netobject_utils import *
+from pylib.pynet.netobject_utils import *
 
 def build_l4_unihosts(ipv4_udp_bitalker_genes_generator_lst, udp_bitalker_ids, ipv4_tcp_bitalker_genes_generator_lst, tcp_bitalker_ids):
     """Build L4 UniHosts"""

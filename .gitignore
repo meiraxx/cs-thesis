@@ -2,14 +2,14 @@
 # Pycache Files
 # =============
 # Normal Runs
-netmeter/pyaux/__pycache__/
-netmeter/pynet/__pycache__/
+netgenes/pylib/pyaux/__pycache__/
+netgenes/pylib/pynet/__pycache__/
 
 # PyInstaller
-netmeter/__pycache__/
+netgenes/__pycache__/
 
 # Prepared Data Files - I/O (I: PCAPNGs/PCAPs; O: CSVs, JSONs)
-netmeter/data-files/
+netgenes/data-files/
 
 # Raw Datasets and MD5s (PCAPNGs, PCAPs and MD5s)
 # Current datasets: CIC-IDS-2017, CSE-CIC-IDS-2018

@@ -1,6 +1,6 @@
-[joao.meira@localhost netmeter]$ ./netmeter-tool.py data-files/pcapng/Monday-WorkingHours.pcapng -sv
+[joao.meira@localhost netgenes]$ ./netgenes-tool.py data-files/pcapng/Monday-WorkingHours.pcapng -sv
 »»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»»
-NetMeter I/O Info
+NetGenes I/O Info
 ««««««««««««««««««««««««««««««««««
 [+] Input PCAP file: data-files/pcapng/Monday-WorkingHours.pcapng
 [+] Output CSV directory: data-files/csv/Monday-WorkingHours
@@ -9,9 +9,9 @@ NetMeter I/O Info
 ++++++++++++++++++++++++++++++++++++++++++++++++
 VERBOSE OUTPUT ACTIVATED
 ++++++++++++++++++++++++++++++++++++++++++++++++
-------------------------------------------------------------------------------------------------------
-NetMeter Supported Protocols for NetGene Extraction
-------------------------------------------------------------------------------------------------------
+--------------------------------------------------------
+NetGenes Supported Protocols
+--------------------------------------------------------
 [+] Layer 1: Ethernet
 [+] Layer 2: Ethernet
 [+] Layer 3: IPv4
@@ -81,14 +81,14 @@ NetMeter Supported Protocols for NetGene Extraction
 /usr/local/lib64/python3.7/site-packages/numpy/core/fromnumeric.py:3506: RuntimeWarning: Degrees of freedom <= 0 for slice
   **kwargs)
 Traceback (most recent call last):
-  File "./netmeter-tool.py", line 3044, in <module>
+  File "./netgenes-tool.py", line 3044, in <module>
     run()
-  File "./netmeter-tool.py", line 3027, in run
+  File "./netgenes-tool.py", line 3027, in run
     generate_network_objets(input_file)
-  File "./netmeter-tool.py", line 2807, in generate_network_objets
+  File "./netgenes-tool.py", line 2807, in generate_network_objets
     get_l3_l4_biflow_gene_generators(udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features)
-  File "./netmeter-tool.py", line 1687, in get_l3_l4_biflow_gene_generators
+  File "./netgenes-tool.py", line 1687, in get_l3_l4_biflow_gene_generators
     return list(ipv4_udp_biflow_genes_generator), list(ipv4_tcp_biflow_genes_generator)
-  File "./netmeter-tool.py", line 1205, in calculate_l3_l4_biflow_genes
+  File "./netgenes-tool.py", line 1205, in calculate_l3_l4_biflow_genes
     biflow_fwd_eth_ipv4_data_len_max = round(max(biflow_fwd_eth_ipv4_data_lens), 3)
 ValueError: max() arg is an empty sequence

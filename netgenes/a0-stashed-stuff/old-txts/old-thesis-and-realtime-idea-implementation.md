@@ -1,7 +1,7 @@
 ## Botnet Detection Engine  
 ### Botnet Detection Engine (Backend)  
 
-**NetMeter:**  
+**NetGenes Tool:**  
 - Parse PCAP file:  
 	- osi-l3: IPv4/IPv6
 	- osi-l4: TCP/UDP
