@@ -1,3 +1,6 @@
+# Standard
+import os
+
 # ========================
 # Network Object to String
 # ========================
@@ -68,3 +71,33 @@ def bitalker_id_to_pcap_filter(bitalker_id):
 
     pcap_filter = src_ip_filter
     return pcap_filter
+
+def check_supported_network_objects(network_object_type):
+    """ Check if network object type is supported"""
+    if network_object_type not in ("biflow", "bitalker", "unihost"):
+        print("[!] Network object type \"" + network_object_type + "\" not supported. Supported protocol stacks: biflow, bitalker, unihost",\
+            file=sys.stderr, flush=True)
+        sys.exit(1)
+
+def check_supported_protocol_stacks(protocol_stack):
+    """ Check if protocol stack is supported"""
+    if protocol_stack not in ("ipv4", "ipv4-l4", "ipv4-tcp"):
+        print("[!] Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4, ipv4-l4, ipv4-tcp",\
+            file=sys.stderr, flush=True)
+        sys.exit(1)
+
+def get_network_object_header(genes_dir, network_object_type, protocol_stack):
+    """Use L3-L4 protocol stack to fetch correct biflow headers and return them as a list"""
+
+    # Check network object type
+    check_supported_network_objects(network_object_type)
+    # Check protocol stack
+    check_supported_protocol_stacks(protocol_stack)
+
+    # Get NetGenes header in the form of a list
+    net_genes_filepath = genes_dir + os.sep + "%s-%s-header.txt"%(network_object_type, protocol_stack)
+    f = open(net_genes_filepath, "r")
+    net_genes_header_lst = f.read().split("\n")
+    f.close()
+
+    return net_genes_header_lst

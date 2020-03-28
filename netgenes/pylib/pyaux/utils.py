@@ -1,6 +1,6 @@
-import socket
 import os
 import datetime
+from dpkt.compat import compat_ord
 
 class Colors:
     RED = '\033[91m'
@@ -57,32 +57,11 @@ def unixtime_to_datetime(ms_timestamp):
         datetime_obj = datetime.datetime.utcfromtimestamp(ms_timestamp/1000.0).strftime(datetime_format2)
     return datetime_obj
 
-def mac_addr(address):
-    """Convert a MAC address to a readable/printable string
-       Args:
-           address (str): a MAC address in hex form (e.g. '\x01\x02\x03\x04\x05\x06')
-       Returns:
-           str: Printable/readable MAC address
-    """
-    return ":".join("%02x" % compat_ord(b) for b in address)
+def make_header_string(string, fwd_separator="#", bwd_separator="#", big_header_factor=1):
+    """Transforms a string into an header"""
+    fwd_separator_line = fwd_separator*len(string)
+    bwd_separator_line = bwd_separator*len(string)
 
-def inet_to_str(inet):
-    """
-    Convert inet object to a string
-        Args:
-            inet (inet struct): inet network address
-        Returns:
-            str: Printable/readable IP address
-    """
-    # First try ipv4 and then ipv6
-    try:
-        return socket.inet_ntop(socket.AF_INET, inet)
-    except ValueError:
-        return socket.inet_ntop(socket.AF_INET6, inet)
-
-def ipv4_dotted_to_int(ipv4_dotted):
-    """Transforms an IP into its integer representation"""
-    # FUTURE-TODO: handle IPv6
-    ipv4_obj = ipaddress.IPv4Address(ipv4_dotted)
-    ipv4_int = hex(int(ipv4_obj))[2:]
-    return ipv4_int
+    header_string = Colors.BOLD + fwd_separator_line*big_header_factor + "\n" +\
+        string + "\n" + bwd_separator_line*big_header_factor + Colors.ENDC
+    return header_string
