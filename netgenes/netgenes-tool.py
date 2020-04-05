@@ -210,7 +210,7 @@ def output_net_genes(net_genes_generator_lst, l4_protocol, network_object_type):
         # CSV Directory
         os.makedirs(netgenes_globals.csv_output_dir, exist_ok=True)
         # Save NetGenes
-        save_csv_file(net_genes_header_lst, net_genes_generator_lst, "ipv4-%s-%ss.csv"%(l4_protocol, network_object_type))
+        save_csv_file(net_genes_header_lst, net_genes_generator_lst, "ipv4-%s-%ss.csv"%(l4_protocol.lower(), network_object_type))
 
 # ===================
 # Main Program Flow |
