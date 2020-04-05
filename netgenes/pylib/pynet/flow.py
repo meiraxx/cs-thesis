@@ -376,7 +376,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
     return udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features, n_disconected_rfc793_packets
 
 
-def get_l3_l4_biflow_gene_generators(genes_dir, ipv4_udp_biflows, ipv4_udp_biflow_ids, ipv4_tcp_biflows, ipv4_tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features, verbose=True):
+def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol=None, l4_conceptual_features=None, verbose=True):
     """Return L3-L4 biflow gene generators"""
     def calculate_l3_l4_biflow_genes(genes_dir, biflows, biflow_ids, l4_protocol=None, l4_conceptual_features=None, verbose=True):
         """Calculate and yield L3-L4 biflow genes"""
@@ -1204,13 +1204,10 @@ def get_l3_l4_biflow_gene_generators(genes_dir, ipv4_udp_biflows, ipv4_udp_biflo
 
             yield biflow_genes
 
-    # IPv4-UDP Genes Generator
-    ipv4_udp_biflow_genes_generator = calculate_l3_l4_biflow_genes(genes_dir, ipv4_udp_biflows, ipv4_udp_biflow_ids,\
-        l4_protocol="UDP", verbose=verbose)
-    # IPv4-TCP Genes Generator
-    ipv4_tcp_biflow_genes_generator = calculate_l3_l4_biflow_genes(genes_dir, ipv4_tcp_biflows, ipv4_tcp_biflow_ids,\
-        l4_protocol="TCP", l4_conceptual_features=rfc793_tcp_biflow_conceptual_features, verbose=verbose)
+    # IPv4-[UDP|TCP] Genes Generator
+    biflow_genes_generator = calculate_l3_l4_biflow_genes(genes_dir, biflows, biflow_ids,\
+        l4_protocol=l4_protocol, l4_conceptual_features=l4_conceptual_features, verbose=verbose)
 
     # can return a listed yelder since passive analysis (threat hunting) is the objective
     # https://stackoverflow.com/questions/3487802/which-is-generally-faster-a-yield-or-an-append
-    return list(ipv4_udp_biflow_genes_generator), list(ipv4_tcp_biflow_genes_generator)
+    return list(biflow_genes_generator)

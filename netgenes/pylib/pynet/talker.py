@@ -11,76 +11,62 @@ except ImportError:
 from pylib.pynet.netobject_utils import *
 from pylib.pyaux.utils import datetime_to_unixtime, unixtime_to_datetime
 
-def build_l4_unitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids, ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids):
-    """Build L4 UniTalkers"""
-    def build_unitalkers(biflow_genes_generator_lst, biflow_ids):
-        """Build UniTalkers"""
-        unitalkers = dict()
-        unitalker_ids = list()
+def build_unitalkers(biflow_genes_generator_lst, biflow_ids):
+    """Build UniTalkers"""
+    unitalkers = dict()
+    unitalker_ids = list()
 
-        for biflow_genes in biflow_genes_generator_lst:
-            biflow_id_str = biflow_genes[0]
-            biflow_id = str_to_iterator(biflow_id_str)
-            unitalker_id = biflow_id_to_bitalker_id(biflow_id)
+    for biflow_genes in biflow_genes_generator_lst:
+        biflow_id_str = biflow_genes[0]
+        biflow_id = str_to_iterator(biflow_id_str)
+        unitalker_id = biflow_id_to_bitalker_id(biflow_id)
 
-            try:
-                unitalkers[unitalker_id].append(biflow_genes)
-            except KeyError:
-                unitalker_ids.append(unitalker_id)
-                unitalkers[unitalker_id] = [biflow_genes]
+        try:
+            unitalkers[unitalker_id].append(biflow_genes)
+        except KeyError:
+            unitalker_ids.append(unitalker_id)
+            unitalkers[unitalker_id] = [biflow_genes]
 
-        return unitalkers, unitalker_ids
+    return unitalkers, unitalker_ids
 
-    udp_unitalkers, udp_unitalker_ids = build_unitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids)
-    tcp_unitalkers, tcp_unitalker_ids = build_unitalkers(ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids)
+def build_bitalkers(unitalkers, unitalker_ids):
+    """Build BiTalkers"""
+    def get_unique_matching_unitalker_ids(unitalkers, unitalker_ids):
+        """Local helper function to return matching unidirectional talker ids, with fwd_talker_id
+        as key and bwd_talker_id as value, and not vice-versa"""
+        matching_unitalker_ids_dict = dict()
+        fwd_talker_ids = list()
+        for unitalker_id in unitalker_ids:
+            reversed_unitalker_id = (unitalker_id[1], unitalker_id[0], unitalker_id[2])
 
-    return udp_unitalkers, udp_unitalker_ids, tcp_unitalkers, tcp_unitalker_ids
-
-def build_l4_bitalkers(udp_unitalkers, udp_unitalker_ids, tcp_unitalkers, tcp_unitalker_ids):
-    """Build L4 BiTalkers"""
-    def build_bitalkers(l4_unitalkers, l4_unitalker_ids):
-        """Build BiTalkers"""
-        def get_unique_matching_l4_unitalker_ids(l4_unitalkers, l4_unitalker_ids):
-            """Local helper function to return matching unidirectional talker ids, with l4_fwd_talker_id
-            as key and l4_bwd_talker_id as value, and not vice-versa"""
-            matching_l4_unitalker_ids_dict = dict()
-            l4_fwd_talker_ids = list()
-            for l4_unitalker_id in l4_unitalker_ids:
-                reversed_l4_unitalker_id = (l4_unitalker_id[1], l4_unitalker_id[0], l4_unitalker_id[2])
-
-                # Note: O(n**2) --> O(n) optimization done using dictionary search
-                if reversed_l4_unitalker_id in l4_unitalkers:
-                    if reversed_l4_unitalker_id not in matching_l4_unitalker_ids_dict:
-                        l4_fwd_talker_ids.append(l4_unitalker_id)
-                        matching_l4_unitalker_ids_dict[l4_unitalker_id] = reversed_l4_unitalker_id
-                else:
-                    if reversed_l4_unitalker_id not in matching_l4_unitalker_ids_dict:
-                        l4_fwd_talker_ids.append(l4_unitalker_id)
-                        matching_l4_unitalker_ids_dict[l4_unitalker_id] = False
-            return matching_l4_unitalker_ids_dict, l4_fwd_talker_ids
-
-        matching_l4_unitalker_ids_dict, l4_fwd_talker_ids = get_unique_matching_l4_unitalker_ids(l4_unitalkers, l4_unitalker_ids)
-        l4_bitalkers = dict()
-        l4_bitalker_ids = list()
-
-        for l4_fwd_talker_id in l4_fwd_talker_ids:
-            # have in mind every l4_unitalker_id in this list will have been constituted by the first flow ever recorded in that talker,
-            # so the researcher defines l4_bitalker_id = l4_fwd_talker_id
-            l4_bwd_talker_id = matching_l4_unitalker_ids_dict[l4_fwd_talker_id]
-            l4_bitalker_ids.append(l4_fwd_talker_id)
-            if l4_bwd_talker_id:
-                l4_bitalkers[l4_fwd_talker_id] = l4_unitalkers[l4_fwd_talker_id] + l4_unitalkers[l4_bwd_talker_id]
+            # Note: O(n**2) --> O(n) optimization done using dictionary search
+            if reversed_unitalker_id in unitalkers:
+                if reversed_unitalker_id not in matching_unitalker_ids_dict:
+                    fwd_talker_ids.append(unitalker_id)
+                    matching_unitalker_ids_dict[unitalker_id] = reversed_unitalker_id
             else:
-                l4_bitalkers[l4_fwd_talker_id] = l4_unitalkers[l4_fwd_talker_id]
+                if reversed_unitalker_id not in matching_unitalker_ids_dict:
+                    fwd_talker_ids.append(unitalker_id)
+                    matching_unitalker_ids_dict[unitalker_id] = False
+        return matching_unitalker_ids_dict, fwd_talker_ids
 
-        return l4_bitalkers, l4_bitalker_ids
+    matching_unitalker_ids_dict, fwd_talker_ids = get_unique_matching_unitalker_ids(unitalkers, unitalker_ids)
+    bitalkers = dict()
+    bitalker_ids = list()
 
-    udp_bitalkers, udp_bitalker_ids = build_bitalkers(udp_unitalkers, udp_unitalker_ids)
-    tcp_bitalkers, tcp_bitalker_ids = build_bitalkers(tcp_unitalkers, tcp_unitalker_ids)
+    for fwd_talker_id in fwd_talker_ids:
+        # have in mind every unitalker_id in this list will have been constituted by the first flow ever recorded in that talker,
+        # so the researcher defines bitalker_id = fwd_talker_id
+        bwd_talker_id = matching_unitalker_ids_dict[fwd_talker_id]
+        bitalker_ids.append(fwd_talker_id)
+        if bwd_talker_id:
+            bitalkers[fwd_talker_id] = unitalkers[fwd_talker_id] + unitalkers[bwd_talker_id]
+        else:
+            bitalkers[fwd_talker_id] = unitalkers[fwd_talker_id]
 
-    return udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids
+    return bitalkers, bitalker_ids
 
-def get_l3_l4_bitalker_gene_generators(genes_dir, udp_bitalkers, udp_bitalker_ids, tcp_bitalkers, tcp_bitalker_ids):
+def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_protocol=None):
     """Return L3-L4 bitalker gene generators"""
     def calculate_l3_l4_bitalker_genes(genes_dir, bitalkers, bitalker_ids, l4_protocol=None):
         """Calculate and yield L3-L4 bitalker genes"""
@@ -662,8 +648,7 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, udp_bitalkers, udp_bitalker_id
             
             yield bitalker_genes
 
-    ipv4_udp_bitalker_genes_generator = calculate_l3_l4_bitalker_genes(genes_dir, udp_bitalkers, udp_bitalker_ids, "UDP")
-    ipv4_tcp_bitalker_genes_generator = calculate_l3_l4_bitalker_genes(genes_dir, tcp_bitalkers, tcp_bitalker_ids, "TCP")
+    bitalker_genes_generator = calculate_l3_l4_bitalker_genes(genes_dir, bitalkers, bitalker_ids, l4_protocol=l4_protocol)
 
-    return list(ipv4_udp_bitalker_genes_generator), list(ipv4_tcp_bitalker_genes_generator)
+    return list(bitalker_genes_generator)
     

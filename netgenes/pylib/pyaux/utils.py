@@ -57,7 +57,7 @@ def unixtime_to_datetime(ms_timestamp):
         datetime_obj = datetime.datetime.utcfromtimestamp(ms_timestamp/1000.0).strftime(datetime_format2)
     return datetime_obj
 
-def make_header_string(string, fwd_separator="#", bwd_separator="#", big_header_factor=1):
+def make_header_string(string, fwd_separator="-", bwd_separator="-", big_header_factor=1):
     """Transforms a string into an header"""
     fwd_separator_line = fwd_separator*len(string)
     bwd_separator_line = bwd_separator*len(string)
