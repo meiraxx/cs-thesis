@@ -1,5 +1,6 @@
 bitalker_id
-unihost_id
+bihost_fwd_id
+bihost_bwd_id
 bitalker_any_first_biflow_initiation_time
 bitalker_any_last_biflow_termination_time
 bitalker_any_duration

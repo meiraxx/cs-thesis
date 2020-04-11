@@ -1,5 +1,6 @@
 # Standard
 import datetime, time
+import sys
 
 # 3rdParty
 try:
@@ -43,7 +44,7 @@ def build_packets(input_file, args):
     # TODO: find a database and dataset format which accomodates such diverse feature formats (tcp vs udp vs icmp) while maintaining
     # all the relevant genes for each format... maybe there needs to be dataset separation, or maybe it's enough to put a "L3-protocol"
     # and "L4-protocol" field to separate those formats in the same dataset and zero-out different values - it will complicate too much
-    # when introducing mixed NetGenes (l3biflows/l4biflows/bitalkers/unihosts)
+    # when introducing mixed NetGenes (l3biflows/l4biflows/bitalkers/bihosts)
     packets = []
     
     # ===================

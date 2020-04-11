@@ -17,10 +17,10 @@ def build_unitalkers(biflow_genes_generator_lst, biflow_ids):
     unitalker_ids = list()
 
     for biflow_genes in biflow_genes_generator_lst:
-        biflow_id_str = biflow_genes[0]
-        biflow_id = str_to_iterator(biflow_id_str)
-        unitalker_id = biflow_id_to_bitalker_id(biflow_id)
-
+        #biflow_id_str = biflow_genes[0]
+        #biflow_id = str_to_iterator(biflow_id_str)
+        #unitalker_id = biflow_id_to_bitalker_id(biflow_id)
+        unitalker_id = tuple(str_to_iterator(biflow_genes[1]))
         try:
             unitalkers[unitalker_id].append(biflow_genes)
         except KeyError:
@@ -206,8 +206,9 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
             # =================================
             # Additional Information - Reformat
             # =================================
-            # Get unihost_id and convert bitalker_id and unihost_id to strings
-            unihost_id = iterator_to_str(bitalker_id_to_unihost_id(bitalker_id))
+            # Get bihost_id and convert bitalker_id and bihost_id to strings
+            bihost_fwd_id = iterator_to_str(bitalker_id_to_bihost_id(bitalker_id))
+            bihost_bwd_id = iterator_to_str(bitalker_id_to_bihost_id(bitalker_id, _fwd=False))
             bitalker_id = iterator_to_str(bitalker_id)
             bitalker_any_first_biflow_initiation_time = unixtime_to_datetime(bitalker_any_first_biflow_initiation_time)
             bitalker_any_last_biflow_termination_time = unixtime_to_datetime(bitalker_any_last_biflow_termination_time)

@@ -1,7 +1,0 @@
-unihost_id
-unihost_first_bitalker_initiation_time
-unihost_last_bitalker_termination_time
-unihost_duration
-unihost_n_bitalkers
-unihost_bitalkers_per_sec
-unihost_bitalker_bytes_per_sec

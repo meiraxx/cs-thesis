@@ -22,16 +22,13 @@ def biflow_id_to_bitalker_id(biflow_id):
     bitalker_id = (biflow_id[0], biflow_id[2], biflow_id[4])
     return bitalker_id
 
-def bitalker_id_to_unihost_id(bitalker_id, _reversed=False):
-    """Get bitalker_id's correspondent unihost_id"""
+def bitalker_id_to_bihost_id(bitalker_id, _fwd=True):
+    """Get bitalker_id's correspondent bihost_id"""
     # Note: the researcher will keep the protocol_stack in this network object definition because we want to analyze
     # each protocol_stack independently (for now, at least)
-    if not _reversed:
-        unihost_id = (bitalker_id[0], bitalker_id[2])
-    else:
-        unihost_id = (bitalker_id[1], bitalker_id[2])
+    bihost_id = (bitalker_id[0], bitalker_id[2]) if _fwd else (bitalker_id[1], bitalker_id[2])
 
-    return unihost_id
+    return bihost_id
 
 # ===============================
 # Network Objects to PCAP Filters
@@ -74,17 +71,17 @@ def bitalker_id_to_pcap_filter(bitalker_id):
 
 def check_supported_network_objects(network_object_type):
     """ Check if network object type is supported"""
-    if network_object_type not in ("biflow", "bitalker", "unihost"):
-        print("[!] Network object type \"" + network_object_type + "\" not supported. Supported protocol stacks: biflow, bitalker, unihost",\
-            file=sys.stderr, flush=True)
-        sys.exit(1)
+    if network_object_type not in ("biflow", "bitalker", "bihost"):
+        print("[!] Network object type \"" + network_object_type + "\" not supported. Supported protocol stacks: biflow, bitalker, bihost",\
+            flush=True)
+        exit()
 
 def check_supported_protocol_stacks(protocol_stack):
     """ Check if protocol stack is supported"""
     if protocol_stack not in ("ipv4", "ipv4-l4", "ipv4-tcp"):
         print("[!] Protocol stack \"" + protocol_stack + "\" not supported. Supported protocol stacks: ipv4, ipv4-l4, ipv4-tcp",\
-            file=sys.stderr, flush=True)
-        sys.exit(1)
+            flush=True)
+        exit()
 
 def get_network_object_header(genes_dir, network_object_type, protocol_stack):
     """Use L3-L4 protocol stack to fetch correct biflow headers and return them as a list"""

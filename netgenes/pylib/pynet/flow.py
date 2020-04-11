@@ -152,8 +152,8 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
             flow_any_n_packets = len(curr_flow)
 
             if flow_any_n_packets == 0:
-                print("[!] A flow can't have 0 packets.", file=sys.stderr, flush=True)
-                sys.exit(1)
+                print("[!] A flow can't have 0 packets.", flush=True)
+                exit()
             else:
                 # =================================
                 # RFC793-compliant TCP BiFlow Genes
@@ -367,9 +367,9 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
             tmp_tcp_biflows[l3_biflow_id] = biflow
             tmp_tcp_biflow_ids.append(l3_biflow_id)
         else:
-            print("ERROR: Run-time should never reach this branch, but in case it does, it means that another protocol was let through in an earlier stage.",
-                file=sys.stderr, flush=True)
-            sys.exit(1)
+            print("ERROR: Run-time should never reach this branch, but in case it does, it means that another protocol was let through in an earlier stage.",\
+                flush=True)
+            exit()
 
     # Apply RFC793 to the unseparated TCP BiFlows
     tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features, n_disconected_rfc793_packets = build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids, args)
@@ -455,16 +455,16 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
             # -------------------
             # IPv4 Header Lengths
             # -------------------
-            biflow_any_eth_ipv4_data_lens = list()
-            biflow_fwd_eth_ipv4_data_lens = list()
-            biflow_bwd_eth_ipv4_data_lens = list()
+            biflow_any_eth_ipv4_header_lens = list()
+            biflow_fwd_eth_ipv4_header_lens = list()
+            biflow_bwd_eth_ipv4_header_lens = list()
 
             # -----------------
             # IPv4 Data Lengths
             # -----------------
-            biflow_any_eth_ipv4_header_lens = list()
-            biflow_fwd_eth_ipv4_header_lens = list()
-            biflow_bwd_eth_ipv4_header_lens = list()
+            biflow_any_eth_ipv4_data_lens = list()
+            biflow_fwd_eth_ipv4_data_lens = list()
+            biflow_bwd_eth_ipv4_data_lens = list()
 
             # ------------------------
             # IPv4 Fragmentation Flags
@@ -1195,7 +1195,7 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
                         biflow_bwd_eth_ipv4_tcp_cwr_flags_min = round(min(biflow_bwd_eth_ipv4_tcp_cwr_flags), 3)
                 else:
                     print("No L4 protocol specified.", flush=True)
-                    sys.exit(1)
+                    exit()
             # ===============
             # WRAP-UP RESULTS
             # ===============

@@ -3,7 +3,7 @@
 This tool grabs a PCAP/PCAPNG file and extracts useful conceptual and statistical network-object features, called NetGenes. NetGenes refer to three different types of network objects:
 - Flows (bidirectional - BiFlows)
 - Talkers (bidirectional - BiTalkers)
-- Hosts (unidirectional - UniHosts)
+- Hosts (bidirectional - BiHosts)
 
 ### What you can do with this tool
 - Create new datasets with your capture files (the community thanks you if you label and share them)

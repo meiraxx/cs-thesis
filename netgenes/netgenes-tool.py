@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-This script is meant to output "unihosts" (ipX), "bitalkers" (ipX-ipY) and "biflows"
+This script is meant to output "bihosts" (ipX), "bitalkers" (ipX-ipY) and "biflows"
 (ipX-portA-ipY-portB-protocol_stack-inner_sep_counter), which are network objects,
 and their respective conceptual and statistical features to build a dataset. These
 network objects (NetObjects) are meant to perform a logical packet aggregation having
@@ -44,7 +44,7 @@ Joao Meira <joao.meira.cs@gmail.com>
 # ===============================
 import time
 import argparse
-import os, sys
+import os
 
 # for debugging code
 import code
@@ -76,13 +76,13 @@ class NetGenesArgs:
         def check_and_print_help(args, help_message):
             """Local helper function to check if help should be printed and, if so, print it."""
             if args.print_help:
-                print(help_message, file=sys.stderr, flush=True)
-                sys.exit(1)
+                print(help_message, flush=True)
+                exit()
             elif args.pcap_path=="":
                 help_message = help_message.replace("PCAP-File-Path", Colors.YELLOW + "PCAP-File-Path <-- " + Colors.ENDC + \
                     Colors.RED + "Please give me a PCAP file as an input!" + Colors.ENDC)
-                print(help_message, file=sys.stderr, flush=True)
-                sys.exit(1)
+                print(help_message, flush=True)
+                exit()
 
         def verify_output_type(args):
             """Local helper function to verify output type: csv, mongo, etc."""
@@ -91,7 +91,7 @@ class NetGenesArgs:
                 print("[!] Specified output type", Colors.RED + args.output_type + Colors.ENDC,
                     "is not a valid output type. Valid output types:"  + Colors.BLUE,
                     ",".join(supported_output_types) + Colors.ENDC, flush=True)
-                sys.exit(1)
+                exit()
 
         oparser = argparse.ArgumentParser(prog="NetGenes", description="Description: NetGene extraction tool", \
             epilog="For any enquiries, please contact me at joao[dot]meira[dot]cs[at]gmail[dot]com", add_help=False)
@@ -152,7 +152,7 @@ def print_netgenes_info():
         ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count, "BiFlow Genes", flush=True)
     print("[+] IPv4-TCP BiFlow Genes:", \
         ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count + ipv4_tcp_biflow_genes_count, "BiFlow Genes", flush=True)
-    # minus 4 to remove bitalker_id, unihost_id, bitalker_any_first_biflow_initiation_time
+    # minus 4 to remove bitalker_id, bihost_id, bitalker_any_first_biflow_initiation_time
     # and bitalker_any_last_biflow_termination_time
     ipv4_bitalker_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "bitalker", "ipv4")) - 4
     ipv4_l4_bitalker_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "bitalker", "ipv4-l4"))
@@ -163,20 +163,20 @@ def print_netgenes_info():
     print("[+] IPv4-TCP BiTalker Genes:", \
         ipv4_bitalker_genes_count + ipv4_l4_bitalker_genes_count + ipv4_tcp_bitalker_genes_count, "BiTalker Genes", \
         flush=True)
-    # minus 3 to remove unihost_id, unihost_first_bitalker_initiation_time
-    # and unihost_first_bitalker_termination_time
-    ipv4_unihost_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "unihost", "ipv4")) - 3
-    ipv4_l4_unihost_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "unihost", "ipv4-l4"))
-    ipv4_tcp_unihost_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "unihost", "ipv4-tcp"))
-    print("[+] IPv4 UniHost Genes:", ipv4_unihost_genes_count, "UniHost Genes", flush=True)
-    print("[+] IPv4-UDP UniHost Genes:", \
-        ipv4_unihost_genes_count + ipv4_l4_unihost_genes_count, "UniHost Genes", flush=True)
-    print("[+] IPv4-TCP UniHost Genes:", \
-        ipv4_unihost_genes_count + ipv4_l4_unihost_genes_count + ipv4_tcp_unihost_genes_count, "UniHost Genes", \
+    # minus 3 to remove bihost_id, bihost_first_bitalker_initiation_time
+    # and bihost_first_bitalker_termination_time
+    ipv4_bihost_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "bihost", "ipv4")) - 3
+    ipv4_l4_bihost_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "bihost", "ipv4-l4"))
+    ipv4_tcp_bihost_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "bihost", "ipv4-tcp"))
+    print("[+] IPv4 BiHost Genes:", ipv4_bihost_genes_count, "BiHost Genes", flush=True)
+    print("[+] IPv4-UDP BiHost Genes:", \
+        ipv4_bihost_genes_count + ipv4_l4_bihost_genes_count, "BiHost Genes", flush=True)
+    print("[+] IPv4-TCP BiHost Genes:", \
+        ipv4_bihost_genes_count + ipv4_l4_bihost_genes_count + ipv4_tcp_bihost_genes_count, "BiHost Genes", \
         flush=True)
 
 def output_net_genes(net_genes_generator_lst, l4_protocol, network_object_type):
-    """ Output all NetObjects present on a PCAP file: biflows, bitalkers and unihosts, along with
+    """ Output all NetObjects present on a PCAP file: biflows, bitalkers and bihosts, along with
     their respective genes (NetGenes): conceptual and statistical features. """
 
     ipv4_net_genes_header_lst = get_network_object_header(netgenes_globals.genes_dir, network_object_type, "ipv4")
@@ -192,7 +192,7 @@ def output_net_genes(net_genes_generator_lst, l4_protocol, network_object_type):
         net_genes_header_lst = ipv4_tcp_net_genes_header_lst
     else:
         print("Unknown protocol '%s'"%(l4_protocol), flush=True)
-        sys.exit(1)
+        exit()
 
     
     if args.output_type == "csv":
@@ -337,23 +337,23 @@ def generate_network_objets(input_file):
     # ---------
     # UDP Hosts
     # ---------
-    # UDP UniHost Construction
-    udp_unihosts, udp_unihost_ids = host.build_unihosts(ipv4_udp_bitalker_genes_generator_lst, udp_bitalker_ids)
-    n_ipv4_udp_unihosts = len(udp_unihost_ids)
+    # UDP BiHost Construction
+    udp_bihosts, udp_bihost_ids = host.build_bihosts(ipv4_udp_bitalker_genes_generator_lst, udp_bitalker_ids)
+    n_ipv4_udp_bihosts = len(udp_bihost_ids)
     del(ipv4_udp_bitalker_genes_generator_lst, udp_bitalker_ids)
 
-    # UDP UniHost Genes Extraction
-    ipv4_udp_unihost_genes_generator_lst = host.get_l3_l4_unihost_gene_generators(\
-        netgenes_globals.genes_dir, udp_unihosts, udp_unihost_ids, l4_protocol="UDP")
-    del(udp_unihosts, udp_unihost_ids)
+    # UDP BiHost Genes Extraction
+    ipv4_udp_bihost_genes_generator_lst = host.get_l3_l4_bihost_gene_generators(\
+        netgenes_globals.genes_dir, udp_bihosts, udp_bihost_ids, l4_protocol="UDP")
+    del(udp_bihosts, udp_bihost_ids)
 
-    # Save UDP UniHost Genes
-    output_net_genes(ipv4_udp_unihost_genes_generator_lst, "UDP", "unihost")
+    # Save UDP BiHost Genes
+    output_net_genes(ipv4_udp_bihost_genes_generator_lst, "UDP", "bihost")
 
     if args.verbose:
         print("[+] IPv4-UDP UniTalkers detected:" + Colors.GREEN, n_ipv4_udp_unitalkers, "IPv4-UDP UniTalkers" + Colors.ENDC, flush=True)
         print("[+] IPv4-UDP BiTalkers detected:" + Colors.GREEN, n_ipv4_udp_bitalkers, "IPv4-UDP BiTalkers" + Colors.ENDC, flush=True)
-        print("[+] IPv4-UDP UniHosts detected:" + Colors.GREEN, n_ipv4_udp_unihosts, "IPv4-UDP UniHosts" + Colors.ENDC, flush=True)
+        print("[+] IPv4-UDP BiHosts detected:" + Colors.GREEN, n_ipv4_udp_bihosts, "IPv4-UDP BiHosts" + Colors.ENDC, flush=True)
         print("[T] Calculated and saved in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # ================================================================================================================= #
@@ -402,23 +402,23 @@ def generate_network_objets(input_file):
     # -----------
     # TCP Hosts
     # -----------
-    # TCP UniHost Construction
-    tcp_unihosts, tcp_unihost_ids = host.build_unihosts(ipv4_tcp_bitalker_genes_generator_lst, tcp_bitalker_ids)
-    n_ipv4_tcp_unihosts = len(tcp_unihost_ids)
+    # TCP BiHost Construction
+    tcp_bihosts, tcp_bihost_ids = host.build_bihosts(ipv4_tcp_bitalker_genes_generator_lst, tcp_bitalker_ids)
+    n_ipv4_tcp_bihosts = len(tcp_bihost_ids)
     del(ipv4_tcp_bitalker_genes_generator_lst, tcp_bitalker_ids)
 
-    # TCP UniHost Genes Extraction
-    ipv4_tcp_unihost_genes_generator_lst = host.get_l3_l4_unihost_gene_generators(\
-        netgenes_globals.genes_dir, tcp_unihosts, tcp_unihost_ids, l4_protocol="TCP")
-    del(tcp_unihosts, tcp_unihost_ids)
+    # TCP BiHost Genes Extraction
+    ipv4_tcp_bihost_genes_generator_lst = host.get_l3_l4_bihost_gene_generators(\
+        netgenes_globals.genes_dir, tcp_bihosts, tcp_bihost_ids, l4_protocol="TCP")
+    del(tcp_bihosts, tcp_bihost_ids)
 
-    # Save TCP UniHost Genes
-    output_net_genes(ipv4_tcp_unihost_genes_generator_lst, "TCP", "unihost")
+    # Save TCP BiHost Genes
+    output_net_genes(ipv4_tcp_bihost_genes_generator_lst, "TCP", "bihost")
 
     if args.verbose:
         print("[+] IPv4-TCP UniTalkers detected:" + Colors.GREEN, n_ipv4_tcp_unitalkers, "IPv4-TCP UniTalkers" + Colors.ENDC, flush=True)
         print("[+] IPv4-TCP BiTalkers detected:" + Colors.GREEN, n_ipv4_tcp_bitalkers, "IPv4-TCP BiTalkers" + Colors.ENDC, flush=True)
-        print("[+] IPv4-TCP UniHosts detected:" + Colors.GREEN, n_ipv4_tcp_unihosts, "IPv4-TCP UniHosts" + Colors.ENDC, flush=True)
+        print("[+] IPv4-TCP BiHosts detected:" + Colors.GREEN, n_ipv4_tcp_bihosts, "IPv4-TCP BiHosts" + Colors.ENDC, flush=True)
         print("[T] Calculated and saved in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # ================================================================================================================= #
@@ -458,7 +458,7 @@ def run():
     if args.output_type == "csv":
         csv_output_dir_size = OperatingSystem.get_dir_size(netgenes_globals.csv_output_dir)
         csv_size_str = OperatingSystem.get_size_str(csv_output_dir_size)
-        print("[+] Network-object (BiFlows, BiTalkers and UniHosts) genes extracted:" + Colors.BLUE,
+        print("[+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted:" + Colors.BLUE,
             csv_size_str + Colors.ENDC, flush=True, end="\n\n")
 
 # Reading Command-Line Output:
