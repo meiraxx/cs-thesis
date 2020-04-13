@@ -18,16 +18,16 @@ def build_bihosts(bitalker_genes_generator_lst, bitalker_ids):
         bihost_bwd_id = tuple(str_to_iterator(bitalker_genes[2]))
 
         try:
-            bihosts[bihost_fwd_id].append(bitalker_genes)
+            bihosts[bihost_fwd_id].append([bitalker_genes, "fwd"])
         except KeyError:
-            bihost_ids.append(("fwd", bihost_fwd_id))
-            bihosts[bihost_fwd_id] = [bitalker_genes]
+            bihost_ids.append(bihost_fwd_id)
+            bihosts[bihost_fwd_id] = [[bitalker_genes, "fwd"], ]
 
         try:
-            bihosts[bihost_bwd_id].append(bitalker_genes)
+            bihosts[bihost_bwd_id].append([bitalker_genes, "bwd"])
         except KeyError:
-            bihost_ids.append(("bwd", bihost_bwd_id))
-            bihosts[bihost_bwd_id] = [bitalker_genes]
+            bihost_ids.append(bihost_bwd_id)
+            bihosts[bihost_bwd_id] = [[bitalker_genes, "bwd"], ]
 
     return bihosts, bihost_ids
 
@@ -59,14 +59,14 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
             elif l4_protocol == "TCP":
                 ipv4_all_bihost_genes_header_list += ipv4_tcp_bihost_genes_header_list
 
-        for direction, bihost_id in bihost_ids:
+        for bihost_id in bihost_ids:
             # ======================
             # Additional Information
             # ======================
             curr_bihost = bihosts[bihost_id]
 
-            first_bitalker = curr_bihost[0]
-            last_bitalker = curr_bihost[-1]
+            first_bitalker = curr_bihost[0][0]
+            last_bitalker = curr_bihost[-1][0]
             bihost_any_first_bitalker_initiation_time = first_bitalker[3]
             bihost_any_last_bitalker_termination_time = last_bitalker[4]
             bihost_any_first_bitalker_initiation_time = datetime_to_unixtime(bihost_any_first_bitalker_initiation_time)
@@ -170,12 +170,13 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                 # BiTalker Concepts |
                 # ===================
                 if curr_bitalker_index >= 1:
-                    previous_bitalker = curr_bihost[curr_bitalker_index-1]
+                    previous_bitalker = curr_bihost[curr_bitalker_index-1][0]
                     previous_bitalker_bitalker_id = previous_bitalker[1]
                     previous_bitalker_initiation_timestamp = previous_bitalker[3]
                     previous_bitalker_termination_timestamp = previous_bitalker[4]
 
-                curr_bitalker = curr_bihost[curr_bitalker_index]
+                curr_bitalker = curr_bihost[curr_bitalker_index][0]
+                curr_bitalker_direction = curr_bihost[curr_bitalker_index][1]
                 curr_bitalker_id_str = curr_bitalker[0]
                 curr_bitalker_id = str_to_iterator(curr_bitalker_id_str)
                 curr_bitalker_bitalker_id_str = curr_bitalker[1]
@@ -188,7 +189,7 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                 curr_bitalker_any_biflow_eth_ipv4_data_lens_total = int(curr_bitalker[15])
                 bihost_any_bitalker_any_biflow_eth_ipv4_data_lens.append(curr_bitalker_any_biflow_eth_ipv4_data_lens_total)
 
-                if direction == "fwd":
+                if curr_bitalker_direction == "fwd":
                     # Statistical
                     bihost_fwd_bitalker_any_biflow_eth_ipv4_data_lens.append(curr_bitalker_any_biflow_eth_ipv4_data_lens_total)
 
@@ -211,7 +212,7 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                     curr_bitalker_any_biflow_n_unique_dst_ports = int(curr_bitalker[105])
                     
                     bihost_any_bitalker_any_biflow_n_unique_dst_ports.append(curr_bitalker_any_biflow_n_unique_dst_ports)
-                    if direction == "fwd":
+                    if curr_bitalker_direction == "fwd":
                         bihost_fwd_bitalker_any_biflow_n_unique_dst_ports.append(curr_bitalker_any_biflow_n_unique_dst_ports)
                     else:
                         bihost_bwd_bitalker_any_biflow_n_unique_dst_ports.append(curr_bitalker_any_biflow_n_unique_dst_ports)
@@ -253,7 +254,7 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                         curr_bitalker_eth_ipv4_tcp_biflow_abort_terminations = int(curr_bitalker[168])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_abort_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_abort_terminations)
 
-                        if direction == "fwd":
+                        if curr_bitalker_direction == "fwd":
                             # init
                             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations)
                             # connect
