@@ -152,9 +152,9 @@ def print_netgenes_info():
         ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count, "BiFlow Genes", flush=True)
     print("[+] IPv4-TCP BiFlow Genes:", \
         ipv4_biflow_genes_count + ipv4_l4_biflow_genes_count + ipv4_tcp_biflow_genes_count, "BiFlow Genes", flush=True)
-    # minus 4 to remove bitalker_id, bihost_id, bitalker_any_first_biflow_initiation_time
+    # minus 5 to remove bitalker_id, bihost_fwd_id, bihost_bwd_id, bitalker_any_first_biflow_initiation_time
     # and bitalker_any_last_biflow_termination_time
-    ipv4_bitalker_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "bitalker", "ipv4")) - 4
+    ipv4_bitalker_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "bitalker", "ipv4")) - 5
     ipv4_l4_bitalker_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "bitalker", "ipv4-l4"))
     ipv4_tcp_bitalker_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "bitalker", "ipv4-tcp"))
     print("[+] IPv4 BiTalker Genes:", ipv4_bitalker_genes_count, "BiTalker Genes", flush=True)
@@ -174,7 +174,7 @@ def print_netgenes_info():
     print("[+] IPv4-TCP BiHost Genes:", \
         ipv4_bihost_genes_count + ipv4_l4_bihost_genes_count + ipv4_tcp_bihost_genes_count, "BiHost Genes", \
         flush=True)
-
+    
 def output_net_genes(net_genes_generator_lst, l4_protocol, network_object_type):
     """ Output all NetObjects present on a PCAP file: biflows, bitalkers and bihosts, along with
     their respective genes (NetGenes): conceptual and statistical features. """
@@ -275,17 +275,18 @@ def generate_network_objets(input_file):
 
     udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features,\
         n_disconected_rfc793_packets = flow.build_l4_biflows(l3_biflows, l3_biflow_ids, args.debug)
+    n_ipv4_udp_biflows = len(udp_biflows)
+    n_ipv4_tcp_biflows = len(tcp_biflows)
+    n_preserved_udp_packets = sum([len(udp_biflows[udp_biflow_id]) for udp_biflow_id in udp_biflow_ids])
+    n_preserved_tcp_packets = sum([len(tcp_biflows[tcp_biflow_id]) for tcp_biflow_id in tcp_biflow_ids])
     del(l3_biflows, l3_biflow_ids)
 
     if args.verbose:
-        n_preserved_udp_packets = sum([len(udp_biflows[udp_biflow_id]) for udp_biflow_id in udp_biflow_ids])
-        n_preserved_tcp_packets = sum([len(tcp_biflows[tcp_biflow_id]) for tcp_biflow_id in tcp_biflow_ids])
-
         print("[+] IPv4-UDP Packets preserved:", n_preserved_udp_packets, "IPv4-UDP OK Packets", flush=True)
         print("[+] IPv4-TCP Packets preserved:", n_preserved_tcp_packets, "IPv4-TCP OK Packets", flush=True)
         print("[+] IPv4-TCP Packets disconected:", n_disconected_rfc793_packets, "IPv4-TCP DCed Packets", flush=True)
-        print("[+] IPv4-UDP BiFlows detected:" + Colors.GREEN, len(udp_biflows), "IPv4-UDP BiFlows" + Colors.ENDC, flush=True)
-        print("[+] IPv4-TCP BiFlows detected:" + Colors.GREEN, len(tcp_biflows), "IPv4-TCP BiFlows" + Colors.ENDC, flush=True)
+        print("[+] IPv4-UDP BiFlows detected:" + Colors.GREEN, n_ipv4_udp_biflows, "IPv4-UDP BiFlows" + Colors.ENDC, flush=True)
+        print("[+] IPv4-TCP BiFlows detected:" + Colors.GREEN, n_ipv4_tcp_biflows, "IPv4-TCP BiFlows" + Colors.ENDC, flush=True)
         print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # ======================================================================
@@ -318,7 +319,7 @@ def generate_network_objets(input_file):
     # -----------
     # UDP UniTalker Construction
     udp_unitalkers, udp_unitalker_ids = talker.build_unitalkers(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids)
-    n_ipv4_udp_unitalkers = len(udp_unitalker_ids)
+    #n_ipv4_udp_unitalkers = len(udp_unitalker_ids)
     del(ipv4_udp_biflow_genes_generator_lst, udp_biflow_ids)
 
     # UDP BiTalker Construction
@@ -351,7 +352,9 @@ def generate_network_objets(input_file):
     output_net_genes(ipv4_udp_bihost_genes_generator_lst, "UDP", "bihost")
 
     if args.verbose:
-        print("[+] IPv4-UDP UniTalkers detected:" + Colors.GREEN, n_ipv4_udp_unitalkers, "IPv4-UDP UniTalkers" + Colors.ENDC, flush=True)
+        print("[+] IPv4-UDP Packets detected:" + Colors.GREEN, n_preserved_udp_packets, "IPv4-UDP BiFlows" + Colors.ENDC, flush=True)
+        print("[+] IPv4-UDP BiFlows detected:" + Colors.GREEN, n_ipv4_udp_biflows, "IPv4-UDP BiFlows" + Colors.ENDC, flush=True)
+        #print("[+] IPv4-UDP UniTalkers detected:" + Colors.GREEN, n_ipv4_udp_unitalkers, "IPv4-UDP UniTalkers" + Colors.ENDC, flush=True)
         print("[+] IPv4-UDP BiTalkers detected:" + Colors.GREEN, n_ipv4_udp_bitalkers, "IPv4-UDP BiTalkers" + Colors.ENDC, flush=True)
         print("[+] IPv4-UDP BiHosts detected:" + Colors.GREEN, n_ipv4_udp_bihosts, "IPv4-UDP BiHosts" + Colors.ENDC, flush=True)
         print("[T] Calculated and saved in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
@@ -384,7 +387,7 @@ def generate_network_objets(input_file):
     # -----------
     # TCP UniTalker Construction
     tcp_unitalkers, tcp_unitalker_ids = talker.build_unitalkers(ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids)
-    n_ipv4_tcp_unitalkers = len(tcp_unitalker_ids)
+    #n_ipv4_tcp_unitalkers = len(tcp_unitalker_ids)
     del(ipv4_tcp_biflow_genes_generator_lst, tcp_biflow_ids)
 
     # TCP BiTalker Construction
@@ -416,7 +419,9 @@ def generate_network_objets(input_file):
     output_net_genes(ipv4_tcp_bihost_genes_generator_lst, "TCP", "bihost")
 
     if args.verbose:
-        print("[+] IPv4-TCP UniTalkers detected:" + Colors.GREEN, n_ipv4_tcp_unitalkers, "IPv4-TCP UniTalkers" + Colors.ENDC, flush=True)
+        print("[+] IPv4-TCP Packets detected:" + Colors.GREEN, n_preserved_tcp_packets, "IPv4-TCP BiFlows" + Colors.ENDC, flush=True)
+        print("[+] IPv4-TCP BiFlows detected:" + Colors.GREEN, n_ipv4_tcp_biflows, "IPv4-TCP BiFlows" + Colors.ENDC, flush=True)
+        #print("[+] IPv4-TCP UniTalkers detected:" + Colors.GREEN, n_ipv4_tcp_unitalkers, "IPv4-TCP UniTalkers" + Colors.ENDC, flush=True)
         print("[+] IPv4-TCP BiTalkers detected:" + Colors.GREEN, n_ipv4_tcp_bitalkers, "IPv4-TCP BiTalkers" + Colors.ENDC, flush=True)
         print("[+] IPv4-TCP BiHosts detected:" + Colors.GREEN, n_ipv4_tcp_bihosts, "IPv4-TCP BiHosts" + Colors.ENDC, flush=True)
         print("[T] Calculated and saved in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")

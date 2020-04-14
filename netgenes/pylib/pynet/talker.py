@@ -138,6 +138,13 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
             bitalker_fwd_biflow_dst_ports = list()
             bitalker_bwd_biflow_dst_ports = list()
 
+            # ====================
+            # Source Port Features
+            # ====================
+            bitalker_any_biflow_src_ports = list()
+            bitalker_fwd_biflow_src_ports = list()
+            bitalker_bwd_biflow_src_ports = list()
+
             # ===============
             # Packet Features
             # ===============
@@ -213,9 +220,6 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
             bitalker_any_first_biflow_initiation_time = unixtime_to_datetime(bitalker_any_first_biflow_initiation_time)
             bitalker_any_last_biflow_termination_time = unixtime_to_datetime(bitalker_any_last_biflow_termination_time)
 
-            bitalker_any_biflow_n_unique_dst_ports = 0
-            bitalker_fwd_biflow_n_unique_dst_ports = 0
-            bitalker_bwd_biflow_n_unique_dst_ports = 0
             # ==========================
             # POPULATE DATA STRUCTURES |
             # ==========================
@@ -295,15 +299,19 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                 # L4 Concepts
                 # ===========
                 if l4_protocol:
+                    curr_biflow_src_port = curr_biflow_id[1]
                     curr_biflow_dst_port = curr_biflow_id[3]
                     curr_biflow_any_eth_ipv4_l4_n_data_packets = int(curr_biflow[104])
 
+                    bitalker_any_biflow_src_ports.append(curr_biflow_src_port)
                     bitalker_any_biflow_dst_ports.append(curr_biflow_dst_port)
                     bitalker_any_eth_ipv4_l4_biflow_n_data_packets.append(curr_biflow_any_eth_ipv4_l4_n_data_packets)
                     if curr_biflow_bitalker_id_str == bitalker_id:
+                        bitalker_fwd_biflow_src_ports.append(curr_biflow_src_port)
                         bitalker_fwd_biflow_dst_ports.append(curr_biflow_dst_port)
                         bitalker_fwd_eth_ipv4_l4_biflow_n_data_packets.append(curr_biflow_any_eth_ipv4_l4_n_data_packets)
                     else:
+                        bitalker_bwd_biflow_src_ports.append(curr_biflow_src_port)
                         bitalker_bwd_biflow_dst_ports.append(curr_biflow_dst_port)
                         bitalker_bwd_eth_ipv4_l4_biflow_n_data_packets.append(curr_biflow_any_eth_ipv4_l4_n_data_packets)
 
@@ -521,9 +529,30 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                 bitalker_fwd_biflow_unique_dst_ports = list(OrderedDict.fromkeys(bitalker_fwd_biflow_dst_ports))
                 bitalker_bwd_biflow_unique_dst_ports = list(OrderedDict.fromkeys(bitalker_bwd_biflow_dst_ports))
 
-                bitalker_any_biflow_n_unique_dst_ports = len(bitalker_any_biflow_unique_dst_ports)
-                bitalker_fwd_biflow_n_unique_dst_ports = len(bitalker_fwd_biflow_unique_dst_ports)
-                bitalker_bwd_biflow_n_unique_dst_ports = len(bitalker_bwd_biflow_unique_dst_ports)
+                bitalker_any_biflow_n_unique_dst_ports_total = len(bitalker_any_biflow_unique_dst_ports)
+                bitalker_any_biflow_n_unique_dst_ports_mean = round(bitalker_any_biflow_n_unique_dst_ports_total/bitalker_any_n_biflows, 3)
+                bitalker_fwd_biflow_n_unique_dst_ports_total = len(bitalker_fwd_biflow_unique_dst_ports)
+                bitalker_fwd_biflow_n_unique_dst_ports_mean = round(bitalker_fwd_biflow_n_unique_dst_ports_total/bitalker_fwd_n_biflows, 3)\
+                    if bitalker_fwd_n_biflows else 0
+                bitalker_bwd_biflow_n_unique_dst_ports_total = len(bitalker_bwd_biflow_unique_dst_ports)
+                bitalker_bwd_biflow_n_unique_dst_ports_mean = round(bitalker_bwd_biflow_n_unique_dst_ports_total/bitalker_bwd_n_biflows, 3)\
+                    if bitalker_bwd_n_biflows else 0
+
+                # -------------------
+                # L4 Unique Src Ports
+                # -------------------
+                bitalker_any_biflow_unique_src_ports = list(OrderedDict.fromkeys(bitalker_any_biflow_src_ports))
+                bitalker_fwd_biflow_unique_src_ports = list(OrderedDict.fromkeys(bitalker_fwd_biflow_src_ports))
+                bitalker_bwd_biflow_unique_src_ports = list(OrderedDict.fromkeys(bitalker_bwd_biflow_src_ports))
+
+                bitalker_any_biflow_n_unique_src_ports_total = len(bitalker_any_biflow_unique_src_ports)
+                bitalker_any_biflow_n_unique_src_ports_mean = round(bitalker_any_biflow_n_unique_src_ports_total/bitalker_any_n_biflows, 3)
+                bitalker_fwd_biflow_n_unique_src_ports_total = len(bitalker_fwd_biflow_unique_src_ports)
+                bitalker_fwd_biflow_n_unique_src_ports_mean = round(bitalker_fwd_biflow_n_unique_src_ports_total/bitalker_fwd_n_biflows, 3)\
+                    if bitalker_fwd_n_biflows else 0
+                bitalker_bwd_biflow_n_unique_src_ports_total = len(bitalker_bwd_biflow_unique_src_ports)
+                bitalker_bwd_biflow_n_unique_src_ports_mean = round(bitalker_bwd_biflow_n_unique_src_ports_total/bitalker_bwd_n_biflows, 3)\
+                    if bitalker_bwd_n_biflows else 0
 
                 # ---------------
                 # L4 Data Packets

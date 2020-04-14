@@ -120,6 +120,13 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
             bihost_fwd_bitalker_any_biflow_n_unique_dst_ports = list()
             bihost_bwd_bitalker_any_biflow_n_unique_dst_ports = list()
 
+            # ---------------
+            # L4 Source Ports
+            # ---------------
+            bihost_any_bitalker_any_biflow_n_unique_src_ports = list()
+            bihost_fwd_bitalker_any_biflow_n_unique_src_ports = list()
+            bihost_bwd_bitalker_any_biflow_n_unique_src_ports = list()
+
             # ---------------------
             # TCP Innitiation Types
             # ---------------------
@@ -210,12 +217,21 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                     # L4 Destination Ports
                     # --------------------
                     curr_bitalker_any_biflow_n_unique_dst_ports = int(curr_bitalker[105])
-                    
                     bihost_any_bitalker_any_biflow_n_unique_dst_ports.append(curr_bitalker_any_biflow_n_unique_dst_ports)
                     if curr_bitalker_direction == "fwd":
                         bihost_fwd_bitalker_any_biflow_n_unique_dst_ports.append(curr_bitalker_any_biflow_n_unique_dst_ports)
                     else:
                         bihost_bwd_bitalker_any_biflow_n_unique_dst_ports.append(curr_bitalker_any_biflow_n_unique_dst_ports)
+
+                    # ---------------
+                    # L4 Source Ports
+                    # ---------------
+                    curr_bitalker_any_biflow_n_unique_src_ports = int(curr_bitalker[111])
+                    bihost_any_bitalker_any_biflow_n_unique_src_ports.append(curr_bitalker_any_biflow_n_unique_src_ports)
+                    if curr_bitalker_direction == "fwd":
+                        bihost_fwd_bitalker_any_biflow_n_unique_src_ports.append(curr_bitalker_any_biflow_n_unique_src_ports)
+                    else:
+                        bihost_bwd_bitalker_any_biflow_n_unique_src_ports.append(curr_bitalker_any_biflow_n_unique_src_ports)
 
                     # ============
                     # TCP Concepts
@@ -224,34 +240,34 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                         # --------------------
                         # TCP Initiation Types
                         # --------------------
-                        curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = int(curr_bitalker[126])
+                        curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = int(curr_bitalker[135])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations)
 
                         # --------------------
                         # TCP Connection Types
                         # --------------------
-                        curr_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established = int(curr_bitalker[132])
+                        curr_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established = int(curr_bitalker[141])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established)
 
-                        curr_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established = int(curr_bitalker[138])
+                        curr_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established = int(curr_bitalker[147])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established)
 
-                        curr_bitalker_eth_ipv4_tcp_biflow_connections_rejected = int(curr_bitalker[144])
+                        curr_bitalker_eth_ipv4_tcp_biflow_connections_rejected = int(curr_bitalker[153])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_connections_rejected.append(curr_bitalker_eth_ipv4_tcp_biflow_connections_rejected)
 
-                        curr_bitalker_eth_ipv4_tcp_biflow_connections_dropped = int(curr_bitalker[150])
+                        curr_bitalker_eth_ipv4_tcp_biflow_connections_dropped = int(curr_bitalker[159])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_connections_dropped.append(curr_bitalker_eth_ipv4_tcp_biflow_connections_dropped)
 
                         # ---------------------
                         # TCP Termination Types
                         # ---------------------
-                        curr_bitalker_eth_ipv4_tcp_biflow_null_terminations = int(curr_bitalker[156])
+                        curr_bitalker_eth_ipv4_tcp_biflow_null_terminations = int(curr_bitalker[165])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_null_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_null_terminations)
 
-                        curr_bitalker_eth_ipv4_tcp_biflow_graceful_terminations = int(curr_bitalker[162])
+                        curr_bitalker_eth_ipv4_tcp_biflow_graceful_terminations = int(curr_bitalker[171])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_graceful_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_graceful_terminations)
 
-                        curr_bitalker_eth_ipv4_tcp_biflow_abort_terminations = int(curr_bitalker[168])
+                        curr_bitalker_eth_ipv4_tcp_biflow_abort_terminations = int(curr_bitalker[177])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_abort_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_abort_terminations)
 
                         if curr_bitalker_direction == "fwd":
@@ -366,6 +382,42 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                     bihost_bwd_bitalker_any_biflow_n_unique_dst_ports_var = round(np.var(bihost_bwd_bitalker_any_biflow_n_unique_dst_ports), 3)
                     bihost_bwd_bitalker_any_biflow_n_unique_dst_ports_max = round(max(bihost_bwd_bitalker_any_biflow_n_unique_dst_ports), 3)
                     bihost_bwd_bitalker_any_biflow_n_unique_dst_ports_min = round(min(bihost_bwd_bitalker_any_biflow_n_unique_dst_ports), 3)
+
+                # ---------------
+                # L4 Source Ports
+                # ---------------
+                bihost_any_bitalker_any_biflow_n_unique_src_ports_total = round(sum(bihost_any_bitalker_any_biflow_n_unique_src_ports), 3)
+                bihost_any_bitalker_any_biflow_n_unique_src_ports_mean = round(np.mean(bihost_any_bitalker_any_biflow_n_unique_src_ports), 3)
+                bihost_any_bitalker_any_biflow_n_unique_src_ports_std = round(np.std(bihost_any_bitalker_any_biflow_n_unique_src_ports), 3)
+                bihost_any_bitalker_any_biflow_n_unique_src_ports_var = round(np.var(bihost_any_bitalker_any_biflow_n_unique_src_ports), 3)
+                bihost_any_bitalker_any_biflow_n_unique_src_ports_max = round(max(bihost_any_bitalker_any_biflow_n_unique_src_ports), 3)
+                bihost_any_bitalker_any_biflow_n_unique_src_ports_min = round(min(bihost_any_bitalker_any_biflow_n_unique_src_ports), 3)
+
+                if len(bihost_fwd_bitalker_any_biflow_n_unique_src_ports) == 0:
+                    bihost_fwd_bitalker_any_biflow_n_unique_src_ports_total = bihost_fwd_bitalker_any_biflow_n_unique_src_ports_max = \
+                        bihost_fwd_bitalker_any_biflow_n_unique_src_ports_min = 0
+                    bihost_fwd_bitalker_any_biflow_n_unique_src_ports_mean = bihost_fwd_bitalker_any_biflow_n_unique_src_ports_std = \
+                        bihost_fwd_bitalker_any_biflow_n_unique_src_ports_var = 0.0
+                else:
+                    bihost_fwd_bitalker_any_biflow_n_unique_src_ports_total = round(sum(bihost_fwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_fwd_bitalker_any_biflow_n_unique_src_ports_mean = round(np.mean(bihost_fwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_fwd_bitalker_any_biflow_n_unique_src_ports_std = round(np.std(bihost_fwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_fwd_bitalker_any_biflow_n_unique_src_ports_var = round(np.var(bihost_fwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_fwd_bitalker_any_biflow_n_unique_src_ports_max = round(max(bihost_fwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_fwd_bitalker_any_biflow_n_unique_src_ports_min = round(min(bihost_fwd_bitalker_any_biflow_n_unique_src_ports), 3)
+
+                if len(bihost_bwd_bitalker_any_biflow_n_unique_src_ports) == 0:
+                    bihost_bwd_bitalker_any_biflow_n_unique_src_ports_total = bihost_bwd_bitalker_any_biflow_n_unique_src_ports_max = \
+                        bihost_bwd_bitalker_any_biflow_n_unique_src_ports_min = 0
+                    bihost_bwd_bitalker_any_biflow_n_unique_src_ports_mean = bihost_bwd_bitalker_any_biflow_n_unique_src_ports_std = \
+                        bihost_bwd_bitalker_any_biflow_n_unique_src_ports_var = 0.0
+                else:
+                    bihost_bwd_bitalker_any_biflow_n_unique_src_ports_total = round(sum(bihost_bwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_bwd_bitalker_any_biflow_n_unique_src_ports_mean = round(np.mean(bihost_bwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_bwd_bitalker_any_biflow_n_unique_src_ports_std = round(np.std(bihost_bwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_bwd_bitalker_any_biflow_n_unique_src_ports_var = round(np.var(bihost_bwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_bwd_bitalker_any_biflow_n_unique_src_ports_max = round(max(bihost_bwd_bitalker_any_biflow_n_unique_src_ports), 3)
+                    bihost_bwd_bitalker_any_biflow_n_unique_src_ports_min = round(min(bihost_bwd_bitalker_any_biflow_n_unique_src_ports), 3)
 
                 # ============
                 # TCP Concepts

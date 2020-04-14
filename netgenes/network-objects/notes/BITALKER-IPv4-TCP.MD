@@ -1,8 +1,8 @@
 # IPv4-TCP BiTalker
 ## CURRENT NUMBER OF GENES
-**54 BiTalker Genes:**
+**48 BiTalker Genes:**
 - 0 Conceptual Features
-- 54 Statistical Features
+- 48 Statistical Features
 
 ## GENES
 ### Conceptual Features
