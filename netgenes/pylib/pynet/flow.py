@@ -7,6 +7,7 @@ except ImportError:
 # Ours
 from pylib.pynet.netobject_utils import *
 from pylib.pyaux.utils import datetime_to_unixtime, unixtime_to_datetime
+from pylib.pyaux.utils import Colors
 
 def build_l3_uniflows(packets):
     """Associate layer-3 uniflow ids to packets"""
@@ -59,10 +60,10 @@ def build_l3_biflows(l3_uniflows, l3_uniflow_ids):
             l3_biflows[l3_fwd_flow_id] = l3_uniflows[l3_fwd_flow_id]
     return l3_biflows, l3_biflow_ids
 
-def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
+def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
     """Separate layer-3 bidirectional flows by layer-4 protocol and
     build layer-4 bidirectional flows according to TCP and UDP RFCs"""
-    def build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids, args):
+    def build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids, debug=False):
         """Local helper function to build TCP BiFlows according to RFC793"""
         # Aux class
         class RFC793:
@@ -321,7 +322,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
                     # =====================
                     # TCP BiFlow Debug Info
                     # =====================
-                    if args.debug == "2":
+                    if debug == "2":
                         # Initiation/Connection Types
                         if rfc793.biflow_eth_ipv4_tcp_full_duplex_connection_established:
                             print("[D] IPv4-TCP Full-Duplex Connection Established (3-way Handshake): " +\
@@ -372,7 +373,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, args):
             exit()
 
     # Apply RFC793 to the unseparated TCP BiFlows
-    tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features, n_disconected_rfc793_packets = build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids, args)
+    tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features, n_disconected_rfc793_packets = build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids, debug=True)
     return udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features, n_disconected_rfc793_packets
 
 
@@ -694,7 +695,7 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
                 # 5-tuple biflow instead. I don't currently know how to implement this effectively in the current code
                 # and, thus, will ignore it for now because there aren't many biflows that encounter this "mistiming"
                 # (only found it in the Thursday capture, for portscans)
-                if args.verbose:
+                if verbose:
                     print(Colors.RED + iterator_to_str(biflow_id), "is an out-of-order BiFlow. Ignoring..." + Colors.ENDC)
                 continue
 

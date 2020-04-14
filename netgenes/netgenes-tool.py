@@ -274,7 +274,7 @@ def generate_network_objets(input_file):
         print(make_header_string("2.3. Bidirectional Flows: IPv4-UDP, IPv4-TCP"), flush=True)
 
     udp_biflows, udp_biflow_ids, tcp_biflows, tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features,\
-        n_disconected_rfc793_packets = flow.build_l4_biflows(l3_biflows, l3_biflow_ids, args)
+        n_disconected_rfc793_packets = flow.build_l4_biflows(l3_biflows, l3_biflow_ids, args.debug)
     del(l3_biflows, l3_biflow_ids)
 
     if args.verbose:
