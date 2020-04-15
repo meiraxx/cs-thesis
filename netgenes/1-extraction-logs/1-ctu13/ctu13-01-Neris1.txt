@@ -21,12 +21,12 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4 BiFlow Genes: 100 BiFlow Genes
 [+] IPv4-UDP BiFlow Genes: 142 BiFlow Genes
 [+] IPv4-TCP BiFlow Genes: 294 BiFlow Genes
-[+] IPv4 BiTalker Genes: 101 BiTalker Genes
-[+] IPv4-UDP BiTalker Genes: 122 BiTalker Genes
-[+] IPv4-TCP BiTalker Genes: 170 BiTalker Genes
+[+] IPv4 BiTalker Genes: 100 BiTalker Genes
+[+] IPv4-UDP BiTalker Genes: 130 BiTalker Genes
+[+] IPv4-TCP BiTalker Genes: 178 BiTalker Genes
 [+] IPv4 BiHost Genes: 28 BiHost Genes
-[+] IPv4-UDP BiHost Genes: 46 BiHost Genes
-[+] IPv4-TCP BiHost Genes: 190 BiHost Genes
+[+] IPv4-UDP BiHost Genes: 64 BiHost Genes
+[+] IPv4-TCP BiHost Genes: 208 BiHost Genes
 
 
 ============================================
@@ -44,7 +44,7 @@ NetGenes by Protocol Stacks and NetObjects
 [-] EthL1-EthL2-IPv4-<Other L4> packets: 0 packets
 [-] EthL1-EthL2-IPv6 packets: 0 packets
 [-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets: 0 packets
-[T] Built in: 12.687 seconds
+[T] Built in: 12.528 seconds
 
 ======================================================================================================
 2. Layer-3 Flow Construction and Layer-4 Separation
@@ -54,14 +54,14 @@ NetGenes by Protocol Stacks and NetObjects
 ---------------------------------------
 [+] Packets preserved: 321487 IPv4 Packets
 [+] Flows detected: 19060 IPv4 UniFlows
-[T] Built in: 0.337 seconds
+[T] Built in: 0.335 seconds
 
 --------------------------------------
 2.2. Layer-3 Bidirectional Flows: IPv4
 --------------------------------------
 [+] IPv4 Packets preserved: 321487 IPv4 Packets
 [+] IPv4 BiFlows detected: 14444 IPv4 BiFlows
-[T] Built in: 0.053 seconds
+[T] Built in: 0.058 seconds
 
 --------------------------------------------
 2.3. Bidirectional Flows: IPv4-UDP, IPv4-TCP
@@ -71,7 +71,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-TCP Packets disconected: 7 IPv4-TCP DCed Packets
 [+] IPv4-UDP BiFlows detected: 2758 IPv4-UDP BiFlows
 [+] IPv4-TCP BiFlows detected: 12261 IPv4-TCP BiFlows
-[T] Built in: 0.635 seconds
+[T] Built in: 0.646 seconds
 
 ================================================================================================================================
 3. Layer-3/Layer-4 NetObject Construction and NetGene Extraction
@@ -79,22 +79,25 @@ NetGenes by Protocol Stacks and NetObjects
 -----------------------------------------------------------
 3.1. IPv4-UDP NetObject Construction and NetGene Extraction
 -----------------------------------------------------------
-[+] IPv4-UDP UniTalkers detected: 2201 IPv4-UDP UniTalkers
+[+] IPv4-UDP Packets detected: 85865 IPv4-UDP Packets
+[+] IPv4-UDP BiFlows detected: 2758 IPv4-UDP BiFlows
 [+] IPv4-UDP BiTalkers detected: 2200 IPv4-UDP BiTalkers
 [+] IPv4-UDP BiHosts detected: 2201 IPv4-UDP BiHosts
-[T] Calculated and saved in: 12.893 seconds
+[T] Calculated and saved in: 13.281 seconds
 
 -----------------------------------------------------------
 3.2. IPv4-TCP NetObject Construction and NetGene Extraction
 -----------------------------------------------------------
-[+] IPv4-TCP UniTalkers detected: 2078 IPv4-TCP UniTalkers
+[+] IPv4-TCP Packets detected: 233195 IPv4-TCP Packets
+[+] IPv4-TCP BiFlows detected: 12261 IPv4-TCP BiFlows
 [+] IPv4-TCP BiTalkers detected: 2078 IPv4-TCP BiTalkers
 [+] IPv4-TCP BiHosts detected: 2079 IPv4-TCP BiHosts
-[T] Calculated and saved in: 63.726 seconds
+[T] Calculated and saved in: 65.137 seconds
 
 ==========================================
 Total Extraction Time
 ==========================================
-[T] Script took 90.335 seconds to complete
+[T] Script took 91.985 seconds to complete
 
-[+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 19.91 MBs (megabytes)
+[+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 20.243 MBs (megabytes)
+

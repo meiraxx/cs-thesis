@@ -21,12 +21,12 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4 BiFlow Genes: 100 BiFlow Genes
 [+] IPv4-UDP BiFlow Genes: 142 BiFlow Genes
 [+] IPv4-TCP BiFlow Genes: 294 BiFlow Genes
-[+] IPv4 BiTalker Genes: 101 BiTalker Genes
-[+] IPv4-UDP BiTalker Genes: 122 BiTalker Genes
-[+] IPv4-TCP BiTalker Genes: 170 BiTalker Genes
+[+] IPv4 BiTalker Genes: 100 BiTalker Genes
+[+] IPv4-UDP BiTalker Genes: 130 BiTalker Genes
+[+] IPv4-TCP BiTalker Genes: 178 BiTalker Genes
 [+] IPv4 BiHost Genes: 28 BiHost Genes
-[+] IPv4-UDP BiHost Genes: 46 BiHost Genes
-[+] IPv4-TCP BiHost Genes: 190 BiHost Genes
+[+] IPv4-UDP BiHost Genes: 64 BiHost Genes
+[+] IPv4-TCP BiHost Genes: 208 BiHost Genes
 
 
 ============================================
@@ -44,7 +44,7 @@ NetGenes by Protocol Stacks and NetObjects
 [-] EthL1-EthL2-IPv4-<Other L4> packets: 94 packets
 [-] EthL1-EthL2-IPv6 packets: 28030 packets
 [-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets: 99 packets
-[T] Built in: 456.535 seconds
+[T] Built in: 464.005 seconds
 
 ======================================================================================================
 2. Layer-3 Flow Construction and Layer-4 Separation
@@ -54,14 +54,14 @@ NetGenes by Protocol Stacks and NetObjects
 ---------------------------------------
 [+] Packets preserved: 9239070 IPv4 Packets
 [+] Flows detected: 485177 IPv4 UniFlows
-[T] Built in: 6.621 seconds
+[T] Built in: 6.683 seconds
 
 --------------------------------------
 2.2. Layer-3 Bidirectional Flows: IPv4
 --------------------------------------
 [+] IPv4 Packets preserved: 9239070 IPv4 Packets
 [+] IPv4 BiFlows detected: 258607 IPv4 BiFlows
-[T] Built in: 1.985 seconds
+[T] Built in: 2.024 seconds
 
 --------------------------------------------
 2.3. Bidirectional Flows: IPv4-UDP, IPv4-TCP
@@ -71,7 +71,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-TCP Packets disconected: 3686 IPv4-TCP DCed Packets
 [+] IPv4-UDP BiFlows detected: 98990 IPv4-UDP BiFlows
 [+] IPv4-TCP BiFlows detected: 167898 IPv4-TCP BiFlows
-[T] Built in: 20.011 seconds
+[T] Built in: 20.092 seconds
 
 ================================================================================================================================
 3. Layer-3/Layer-4 NetObject Construction and NetGene Extraction
@@ -79,10 +79,11 @@ NetGenes by Protocol Stacks and NetObjects
 -----------------------------------------------------------
 3.1. IPv4-UDP NetObject Construction and NetGene Extraction
 -----------------------------------------------------------
-[+] IPv4-UDP UniTalkers detected: 224 IPv4-UDP UniTalkers
+[+] IPv4-UDP Packets detected: 700922 IPv4-UDP Packets
+[+] IPv4-UDP BiFlows detected: 98990 IPv4-UDP BiFlows
 [+] IPv4-UDP BiTalkers detected: 216 IPv4-UDP BiTalkers
 [+] IPv4-UDP BiHosts detected: 122 IPv4-UDP BiHosts
-[T] Calculated and saved in: 256.797 seconds
+[T] Calculated and saved in: 271.295 seconds
 
 -----------------------------------------------------------
 3.2. IPv4-TCP NetObject Construction and NetGene Extraction
@@ -105,14 +106,16 @@ NetGenes by Protocol Stacks and NetObjects
 192.168.10.19-3690-192.168.10.8-59793-TCP-1 is an out-of-order BiFlow. Ignoring...
 192.168.10.25-5414-192.168.10.8-54031-TCP-1 is an out-of-order BiFlow. Ignoring...
 192.168.10.25-5718-192.168.10.8-54031-TCP-1 is an out-of-order BiFlow. Ignoring...
-[+] IPv4-TCP UniTalkers detected: 18403 IPv4-TCP UniTalkers
+[+] IPv4-TCP Packets detected: 8489002 IPv4-TCP Packets
+[+] IPv4-TCP BiFlows detected: 167898 IPv4-TCP BiFlows
 [+] IPv4-TCP BiTalkers detected: 18387 IPv4-TCP BiTalkers
 [+] IPv4-TCP BiHosts detected: 8468 IPv4-TCP BiHosts
-[T] Calculated and saved in: 1161.998 seconds
+[T] Calculated and saved in: 1221.237 seconds
 
 ==========================================
 Total Extraction Time
 ==========================================
-[T] Script took 1903.946 seconds to complete
+[T] Script took 1985.337 seconds to complete
 
-[+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 280.342 MBs (megabytes)
+[+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 281.3 MBs (megabytes)
+

@@ -24,7 +24,7 @@ Joao Meira <joao.meira.cs@gmail.com>
 # L2plus-protocols: ++LLC++
 # L3-protocols: **IPv4 (IP-4)**, IPv6 (IP-41)
 # L3plus-protocols: ++ICMPv4 (IP-1)++, ++IGMPv4 (IP-2)++, ICMPv6 (IP-58), GRE (IP-47)
-# L4-protocols: **TCP (IP-6)**, ++UDP (IP-17)++
+# L4-protocols: **TCP (IP-6)**, **UDP (IP-17)**
 # SOME REFS:
 # https://en.wikipedia.org/wiki/EtherType; https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers
 # [L2] ARP: https://tools.ietf.org/html/rfc826
@@ -352,7 +352,7 @@ def generate_network_objets(input_file):
     output_net_genes(ipv4_udp_bihost_genes_generator_lst, "UDP", "bihost")
 
     if args.verbose:
-        print("[+] IPv4-UDP Packets detected:" + Colors.GREEN, n_preserved_udp_packets, "IPv4-UDP BiFlows" + Colors.ENDC, flush=True)
+        print("[+] IPv4-UDP Packets detected:" + Colors.GREEN, n_preserved_udp_packets, "IPv4-UDP Packets" + Colors.ENDC, flush=True)
         print("[+] IPv4-UDP BiFlows detected:" + Colors.GREEN, n_ipv4_udp_biflows, "IPv4-UDP BiFlows" + Colors.ENDC, flush=True)
         #print("[+] IPv4-UDP UniTalkers detected:" + Colors.GREEN, n_ipv4_udp_unitalkers, "IPv4-UDP UniTalkers" + Colors.ENDC, flush=True)
         print("[+] IPv4-UDP BiTalkers detected:" + Colors.GREEN, n_ipv4_udp_bitalkers, "IPv4-UDP BiTalkers" + Colors.ENDC, flush=True)
@@ -419,7 +419,7 @@ def generate_network_objets(input_file):
     output_net_genes(ipv4_tcp_bihost_genes_generator_lst, "TCP", "bihost")
 
     if args.verbose:
-        print("[+] IPv4-TCP Packets detected:" + Colors.GREEN, n_preserved_tcp_packets, "IPv4-TCP BiFlows" + Colors.ENDC, flush=True)
+        print("[+] IPv4-TCP Packets detected:" + Colors.GREEN, n_preserved_tcp_packets, "IPv4-TCP Packets" + Colors.ENDC, flush=True)
         print("[+] IPv4-TCP BiFlows detected:" + Colors.GREEN, n_ipv4_tcp_biflows, "IPv4-TCP BiFlows" + Colors.ENDC, flush=True)
         #print("[+] IPv4-TCP UniTalkers detected:" + Colors.GREEN, n_ipv4_tcp_unitalkers, "IPv4-TCP UniTalkers" + Colors.ENDC, flush=True)
         print("[+] IPv4-TCP BiTalkers detected:" + Colors.GREEN, n_ipv4_tcp_bitalkers, "IPv4-TCP BiTalkers" + Colors.ENDC, flush=True)
