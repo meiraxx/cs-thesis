@@ -7,20 +7,20 @@
 ## GENES
 ### Conceptual Features
 **L4 Destination Port Features**  
-bitalker_any_biflow_n_unique_dst_ports_total  
-bitalker_any_biflow_n_unique_dst_ports_mean  
-bitalker_fwd_biflow_n_unique_dst_ports_total  
-bitalker_fwd_biflow_n_unique_dst_ports_mean  
-bitalker_bwd_biflow_n_unique_dst_ports_total  
-bitalker_bwd_biflow_n_unique_dst_ports_mean  
+bitalker_any_biflow_n_unique_dst_ports  
+bitalker_fwd_biflow_n_unique_dst_ports  
+bitalker_bwd_biflow_n_unique_dst_ports  
+bitalker_any_biflow_unique_dst_ports_avg  
+bitalker_fwd_biflow_unique_dst_ports_avg  
+bitalker_bwd_biflow_unique_dst_ports_avg  
 
 **L4 Source Port Features**  
-bitalker_any_biflow_n_unique_src_ports_total  
-bitalker_any_biflow_n_unique_src_ports_mean  
-bitalker_fwd_biflow_n_unique_src_ports_total  
-bitalker_fwd_biflow_n_unique_src_ports_mean  
-bitalker_bwd_biflow_n_unique_src_ports_total  
-bitalker_bwd_biflow_n_unique_src_ports_mean  
+bitalker_any_biflow_n_unique_src_ports  
+bitalker_fwd_biflow_n_unique_src_ports  
+bitalker_bwd_biflow_n_unique_src_ports  
+bitalker_any_biflow_unique_src_ports_avg  
+bitalker_fwd_biflow_unique_src_ports_avg  
+bitalker_bwd_biflow_unique_src_ports_avg  
 
 ### Statistical Features
 

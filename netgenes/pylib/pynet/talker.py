@@ -529,13 +529,15 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                 bitalker_fwd_biflow_unique_dst_ports = list(OrderedDict.fromkeys(bitalker_fwd_biflow_dst_ports))
                 bitalker_bwd_biflow_unique_dst_ports = list(OrderedDict.fromkeys(bitalker_bwd_biflow_dst_ports))
 
-                bitalker_any_biflow_n_unique_dst_ports_total = len(bitalker_any_biflow_unique_dst_ports)
-                bitalker_any_biflow_n_unique_dst_ports_mean = round(bitalker_any_biflow_n_unique_dst_ports_total/bitalker_any_n_biflows, 3)
-                bitalker_fwd_biflow_n_unique_dst_ports_total = len(bitalker_fwd_biflow_unique_dst_ports)
-                bitalker_fwd_biflow_n_unique_dst_ports_mean = round(bitalker_fwd_biflow_n_unique_dst_ports_total/bitalker_fwd_n_biflows, 3)\
+                bitalker_any_biflow_n_unique_dst_ports = len(bitalker_any_biflow_unique_dst_ports)
+                bitalker_fwd_biflow_n_unique_dst_ports = len(bitalker_fwd_biflow_unique_dst_ports)
+                bitalker_bwd_biflow_n_unique_dst_ports = len(bitalker_bwd_biflow_unique_dst_ports)
+
+                # rates use number of biflows since that number is also equal to total number of unique and non-unique ports
+                bitalker_any_biflow_unique_dst_ports_rate = round(bitalker_any_biflow_n_unique_dst_ports/bitalker_any_n_biflows, 3)
+                bitalker_fwd_biflow_unique_dst_ports_rate = round(bitalker_fwd_biflow_n_unique_dst_ports/bitalker_fwd_n_biflows, 3)\
                     if bitalker_fwd_n_biflows else 0
-                bitalker_bwd_biflow_n_unique_dst_ports_total = len(bitalker_bwd_biflow_unique_dst_ports)
-                bitalker_bwd_biflow_n_unique_dst_ports_mean = round(bitalker_bwd_biflow_n_unique_dst_ports_total/bitalker_bwd_n_biflows, 3)\
+                bitalker_bwd_biflow_unique_dst_ports_rate = round(bitalker_bwd_biflow_n_unique_dst_ports/bitalker_bwd_n_biflows, 3)\
                     if bitalker_bwd_n_biflows else 0
 
                 # -------------------
@@ -545,13 +547,15 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                 bitalker_fwd_biflow_unique_src_ports = list(OrderedDict.fromkeys(bitalker_fwd_biflow_src_ports))
                 bitalker_bwd_biflow_unique_src_ports = list(OrderedDict.fromkeys(bitalker_bwd_biflow_src_ports))
 
-                bitalker_any_biflow_n_unique_src_ports_total = len(bitalker_any_biflow_unique_src_ports)
-                bitalker_any_biflow_n_unique_src_ports_mean = round(bitalker_any_biflow_n_unique_src_ports_total/bitalker_any_n_biflows, 3)
-                bitalker_fwd_biflow_n_unique_src_ports_total = len(bitalker_fwd_biflow_unique_src_ports)
-                bitalker_fwd_biflow_n_unique_src_ports_mean = round(bitalker_fwd_biflow_n_unique_src_ports_total/bitalker_fwd_n_biflows, 3)\
+                bitalker_any_biflow_n_unique_src_ports = len(bitalker_any_biflow_unique_src_ports)
+                bitalker_fwd_biflow_n_unique_src_ports = len(bitalker_fwd_biflow_unique_src_ports)
+                bitalker_bwd_biflow_n_unique_src_ports = len(bitalker_bwd_biflow_unique_src_ports)
+
+                # rates use number of biflows since that number is also equal to total number of unique and non-unique ports
+                bitalker_any_biflow_unique_src_ports_rate = round(bitalker_any_biflow_n_unique_src_ports/bitalker_any_n_biflows, 3)
+                bitalker_fwd_biflow_unique_src_ports_rate = round(bitalker_fwd_biflow_n_unique_src_ports/bitalker_fwd_n_biflows, 3)\
                     if bitalker_fwd_n_biflows else 0
-                bitalker_bwd_biflow_n_unique_src_ports_total = len(bitalker_bwd_biflow_unique_src_ports)
-                bitalker_bwd_biflow_n_unique_src_ports_mean = round(bitalker_bwd_biflow_n_unique_src_ports_total/bitalker_bwd_n_biflows, 3)\
+                bitalker_bwd_biflow_unique_src_ports_rate = round(bitalker_bwd_biflow_n_unique_src_ports/bitalker_bwd_n_biflows, 3)\
                     if bitalker_bwd_n_biflows else 0
 
                 # ---------------
