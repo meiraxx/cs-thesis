@@ -44,7 +44,7 @@ NetGenes by Protocol Stacks and NetObjects
 [-] EthL1-EthL2-IPv4-<Other L4> packets: 115826 packets
 [-] EthL1-EthL2-IPv6 packets: 0 packets
 [-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets: 0 packets
-[T] Built in: 9.083 seconds
+[T] Built in: 9.207 seconds
 
 ======================================================================================================
 2. Layer-3 Flow Construction and Layer-4 Separation
@@ -54,14 +54,14 @@ NetGenes by Protocol Stacks and NetObjects
 ---------------------------------------
 [+] Packets preserved: 140666 IPv4 Packets
 [+] Flows detected: 316 IPv4 UniFlows
-[T] Built in: 0.076 seconds
+[T] Built in: 0.074 seconds
 
 --------------------------------------
 2.2. Layer-3 Bidirectional Flows: IPv4
 --------------------------------------
 [+] IPv4 Packets preserved: 140666 IPv4 Packets
 [+] IPv4 BiFlows detected: 166 IPv4 BiFlows
-[T] Built in: 0.0 seconds
+[T] Built in: 0.001 seconds
 
 --------------------------------------------
 2.3. Bidirectional Flows: IPv4-UDP, IPv4-TCP
@@ -83,7 +83,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-UDP BiFlows detected: 13 IPv4-UDP BiFlows
 [+] IPv4-UDP BiTalkers detected: 6 IPv4-UDP BiTalkers
 [+] IPv4-UDP BiHosts detected: 7 IPv4-UDP BiHosts
-[T] Calculated and saved in: 4.912 seconds
+[T] Calculated and saved in: 5.233 seconds
 
 -----------------------------------------------------------
 3.2. IPv4-TCP NetObject Construction and NetGene Extraction
@@ -92,12 +92,12 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-TCP BiFlows detected: 158 IPv4-TCP BiFlows
 [+] IPv4-TCP BiTalkers detected: 7 IPv4-TCP BiTalkers
 [+] IPv4-TCP BiHosts detected: 8 IPv4-TCP BiHosts
-[T] Calculated and saved in: 0.938 seconds
+[T] Calculated and saved in: 0.893 seconds
 
 ==========================================
 Total Extraction Time
 ==========================================
-[T] Script took 15.012 seconds to complete
+[T] Script took 15.412 seconds to complete
 
-[+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 0.243 MBs (megabytes)
+[+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 0.242 MBs (megabytes)
 
