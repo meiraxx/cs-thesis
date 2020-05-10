@@ -1,0 +1,13 @@
+References:
+- https://www.yeahhub.com/15-most-useful-host-scanning-commands-kalilinux/
+- https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html
+- http://www.cs.columbia.edu/~dgen/papers/conferences/conference-07.pdf
+- https://betangel.kayako.com/article/107-how-do-i-secure-my-dns-resolver-against-amplification-attacks
+- https://nmap.org/man/pt_PT/man-host-discovery.html
+- https://nmap.org/book/man-port-scanning-techniques.html
+- https://medium.com/@iphelix/port-scanning-techniques-7661839d182e
+- https://nmap.org/book/idlescan.html
+- https://nmap.org/misc/split-handshake.pdf
+- https://en.wikipedia.org/wiki/SYN_flood
+- https://www.sciencedirect.com/topics/computer-science/denial-of-service
+- https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html

@@ -1,0 +1,21 @@
+##Network objects
+The following network object definitions are contextualized to the detection problem. We consider four main network objects: packets, flows, talkers and hosts.
+
+###Packets
+The packet is the basic form of network communication. By its own, the packet does not provide enough information to determine its maliciousness when its content is encrypted. However, if the bad guys would implement RFC-3514 it could be viable to provide such a packet-based detection, but sadly this RFC is not very popular among them.
+
+###Flows
+The flow provides a way to logically aggregate multiple packets in accordance to six packet attributes joined in two tuples: (source IP address, source port, destination IP address, destination port, L1-L4 protocol stack, inner flow separation counter) and (destination IP address, source port, source IP address, destination port, L1-L4 protocol stack, inner flow separation counter). This logical packet aggregation allows for the identification of patterns in the way communications are made between two hosts which may be using a more specific L5-7 network protocol stack and, even more concretely, specific software in both ends to perform those communications.
+
+###Talkers
+The talker provides a way to logically aggregate multiple flows, and their inherent packets, in accordance to three flow attributes joined in two tuples: (source IP address, destination IP address, L1-L4 protocol stack) and (destination IP address, source IP address, L1-L4 protocol stack). This logical flow aggregation allows to correlate multiple flows shared between two hosts and, consequently, better identify the possible interest that a given host may have in communicating with another host.
+
+###Hosts
+The host provides a way to logically aggregate multiple talkers, and their inherent flows and packets, in accordance to two talker attributes joined in a tuple: (source IP address, L1-L4 protocol stack) and (destination IP address, source IP address, L1-L4 protocol stack). This logical talker aggregation allows to determine the intent behind multiple talkers and respective flows which are initiated and received by a given host.
+
+
+Every pattern found in the created domain features can be modeled using Machine Learning to build classifiers around the concept of flows, talkers and hosts. Ultimately and ideally:
+- A flow classifier can be useful to help identifying a program and/or L5-7 network protocol running in the network. In many cases, using flow indicators is already very powerful in detecting anomalies because most software which shares similar intent also shares similar network behavior at the flow level. Examples
+- A talker classifier can be useful to help correlating multiple flows shared between two hosts and help determining the intent behind the flow exchange for both talking hosts. Using talker indicators enables more than detecting specific programs, it enables to deeper understand the purpose of a series of network communications between two hosts. As such, at the talker level, rather than only being able to detect specific threats, we will now be able to theoretically detect threat classes, such as: 1-to-1 portscans, 1-to-1 denial of service attacks, 1-to-1 bruteforce attempts, 1-to-1 C2 channel establishment, among other 1-to-1 threat classes.
+- A host classifier can be useful to help determining the intent behind multiple talkers and respective flows which are initiated and received by a given host.
+
