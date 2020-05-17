@@ -1,75 +1,83 @@
-1. Threat Class - Host discovery
+1. Threat Class - Host Discovery
+1.1. L2 Threat - ARP Host Discovery
+1.2. L3 Threat - IP Protocol Host Discovery
+1.3. L3+ Threat - ICMP Host Discovery
+1.4. L4 Threat - UDP Host Discovery
+1.5. L4 Threat - TCP Host Discovery
 
 Intent: Probe a network range or multiple selected hosts to find active hosts.
 
 Known Technique(s):
-- ARP Ping Scan (-sn -PR) - within a Local Area Network (LAN), the attacker sends an ARP request to a destination MAC address, which can either be a single MAC address, a multicast MAC address or the broadcast MAC address (the most common). If any device is listening on those channels, it will respond (given a normal system configuration) to the request with a valid MAC address associated with the IP, in accordance with the respondent device's ARP table. This scan is very powerful to find hidden devices in a network, since ARP packets are usually responded to by whoever owns the requested information and is actively listening to those channels. In case of a response, we have confirmation that the host is active, unless the respondent host had ARP table entries that should already have expired or, in a more unusual case, if the respondent host was ARP spoofed. However, given that the request is usually broadcast, multiple responses may arrive so
-- ICMP Echo Request Scan (-sn -PE) - for each host, the attacker sends an ICMP type 8 packet. If the host responds with an ICMP type 0 packet, it is up, else the host may be down or the packet was filtered.
-- ICMP Timestamp Request Scan (-sn -PP) - for each host, the attacker sends an ICMP type 13 packet. If the host responds with an ICMP type 14 packet, it is up, else the host may be down or the packet was filtered.
-- ICMP Information Request (does not exist in Nmap) - for each host, the attacker sends an ICMP type 15 packet. If the host responds with an ICMP type 16 packet, it is up, else the host may be down, this service is not implemented on the end device or the packet was filtered.
-- ICMP Address Mask Request Scan (-sn -PM) - for each host, the attacker sends an ICMP type 17 packets. If the host responds with an ICMP type 18 packet, it is up, else the host may be down, this service is not implemented on the end device or the packet was filtered.
-- UDP Ping Scan (-sn -PU) - for each host, the attacker sends a UDP request to one given port. If the host responds, the host is up, else the host may be down or the packet was filtered.
-- TCP SYN Ping Scan (-sn -PS) - for each host, the attacker sends a TCP request with the SYN flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered.
-- TCP ACK Ping Scan (-sn -PA) - for each host, the attacker sends a TCP request with the ACK flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered.
-- IP Protocol Ping (-sn -PO) - for each host, the attacker sends multiple IP packets containing the IP protocol number in the IP header. For example, the attacker can send six packets: ICMP (protocol 1), IGMP (protocol 2), IP-in-IP (protocol 4), TCP (protocol 6), UDP (protocol 17) and SCTP (protocol 132). This method looks for either responses using the same protocol (host supports protocol) or ICMP protocol unreachable messages (host doesn't support protocol), both indicating that the the target host is alive.
+- ARP Ping Scan (-sn -PR) - within a Local Area Network (LAN), the attacker sends an ARP request to a destination MAC address, which can either be a single MAC address, a multicast MAC address or the broadcast MAC address (the most common). If any device is listening on those channels, it will respond (given a normal system configuration) to the request with a valid MAC address associated with the IP, in accordance with the respondent device's ARP table. This scan is very powerful to find hidden devices in a network, since ARP packets are usually responded to by whoever owns the requested information and is actively listening to those channels. In case of a response, we have confirmation that the host is active, unless the respondent host had ARP table entries that should already have expired or, in a more unusual case, if the respondent host was ARP spoofed. [1.1]
+- IP Protocol Ping (-sn -PO) - for each host, the attacker sends multiple IP packets containing the IP protocol number in the IP header. For example, the attacker can send six packets: ICMP (protocol 1), IGMP (protocol 2), IP-in-IP (protocol 4), TCP (protocol 6), UDP (protocol 17) and SCTP (protocol 132). This method looks for either responses using the same protocol (host supports protocol) or ICMP protocol unreachable messages (host doesn't support protocol), both indicating that the the target host is alive. [1.2]
+- ICMP Echo Request Scan (-sn -PE) - for each host, the attacker sends an ICMP type 8 packet. If the host responds with an ICMP type 0 packet, it is up, else the host may be down or the packet was filtered. [1.3]
+- ICMP Timestamp Request Scan (-sn -PP) - for each host, the attacker sends an ICMP type 13 packet. If the host responds with an ICMP type 14 packet, it is up, else the host may be down or the packet was filtered. [1.3]
+- ICMP Information Request (does not exist in Nmap) - for each host, the attacker sends an ICMP type 15 packet. If the host responds with an ICMP type 16 packet, it is up, else the host may be down, this service is not implemented on the end device or the packet was filtered. [1.3]
+- ICMP Address Mask Request Scan (-sn -PM) - for each host, the attacker sends an ICMP type 17 packets. If the host responds with an ICMP type 18 packet, it is up, else the host may be down, this service is not implemented on the end device or the packet was filtered. [1.3]
+- UDP Ping Scan (-sn -PU) - for each host, the attacker sends a UDP request to one given port. If the host responds, the host is up, else the host may be down or the packet was filtered. [1.4]
+- TCP SYN Ping Scan (-sn -PS) - for each host, the attacker sends a TCP request with the SYN flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered. [1.5]
+- TCP ACK Ping Scan (-sn -PA) - for each host, the attacker sends a TCP request with the ACK flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered. [1.5]
 
 2. Threat Class - Port Scan
-2.1. Threat - UDP Port Scan
-2.2. Threat - TCP Port Scan
-2.3. Threat - SCTP Port Scan
+2.1. L4 Threat - UDP Port Scan
+2.2. L4 Threat - TCP Port Scan
+2.3. L4 Threat - SCTP Port Scan
 
 Intent: Probe multiple ports of a given host, for a given L4 protocol.
 
 Known Technique(s):
-- UDP Scan (-sU) - the attacker sends a UDP packet to each port. If the target responds with service data, the port is open. If the target does not respond, the port is either closed or filtered.
-- TCP Connect Scan - the attacker sends a TCP packet with the SYN flag bit set to each port. If the target responds with a SYN-ACK packet, the port is open and accepting requests: the attacker sends an ACK packet back; the target then responds with the service's specific data; then, the attacker sends a RST packet and closes the connection. If the target responds with a RST packet, the port is closed. Else, if the target does not respond, the port is filtered.
-- TCP SYN Scan (-sS) - the attacker sends a TCP packet with the SYN flag bit set to each port. If the target responds with SYN-ACK, the port is open and accepting requests: the attacker sends a RST packet to close the connection. If the target responds with a RST packet, the port is closed. Else, if the target does not respond, the port is filtered.
-- TCP ACK Scan (-sA) - the attacker sends a TCP packet with the ACK flag bit set to each port. If the target responds with a RST packet, the port is either open or closed, meaning that the port is unfiltered (not blocked by any firewall). Else, if the target does not respond or if it responds with certain ICMP error messages (type 3, code 0, 1, 2, 3, 9, 10 or 13), then the port is filtered.
-- TCP Null Scan (-sN) - the attacker sends a TCP packet with no flag set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP unreachable error (type 3, code 0, 1, 2, 3, 9, 10 or 13) then the port is filtered.
-- TCP Xmas Scan (-sX) - the attacker sends a TCP packet with the FIN, PSH and URG flag bits set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP unreachable error (type 3, code 0, 1, 2, 3, 9, 10 or 13) then the port is filtered.
-- TCP FIN Scan (-sF) - the attacker sends a TCP packet with the FIN flag bit set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP unreachable error (type 3, code 0, 1, 2, 3, 9, 10 or 13) then the port is filtered.
+- UDP Scan (-sU) - the attacker sends a UDP packet to each port. If the target responds with service data, the port is open. If the target does not respond, the port is either closed or filtered. [2.1]
+- TCP Connect Scan - the attacker sends a TCP packet with the SYN flag bit set to each port. If the target responds with a SYN-ACK packet, the port is open and accepting requests: the attacker sends an ACK packet back; the target then responds with the service's specific data; then, the attacker sends a RST packet and closes the connection. If the target responds with a RST packet, the port is closed. Else, if the target does not respond, the port is filtered. [2.2]
+- TCP SYN Scan (-sS) - the attacker sends a TCP packet with the SYN flag bit set to each port. If the target responds with SYN-ACK, the port is open and accepting requests: the attacker sends a RST packet to close the connection. If the target responds with a RST packet, the port is closed. Else, if the target does not respond, the port is filtered. [2.2]
+- TCP ACK Scan (-sA) - the attacker sends a TCP packet with the ACK flag bit set to each port. If the target responds with a RST packet, the port is either open or closed, meaning that the port is unfiltered (not blocked by any firewall). Else, if the target does not respond or if it responds with certain ICMP error messages (type 3, code 0, 1, 2, 3, 9, 10 or 13), then the port is filtered. [2.2]
+- TCP Null Scan (-sN) - the attacker sends a TCP packet with no flag set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP unreachable error (type 3, code 0, 1, 2, 3, 9, 10 or 13) then the port is filtered. [2.2]
+- TCP Xmas Scan (-sX) - the attacker sends a TCP packet with the FIN, PSH and URG flag bits set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP unreachable error (type 3, code 0, 1, 2, 3, 9, 10 or 13) then the port is filtered. [2.2]
+- TCP FIN Scan (-sF) - the attacker sends a TCP packet with the FIN flag bit set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP unreachable error (type 3, code 0, 1, 2, 3, 9, 10 or 13) then the port is filtered. [2.2]
 
 Other techniques:
-- TCP Window Scan (-sW) - this is not a technique that would alter the sent packet, rather an analysis technique for the other TCP port scans. The attacker may analyze the response packet to check whether a port is open: a positive window size indicates an open port and a zero size window indicates a closed port; if the response packet time to live (ttl) is lower than the rest of the received RST packets the port is likely to be open. This applies to most systems, but there are other systems that may return the inverse.
-- TCP Custom Scan (--scanflags) - the attacker sends a TCP packet with a custom set of TCP flag bits set to each port. The analysis depends on the TCP flag set used, as this means different possible responses and interpretations.
-- TCP Idle Scan (-sI) - TODO
-- TCP Maimon Scan (-sM) - TODO
-- FTP Bounce Scan (-b) - this method allows an attacker to use a vulnerable FTP server as a proxy to portscan other hosts.
-- SCTP Init Scan (-sY) - TODO
-- SCTP "Cookie Echo" Scan (-sZ) - TODO
+- TCP Window Scan (-sW) - this is not a technique that would alter the sent packet, rather an analysis technique for the other TCP port scans. The attacker may analyze the response packet to check whether a port is open: a positive window size indicates an open port and a zero size window indicates a closed port; if the response packet time to live (ttl) is lower than the rest of the received RST packets the port is likely to be open. This applies to most systems, but there are other systems that may return the inverse. [2.2]
+- TCP Custom Scan (--scanflags) - the attacker sends a TCP packet with a custom set of TCP flag bits set to each port. The analysis depends on the TCP flag set used, as this means different possible responses and interpretations. [2.2]
+- TCP Idle Scan (-sI) - the attacker sends a SYN-ACK packet to a host, which will be dubbed "unaware host" because its technical name, "zombie", already associates to a completely different meaning in the botnet context. The unexpected SYN-ACK packet sent to the unaware host will be responded to with a RST packet sent back to the attacker, which has a certain IP ID associated with it. The attacker then sends a SYN packet to the target host with the source IP address spoofed with the IP of the unaware host, incrementing its IP ID by 1. On this moment, there are three possible scenarios: (A1) The target host responds to the unaware host with a SYN-ACK packet. Since the unaware host was not expecting the packet, it sends a RST packet to the target host, incrementing its IP ID by 1 again. (A2) The target host responds to the unaware host with a RST packet. The unaware host did not expect the packet, but since it isn't a packet that tries to initiate a connection (rather, abort it), the unaware host does not respond with any packet, thus not incrementing its own IP ID. (A3) The target host does not respond to the unaware host. As such, the unaware host does not receive any packet and, more importantly, it doesn't send a packet back, such as in scenario A2, thus not incrementing its IP ID. Continuation: Once any of the previous scenarios has taken place, the attacker will send a SYN-ACK packet to the unaware host, to which the unaware host will respond with a RST packet. The IP ID of the final RST packet will then be analyzed by the attacker for the existence of one of the following scenarios: (B1) The IP ID was incremented by 2 since the first packet received from the unaware host, which means that the target host responded with a SYN-ACK packet to the unaware host, so the probed port is open. (B2) The IP ID was only incremented by 1 since the first packet received from the unaware host, which means that the target host responded with a RST packet or did not respond at all, since in both situations the unaware host does not create any response packet for the target host. As such, from the attacker's perspective, the probed port might be either closed (scenario A2) or filtered (scenario A3). The attacker then repeats this whole process for each port that he intends to scan. [2.2]
+- TCP Maimon Scan (-sM) - this technique is named after its discoverer, Uriel Maimon. It starts with the attacker sending a TCP packet with the FIN and ACK flag bits set to each port. According to the RFC-793 (TCP RFC), the host should generate a RST packet in response, independently of the fact of the port being open or closed. However, Uriel found out that many BSD-derived systems simply drop this packet if the port is open. [2.2]
+- FTP Bounce Scan (-b) - this method allows an attacker to use a vulnerable FTP server as a proxy to portscan other hosts. [2]
+- SCTP INIT Scan (-sY) - the attacker sends an SCTP INIT packet to each port of the target host. An SCTP INIT-ACK response packet indicates that the port is open and, in this case, the attacker aborts the connection right after. An SCTP ABORT response packet indicates that the port is closed and, if no response is received after several retransmissions, the port is marked as filtered. [2.3]
+- SCTP "COOKIE ECHO" Scan (-sZ) - the attacker sends an SCTP COOKIE ECHO packet to each port of the target host. If the target host doesn't respond, the port is either open or filtered. If the target host responds with an SCTP ABORT packet, then the port is closed. [2.3]
 
-3. Threat Class - Miscellaneous Host Scans
-3.1. Threat - IP Protocol Scan (-sO)
+
+3. Threat Class - Miscellaneous Host Scan
+3.1. L3 Threat - IP Protocol Scan (-sO)
 Intent: Find out information about a target host (e.g. what IP protocols are running on it).
 
 Known Techniques:
-- IP Protocol Scan (-sO) - the attacker sends an IP packet with an IP protocol number filled in the IP header for each selected IP protocol number. For example, the attacker can send six packets: ICMP (protocol 1), IGMP (protocol 2), IP-in-IP (protocol 4), TCP (protocol 6), UDP (protocol 17) and SCTP (protocol 132). If the attacker receives a response in the probed protocol from the target host or an ICMP port unreachable error (type 3, code 3), the protocol is supported (open). If an ICMP protocol unreachable error (type 3, code 2) is received, the protocol is marked as unsupported (closed). Other ICMP unreachable errors (type 3, code 0, 1, 9, 10, or 13) cause the protocol to be marked filtered. If no response is received after retransmissions, the protocol is marked as possibly supported (open or filtered).
+- IP Protocol Scan (-sO) - the attacker sends an IP packet with an IP protocol number filled in the IP header for each selected IP protocol number. For example, the attacker can send six IP packets asking for six IP protocols support: ICMP (protocol 1), IGMP (protocol 2), IP-in-IP (protocol 4), TCP (protocol 6), UDP (protocol 17) and SCTP (protocol 132). If the attacker receives a response in the probed protocol from the target host or an ICMP port unreachable error (type 3, code 3), the protocol is supported (open). If an ICMP protocol unreachable error (type 3, code 2) is received, the protocol is marked as unsupported (closed). Other ICMP unreachable errors (type 3, code 0, 1, 9, 10, or 13) cause the protocol to be marked filtered. If no response is received after retransmissions, the protocol is marked as possibly supported (open or filtered). [3.1]
 
 
-4. Threat Class - L1-L4 Denial of Service Attacks
-4.1. Threat - UDP Flood Denial of Service
-4.2. Threat - TCP Flood Denial of Service
-4.3. Threat - Logical Denial of Service
+4. Threat Class - Denial of Service Attack
+4.1. L4 Threat - UDP Flood Denial of Service Attack
+4.2. L4 Threat - TCP Flood Denial of Service Attack
+4.3. L1-L4 Threat - Network Protocol Exploit
+4.4. L7 Threat - Application Layer Denial of Service Attack
 
 Intent: Exhaust a target systems' network resources and/or computational resources by flooding it with multiple malicious requests.
 
 Known Technique(s):
-- Malformed Packet - this technique involves finding a bug or vulnerability in the used network protocol, service or application. Examples of this technique are the attacks "Teardrop", "Land" and "Ping of Death". This technique is comparable to application-based logical exploits that can disrupt the availability of a service. [4.3]
+- Malformed Packet - this technique involves finding a bug or vulnerability in the used network protocol and the network service running on the victim host. Examples of this technique are the attacks "Teardrop", "Land" and "Ping of Death". [4.3]
+- Application Layer Logical Exploits - this technique uses logical errors in a specific application to cause its unavailability. As an example, if a server requires guest user credentials to provide data to any user, and if all users own those credentials, they might be able to change those credentials if no control is put in place. If such thing happens, a single user can deny every other user from accessing the servers with their locally saved guest user credentials. [4.4]
 - Quick Resource Exhaustion - quickly and continuously launch multiple TCP/UDP requests against a target server. [4.1, 4.2]
 - TCP SYN Flood - send multiple SYN packets to a target server, resulting in multiple SYN-ACK responses, only to never send any ACK back to the target server. If the attack is successful, it results in the target server maintaining multiple ports occupied for the initiated half-open connections, resulting in a denial of service for legitimate clients. [4.2]
-- Slow HTTP Resource Exhaustion - use the "connection: keep-alive" header of HTTP/HTTPS requests to slowly launch multiple parallel HTTP/HTTPS connections to the target server. This technique is similar to the SYN Flood technique because it also maintains the port occupied with the connection, but rather than a half-open TCP connection, this is a full-open connection that operates at the HTTP/HTTPS protocol level (L7). [4.2, 4.3]
+- Slow HTTP Resource Exhaustion - use the "connection: keep-alive" header of HTTP/HTTPS requests to slowly launch multiple parallel HTTP/HTTPS persistent connections to the target server. This technique is similar to the SYN Flood technique because it also maintains the port occupied with the connection, but rather than a half-open TCP connection, this is a full-open connection that operates at the HTTP/HTTPS protocol level (L7). [4.2, 4.4]
 - Denial of Service Amplification - use servers that are running network protocols such as DNS or NTP and, if applicable, take advantage of the fact that those servers' responses will have a much bigger length than the requests that are made. This fact gives an attacker the possibility of sending those servers multiple spoofed requests with the target's IP address as the source address in order to flood the unexpected target with those servers' TCP or UDP responses. [4]
-- Distributed Denial of Service - use multiple systems to attack a target system. [4]
+- Distributed Denial of Service (DDoS) Attack - use multiple systems to attack a target system. [4]
 
-5. Threat Class - L5-L7 Bruteforce
-5.1. Threat - FTP Bruteforce
-5.2. Threat - SSH Bruteforce
-5.3. Threat - Telnet Bruteforce
-5.4. Threat - SMTP Bruteforce
-5.5. Threat - POP3 Bruteforce
-5.6. Threat - RDP Bruteforce
-5.7. Threat - HTTP Bruteforce (very dependent on specific application)
-5.8. Threat - HTTPS Bruteforce (very dependent on specific application)
+5. Threat Class - Brute Force Attack
+5.1. L7 Threat - FTP Bruteforce
+5.2. L7 Threat - SSH Bruteforce
+5.3. L7 Threat - Telnet Bruteforce
+5.4. L7 Threat - SMTP Bruteforce
+5.5. L7 Threat - POP3 Bruteforce
+5.6. L7 Threat - RDP Bruteforce
+5.7. L7 Threat - HTTP Bruteforce (very dependent on the specific application)
+5.8. L7 Threat - HTTPS Bruteforce (very dependent on the specific application)
 
 Intent: Test multiple credential combinations in a continuous manner to find out correct ones.
 
@@ -92,3 +100,4 @@ Ncrack
 DoS Goldeneye
 DoS Hulk
 DoS Slowloris
+TODO.

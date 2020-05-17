@@ -1,2 +1,4 @@
 More interesting but not so related references:
 - https://www.auvik.com/franklymsp/blog/tcp-window-size/
+- https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Headers/Keep-Alive
+- https://www.cellstream.com/reference-reading/tipsandtricks/314-the-purpose-of-the-ip-id-field-demystified

@@ -11,3 +11,5 @@ References:
 - https://en.wikipedia.org/wiki/SYN_flood
 - https://www.sciencedirect.com/topics/computer-science/denial-of-service
 - https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html
+- https://link.springer.com/referenceworkentry/10.1007%2F978-1-4419-5906-5_262
+- https://nmap.org/book/idlescan.html
