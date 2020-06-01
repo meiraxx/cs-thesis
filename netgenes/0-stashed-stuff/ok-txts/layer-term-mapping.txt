@@ -1,0 +1,7 @@
+L1 l1-frame
+L2 l2-frame
+L3 packet
+TCP segment
+UDP datagram
+
+However, all of these will be called "packets" for simplicity in my thesis.

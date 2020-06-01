@@ -1,4 +1,6 @@
 References:
+- https://www.fnac.pt/livre-numerique/a2684326/Security-Power-Tools
+- https://www.amazon.co.uk/Network-Security-Assessment-Know-Your/dp/149191095X
 - https://www.yeahhub.com/15-most-useful-host-scanning-commands-kalilinux/
 - https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html
 - http://www.cs.columbia.edu/~dgen/papers/conferences/conference-07.pdf
@@ -13,3 +15,10 @@ References:
 - https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html
 - https://link.springer.com/referenceworkentry/10.1007%2F978-1-4419-5906-5_262
 - https://nmap.org/book/idlescan.html
+- https://nmap.org/book/osdetect-ipv6-methods.html
+- https://books.google.pt/books?id=cuxvBAAAQBAJ&lpg=PA1&dq=inauthor%3A%22Anto.Y%22&hl=pt-PT&pg=PA1#v=onepage&q&f=false
+- https://www.cloudflare.com/learning/ddos/ddos-low-and-slow-attack/
+- https://www.cloudflare.com/learning/ddos/http-flood-ddos-attack/
+- https://blog.qualys.com/securitylabs/2011/11/02/how-to-protect-against-slow-http-attacks
+- https://www.imperva.com/learn/application-security/slowloris/
+- https://www.cloudflare.com/learning/ddos/ddos-attack-tools/slowloris/

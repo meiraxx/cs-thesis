@@ -24,7 +24,7 @@ Joao Meira <joao.meira.cs@gmail.com>
 # L2plus-protocols: ++LLC++
 # L3-protocols: **IPv4 (IP-4)**, IPv6 (IP-41)
 # L3plus-protocols: ++ICMPv4 (IP-1)++, ++IGMPv4 (IP-2)++, ICMPv6 (IP-58), GRE (IP-47)
-# L4-protocols: **TCP (IP-6)**, **UDP (IP-17)**
+# L4-protocols: **TCP (IP-6)**, **UDP (IP-17)**, ++SCTP (IP-132)++
 # SOME REFS:
 # https://en.wikipedia.org/wiki/EtherType; https://en.wikipedia.org/wiki/List_of_IP_protocol_numbers
 # [L2] ARP: https://tools.ietf.org/html/rfc826
@@ -33,6 +33,7 @@ Joao Meira <joao.meira.cs@gmail.com>
 # [L3plus] IGMP: https://tools.ietf.org/html/rfc1112
 # [L4] UDP https://tools.ietf.org/html/rfc768
 # [L4] TCP: https://tools.ietf.org/html/rfc793
+# [L4] SCTP: https://tools.ietf.org/html/rfc4960 (rfc-2960 on dpkt)
 # ===============================================================
 
 # =================
