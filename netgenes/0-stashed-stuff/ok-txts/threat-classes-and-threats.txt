@@ -5,7 +5,7 @@
 1.4. L4 Threat - UDP Host Discovery
 1.5. L4 Threat - TCP Host Discovery
 
-Intent: Probe a network range or multiple selected hosts to find active hosts.
+Intent: Probe multiple selected hosts to find active ones.
 
 Known Technique(s):
 - ARP Ping Scan (-sn -PR) - within a Local Area Network (LAN), the attacker sends an ARP request to a destination MAC address, which can either be a single MAC address, a multicast MAC address or the broadcast MAC address (the most common). If any device is listening on those channels, it will respond (given a normal system configuration) to the request with a valid MAC address associated with the IP, in accordance to its ARP table, given that default dynamic ARP table entries are enabled. This scan is very powerful to find hidden devices in a network, since ARP requests will very likely be responded to by whoever owns the requested information and is actively listening on those channels. In case of a response, we have confirmation that the host is active, unless the respondent host had ARP table entries that should already have expired or, in a more unusual case, if the respondent host was ARP spoofed. [1.1]
@@ -16,7 +16,9 @@ Known Technique(s):
 - ICMP Address Mask Request Scan (-sn -PM) - for each host, the attacker sends an ICMP type 17 packets. If the host responds with an ICMP type 18 packet, it is up, else the host may be down, this service is not implemented on the end device or the packet was filtered. [1.3]
 - UDP Ping Scan (-sn -PU) - for each host, the attacker sends a UDP request to one given port. If the host responds, the host is up, else the host may be down or the packet was filtered. [1.4]
 - TCP SYN Ping Scan (-sn -PS) - for each host, the attacker sends a TCP request with the SYN flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered. [1.5]
-- TCP ACK Ping Scan (-sn -PA) - for each host, the attacker sends a TCP request with the ACK flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered. [1.5]
+- TCP ACK Ping Scan (-sn -PA) - for each host, the attacker sends a TCP packet with the ACK flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered. [1.5]
+- CIDR-based Selection - the attacker probes multiple hosts contained by a network range written in the CIDR (Classless Inter-Domain Routing) notation. [1]
+- Host Range Selection - the attacker probes multiple hosts by specifying a range of IP addresses. [1]
 
 Tool Applicability: Tools that can communicate over a network can eventually be used for host discovery, given that the protocols used to communicate are supported by the targeted machine. However, we will only consider a host discovery tool as such if it complies with at least one of the following conditions:
 - It supports sending and interpreting ARP probes for multiple hosts
@@ -77,6 +79,7 @@ ZMap - 1, 2 (ICMP, UDP, TCP)
 3. L3 Threat Class - L3 Service Discovery
 3.1. L3 Threat - IP Protocol Scan over IPv4 (-sO)
 3.2. L3 Threat - IP Protocol Scan over IPv6
+
 Intent: Find out information about a target host using L3 mechanisms.
 
 Known Techniques:
@@ -89,60 +92,21 @@ Tools:
 Nmap - 1, 2, 3 (ARP, raw IP, ICMP, UDP, TCP, SCTP)
 Hping3 - 1, 2, 3, 4 (raw IP, ICMP, UDP, TCP)
 
-4. L4/L7 Threat Class - Network Resource Exhaustion Denial of Service Attack
-4.1. L4 Threat - UDP Flood
-4.2. L4 Threat - TCP Flood
-4.3. L4 Threat - SCTP Flood
-4.4. L4/L7 Threat - HTTP(S) Slow Flood
-Intent: Exhaust the network resources of a target system by flooding it with multiple malicious requests.
-
-Known Technique(s):
-- Quick Network Resource Exhaustion - quickly and continuously launch multiple TCP/UDP requests against a target server. [4.1, 4.2]
-- TCP SYN Flood - send multiple SYN packets to a target server, resulting in multiple SYN-ACK responses, only to never send any ACK back to the target server. If the attack is successful, it results in the target server maintaining multiple ports occupied for the initiated half-open connections, resulting in a denial of service for legitimate clients. [4.2]
-- HTTP(S) Slow Network Resource Exhaustion - use the "connection: keep-alive" header of HTTP(S) requests to launch multiple parallel HTTP(S) persistent connections to the target server, slowly sending back to the server partial HTTP . This technique, usable against HTTP(S) applications, is similar to the TCP SYN Flood technique because it also maintains the TCP port occupied with the connection. However, rather than establishing multiple half-open TCP connections (L4) where the target server is left waiting for ACK packets, this technique establishes multiple full-open HTTP(S) connections (L7) where the target web server will have multiple threads holding on to each established connection. The attacker does this . Slowloris is an example of implementation of this technique. [4.2, 4.4]
-- SCTP INIT Flood - TODO
-- Denial of Service Amplification - use servers that are running network protocols such as DNS or NTP and, if applicable, take advantage of the fact that those servers' responses will have a much bigger length than the requests that are made. This fact gives an attacker the possibility of sending those servers multiple spoofed requests with the target's IP address as the source address in order to flood the unexpected target with those servers' TCP or UDP responses, resulting in a Distributed Denial of Service (DDoS) attack. [4]
-- Distributed Denial of Service (DDoS) Attack - use multiple systems to attack a target system. [4]
-
-Tool Applicability: TODO
-Tools:
-<name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
-Ncat (UDP, TCP, SCTP) (None in particular)
-Hping3 (raw IP, ICMP, UDP, TCP) (None in particular)
-DoS Goldeneye (TCP) (HTTP/HTTPS)
-DoS Hulk (TCP) (HTTP/HTTPS)
-DoS Slowloris (TCP) (HTTP/HTTPS)
-
-5. L1-7 Threat Class - Logical Denial of Service Attack
-5.1. L1-7 Threat - Network Protocol Exploitation
-5.2. L7 Threat - Application Layer Logical Exploitation
-
-Intent: Exploit a network service or application running on the target system by performing specially crafted actions depending on the specific context.
-
-Known Technique(s):
-- Malformed Packet - this technique involves finding a bug or vulnerability in the used network protocol or in its code implementation, which means a network service running on the victim host is directly targeted. The attacks "Teardrop", "Land" and "Ping of Death" constitute examples of this technique. This technique highly depends on the exploitation of logical flaws in the implementation of a network protocol. [5.1]
-- Application Layer Logical Exploitation - this technique uses logical mistakes in a specific application to cause its unavailability. As an example, if a server requires default guest user credentials to provide data to any user, all users must locally own those credentials (even if "under the hood") to authenticate to the server. As such, users might also be able to issue a password change request to the server to change those credentials if this "guest user" account is not treated with caution server-side. If no control is put in place for this situation, a single user could be able to deny every other user from authenticating to and receiving data from the servers, since every users' locally saved guest user credentials would not be valid anymore. [5.2]
-
-Tool Applicability: Custom exploits.
-Tools:
-<name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
-NA NA NA
-
-6. L7 Threat Class - Brute Force Attack
-6.1. L7 Threat - FTP Bruteforce
-6.2. L7 Threat - SSH Bruteforce
-6.3. L7 Threat - Telnet Bruteforce
-6.4. L7 Threat - SMTP Bruteforce
-6.5. L7 Threat - POP3 Bruteforce
-6.6. L7 Threat - RDP Bruteforce
-6.7. L7 Threat - HTTP Bruteforce (very dependent on the specific application)
-6.8. L7 Threat - HTTPS Bruteforce (very dependent on the specific application)
+4. L7 Threat Class - Brute Force Attack
+4.1. L7 Threat - FTP Bruteforce
+4.2. L7 Threat - SSH Bruteforce
+4.3. L7 Threat - Telnet Bruteforce
+4.4. L7 Threat - SMTP Bruteforce
+4.5. L7 Threat - POP3 Bruteforce
+4.6. L7 Threat - RDP Bruteforce
+4.7. L7 Threat - HTTP Bruteforce (very dependent on the specific application)
+4.8. L7 Threat - HTTPS Bruteforce (very dependent on the specific application)
 
 Intent: Test multiple credential combinations in a continuous manner to find out correct ones.
 
 Known Technique(s):
-- Traditional Bruteforce Attack - test multiple passwords per few accounts. [6]
-- Reverse Bruteforce Attack (a.k.a. Password Spraying Attack) - test few passwords per multiple accounts. [6]
+- Traditional Bruteforce Attack - test multiple passwords per few accounts. [4]
+- Reverse Bruteforce Attack (a.k.a. Password Spraying Attack) - test few passwords per multiple accounts. [4]
 
 Tool Applicability: Any tool that supports brute-forcing credentials associated with a L7 protocol.
 Tools:
@@ -151,3 +115,95 @@ Ncat (UDP, TCP, SCTP) (None in particular)
 Patator (TCP) (FTP, SSH, Telnet, SMTP, HTTP/HTTPS, RDP, AJP, POP, IMAP, LDAP, SMB, SNMP)
 ncrack (TCP) (SSH, RDP, FTP, Telnet, HTTP/HTTPS (more specifically, it also supports Wordpress-based applications), POP3/POP3S, IMAP, CVS)
 CrackMapExec (SMB)
+
+
+5. L3+ Threat Class - L3+-based Resource Exhaustion Denial of Service Attack
+5.1. L3+ Threat - ICMP-based Denial of Service Attack
+
+Intent: Overwhelm a target system with multiple malicious L3-level control queries directed towards a network, with the goal of exhausting that system's network and/or computational resources.
+
+Known Technique(s):
+- ICMP Flood / Ping Flood - the attacker sends multiple ICMP echo-request packets to the target system. [5.1]
+- Smurf Attack - TODO [5.1]
+- Amplification Attack - TODO (a Smurf amplifier is a computer network that lends itself to being used in a Smurf attack. Smurf amplifiers act to worsen the severity of a Smurf attack because they are configured in such a way that they generate a large number of ICMP replies to the target host at the spoofed source IP address). [5.1]
+
+Tool Applicability: TODO
+Tools:
+<name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
+Hping3 (raw IP, ICMP, UDP, TCP) (None in particular)
+
+
+6. L4 Threat Class - L4-based Resource Exhaustion Denial of Service Attack
+6.1. L4 Threat - UDP-based Denial of Service Attack
+6.2. L4 Threat - TCP-based Denial of Service Attack
+6.3. L4 Threat - SCTP-based Denial of Service Attack
+
+Intent: Overwhelm a target system with multiple malicious L4-level requests directed towards a network service using a given L4 protocol on a given port, with the goal of exhausting the target system's network and/or computational resources. 
+
+Note: Since any received packet needs to be processed by the network stack of the targeted system, a denial of service attack may still occur against closed ports, which is why we often use the term "system" rather than "server", which designates a system running a network service usable by clients. We use the term "server" whenever the attack is only applicable against one.
+
+Known Technique(s):
+- High-Rate Attack - quickly and continuously launch multiple requests against a target system. [6]
+- Reflection and Amplification Attack - the attacker uses servers which are running specific network protocols that respond to small requests with large responses. This fact provides an attacker the possibility of sending multiple spoofed requests with the target's IP address (as source address) and redirect those servers' responses to the target system, resulting in a Distributed Denial of Service (DDoS) attack. [6]
+- Distributed Denial of Service (DDoS) Attack - the attacker uses multiple systems to attack a target system. [6]
+- Low Rate Attack - the attacker launches multiple L4-level requests against a target server and, for each established connection, slowly sends data back to the server to keep it holding to the connection as long as possible. [6.2, 6.3]
+- UDP-based Reflection and Amplification Attack - the attacker sends multiple spoofed UDP packets to appear as if these packets originated from the target's network IP address, to multiple systems running UDP services. This results in those multiple systems reflecting large UDP response packets to the target's network, resulting in a Distributed Denial of Service (DDoS) attack. DNS and NTP are examples of UDP services that are very usually used to perform this kind of attack, but many others can be used as well. More recently, in February 2018, the Memcached service was used for this kind of attack with an unprecededent with an unprecedented amplification factor. [6.1]
+- TCP SYN-ACK Reflection and Amplification Attack - the attacker sends multiple spoofed TCP packets to appear as if these packets originated from the target's network IP address, to multiple systems running TCP services. This results in those multiple systems reflecting TCP SYN-ACK response packets to the target's network, resulting in a Distributed Denial of Service (DDoS) attack. [6.2]
+- TCP SYN Flood - the attacker sends multiple SYN packets to a target server, resulting in multiple SYN-ACK responses, only to never send any ACK back to the target server. If the attack is successful, it results in the target server maintaining multiple ports occupied for the initiated half-open connections, resulting in a denial of service for legitimate clients. [6.2]
+- TCP Sockstress Attack Group - the attacker exploits a vulnerability in the TCP 3-way handshake, creating an indefinite connection. Although application-specific payload may also be used with it, this technique exploits concepts which are mainly present at the transport layer level and it includes many variants of it, including: [6.2]
+	- Small Window Stress Attack - the attacker sends TCP packets with small-sized windows defined to the server, expressing a fake unavailability to receive packets with a data size greater than X bytes. In response to the former, the server splits up the data it has yet to send into multiple X-byte chunks and stores it on memory. The attacker will then continuously request the expected X-byte sized chunks at a specified rate and in specified intervals, which will optimally be the slowest rate and intervals at which the target server keeps the connection active, for the longest time possible and avoiding any timeout event. Since the target server will hold on to the data it is slowly sending, the server will incur in excessive memory consumption. [6.2]
+	- Connection Flood Stress - TODO
+	- Zero Window Connection Stress - TODO
+	- Segment Hole Stress - TODO
+	- Req Fin Pause Stress - TODO
+	- Activate Reno Pressure Stress - TODO
+- SCTP INIT Flood - the attacker sends multiple SCTP INIT packets to a target system that supports SCTP. [6.3]
+- SCTP Address Camping - the attacker connects to an SCTP server and "camps upon" or "holds up" a valid peer's IP address, preventing the legitimate peer from communicating with the server. This technique targets the SCTP's multi-homing feature and directly affects the peers' ability to establish a connection with the server. [6.3]
+- SCTP-based Reflection and Amplification Attack (SCTP Bombing Attacks 1-5) - TODO [6.3]
+
+Tool Applicability: Every tool that is able to perform multiple malicious requests to cause a significant resource exhaustion on a system running an HTTP server and, consequently, a toll on the HTTP server's availability.
+Tools:
+<name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
+Ncat (UDP, TCP, SCTP) (None in particular)
+Hping3 (raw IP, ICMP, UDP, TCP) (None in particular)
+DoS Goldeneye (TCP) (HTTP/HTTPS)
+DoS Hulk (TCP) (HTTP/HTTPS)
+DoS Slowloris (TCP) (HTTP/HTTPS)
+
+
+7. L7 Threat Class - HTTP-based Resource Exhaustion Denial of Service Attack
+7.1. L7 Threat - Low Rate Attack
+7.2. L7 Threat - HTTP Flood
+
+Intent: Overwhelm a target HTTP server with multiple malicious HTTP requests in order to exhaust its network and/or computational resources.
+
+Known Technique(s):
+- HTTP-based Low and Slow Attack - slowly exhaust the network and computational resources of a target HTTP server by establishing multiple full-open HTTP connections with it, which in turn will have to keep multiple TCP sockets occupied. [7.1]
+- Slowloris - the attacker performs multiple HTTP persistent connections with the target server and slowly sends partial HTTP headers to it, which will keep it waiting for the receival of the rest of the headers. Timeouts are avoided by periodically sending "Keep alive" (not to confuse with the HTTP header value "keep-alive" used on the "connection" field) packets, i.e., "PSH-ACK" TCP packets transporting partial headers on the data field. [7.1]
+- R.U.D.Y (R-U-DEAD-YET) - the attacker generates multiple POST requests to fill out form fields and tells the server how many bytes it should expect using the "Content-Length" HTTP header field. Then, the attacker sends small-sized TCP packets with the expected data at very slow rates, which results in the server holding on to the TCP socket to receive the rest of the data for a long time. [7.1]
+- HTTP GET Flood - TODO. [7.2]
+- HTTP POST Flood - TODO. [7.2]
+- Distributed Denial of Service (DDoS) Attack - use multiple systems to attack a target server. [7]
+
+Tool Applicability: Every tool that is able to perform multiple malicious requests to cause a significant resource exhaustion on a system running an HTTP server and, consequently, a toll on the HTTP server's availability.
+Tools:
+<name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
+DoS Goldeneye (TCP) (HTTP/HTTPS)
+DoS Hulk (TCP) (HTTP/HTTPS)
+DoS Slowloris (TCP) (HTTP/HTTPS)
+
+
+8. L1-7 Threat Class - Logical Denial of Service Attack
+8.1. L1-7 Threat - Network Protocol Exploitation
+8.2. L7 Threat - Application Layer Logical Exploitation
+
+Intent: Exploit a network service or application, vulnerable to a logic flaw, running on the target system. Exploitation of those are performed through specially crafted actions that highly depend on very specific vulnerabilities.
+
+Known Technique(s):
+- Specially Crafted Packets - this technique involves the exploitation of a logical flaw in a network service that is actively running on the target system by sending a set of packets that, far from the expected format, are able to create a malfunction in the network service itself. This technique may make use of an unforeseen vulnerability in a designed network protocol or, if not on the protocol itself, a vulnerability in its code implementation. "Teardrop" (L3), "Ping of Death" (L3+) and "Land" (L4) are examples of this technique. [8.1]
+- Application Layer Logical Exploitation - this technique uses logical mistakes in a specific application to cause its unavailability. As an example, if a server requires default guest user credentials to provide data to any user, all users must locally own those credentials (even if "under the hood") to authenticate to the server. As such, users might also be able to issue a password change request to the server to change those credentials if this "guest user" account is not treated with caution server-side. If no control is put in place for this situation, a single user could be able to deny every other user from authenticating to and receiving data from the servers, since every users' locally saved guest user credentials would not be valid anymore. [8.2]
+
+Tool Applicability: Custom exploits.
+Tools:
+<name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
+NA NA NA

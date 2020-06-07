@@ -6,3 +6,26 @@ More interesting but not so related references:
 - https://tools.kali.org/information-gathering/hping3
 - https://dpkt.readthedocs.io/en/latest/_modules/dpkt/sctp.html (SCTP by dpkt, based on the now deprecated RFC-2960. Correct RFC is now RFC-4960)
 - https://notes.shichao.io/tcpv1/ch8/
+- https://networkengineering.stackexchange.com/questions/24068/why-do-we-need-a-3-way-handshake-why-not-just-2-way
+- https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
+- https://docs.paloaltonetworks.com/service-providers/9-1/mobile-network-infrastructure-getting-started/sctp/configure-sctp-init-flood-protection.html
+- https://www.researchgate.net/publication/315135669_Evaluating_the_Stream_Control_Transmission_Protocol_Using_Uppaal
+- https://realtimecommunication.wordpress.com/tag/4-way-handshake/
+- https://www.researchgate.net/publication/282385271_Comparing_Study_of_Transport_Layer_Protocols_SCTP_with_TCP_and_UDP/figures?lo=1&utm_source=google&utm_medium=organic
+- https://en.wikipedia.org/wiki/Transmission_Control_Protocol
+- https://www.ibm.com/support/knowledgecenter/ssw_aix_72/network/sctp_intro.html
+- https://www.ibm.com/support/knowledgecenter/ssw_aix_72/network/sctp_startup.html
+- https://nickvsnetworking.com/sctp-and-why-you-should-be-using-it/
+- https://searchnetworking.techtarget.com/definition/SCTP
+- https://www.geeksforgeeks.org/difference-between-flow-control-and-congestion-control/
+- https://accedian.com/blog/network-packet-loss-retransmissions-and-duplicate-acknowledgements/
+- https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol
+- https://www.ibm.com/support/knowledgecenter/ssw_aix_72/network/protocols_userdatagram.html
+ https://serverfault.com/questions/903657/is-a-ddos-possible-if-the-port-being-attacked-is-closed/903659
+- https://www.tatacommunications.com/downloads/enterprise/ethernet/1B-Comparison%20Layer%201%20to%20Ethernet.pdf
+- https://www.secplicity.org/2019/03/01/how-data-moves-across-a-network/
+- https://en.wikipedia.org/wiki/Network_packet
+- https://www.impactcybertrust.org/search?filter[]=Prov%3AUCSD+-+Center+for+Applied+Internet+Data+Analysis&filter[]=Prov%3AExternal+Data+Source&filter[]=Prov%3AUCSD+-+Center+for+Applied+Internet+Data+Analysis+%28CAIDA%29
+- https://www.slideshare.net/contactvijay1988/introduction-to-sctp-and-benefits-over-tcp-and-udp-36433404
+- https://linux.die.net/man/7/sctp
+- https://pt.wikipedia.org/wiki/Memcached

@@ -1,4 +1,3 @@
-"""
 # REDO Flows dict with its features (drop packet info)
 flows = OrderedDict()
 for i, flow_features_dict in enumerate(tcp_flow_features_generator):
@@ -141,4 +140,3 @@ for flow_id in flows:
 
     flow_start_time = unix_time_millis_to_datetime(flow_start_time)
     flow_end_time = unix_time_millis_to_datetime(flow_end_time)
-"""

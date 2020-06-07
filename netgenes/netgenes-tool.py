@@ -247,8 +247,8 @@ def generate_network_objets(input_file):
 
     if args.verbose:
         n_preserved_packets = sum([len(l3_uniflows[l3_uniflow_id]) for l3_uniflow_id in l3_uniflow_ids])
-        print("[+] Packets preserved:", n_preserved_packets, "IPv4 Packets", flush=True)
-        print("[+] Flows detected:" + Colors.GREEN, len(l3_uniflow_ids), "IPv4 UniFlows" + Colors.ENDC, flush=True)
+        print("[+] IPv4 Packets preserved:", n_preserved_packets, "IPv4 Packets", flush=True)
+        print("[+] IPv4 UniFlows detected:" + Colors.GREEN, len(l3_uniflow_ids), "IPv4 UniFlows" + Colors.ENDC, flush=True)
         print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
 
     # ======================

@@ -14,7 +14,7 @@ from pylib.pynet.protocol_utils import inet_to_str
 
 def build_packets(input_file, args):
     """Process PCAP/PCAPNG file and build packets"""
-    # Note: not using yielder due to outputting packet-level information 
+    # Note: not using yielder due to outputting bitstream-level information 
 
     if args.verbose:
         module_init_time = time.time()
@@ -29,16 +29,21 @@ def build_packets(input_file, args):
         print("File format '%s' is not recognized." %(input_file.name.split(".")[-1]))
         sys.exit(1)
 
-    packet_no = 0
+    n_bitstreams_eth = 0
+    n_bitstreams_others = 0
+    n_frames_arp = 0
+    n_frames_llc = 0
+    n_frames_eth = 0
+    n_frames_others = 0
+    n_packets_eth_ipv4 = 0
+    n_packets_eth_ipv6 = 0
+    n_packets_eth_others = 0
     n_packets_eth_ipv4_igmp = 0
     n_packets_eth_ipv4_icmp = 0
-    n_packets_eth_ipv4_tcp = 0
     n_packets_eth_ipv4_udp = 0
+    n_packets_eth_ipv4_tcp = 0
+    n_packets_eth_ipv4_sctp = 0
     n_packets_eth_ipv4_others = 0
-    n_packets_eth_ipv6 = 0
-    n_packets_arp = 0
-    n_packets_llc = 0
-    n_packets_others = 0
 
     # TODO: https://dpkt.readthedocs.io/en/latest/print_icmp.html
     # TODO: find a database and dataset format which accomodates such diverse feature formats (tcp vs udp vs icmp) while maintaining
@@ -60,23 +65,38 @@ def build_packets(input_file, args):
         # buf contains the L1 data
         frame_len = len(buf)
 
+        # FUTURE-TODO: when presented with another L1 protocol, test and improve the try-except
+        # for the purpose above, <<dpkt.pcap.Reader>>.datalink() may be used
+        try:
+            # unpack the Ethernet frame (mac src, mac dst, ether type). Buf must be of the expected format: L1 Ethernet.
+            eth = dpkt.ethernet.Ethernet(buf)
+        except:
+            # if this exception is reached, then the L1 protocol (physical layer) is not Ethernet
+            n_bitstreams_others += 1
+            continue
+        
+        # here, it is confirmed that we have an EthL1 bitstream
+        n_bitstreams_eth += 1
+
         # ================
         # LAYER2: ETHERNET
         # ================
         # FUTURE-TODO: implement handlers for more L2 protocols
 
-        # unpack the Ethernet frame (mac src, mac dst, ether type). Buf must be of the expected format: L1 Ethernet.
-        eth = dpkt.ethernet.Ethernet(buf)
-        packet_no += 1
-
-        # check if frame is an EthL1-ARP packet
+        # [-] check if the Ethernet bitstream contains an EthL1-ARP frame
         if isinstance(eth.data, dpkt.arp.ARP):
-            n_packets_arp += 1
+            n_frames_arp += 1
             continue
-
-        # check if frame is an EthL1-LLC packet
-        if isinstance(eth.data, dpkt.llc.LLC):
-            n_packets_llc += 1
+        # [-] check if the Ethernet bitstream contains an EthL1-LLC frame
+        elif isinstance(eth.data, dpkt.llc.LLC):
+            n_frames_llc += 1
+            continue
+        # [+] check if the Ethernet bitstream contains an EthL1-EthL2 frame
+        elif isinstance(eth.data, dpkt.Packet):
+            n_frames_eth += 1
+        # [-] other non-supported L2 frames above EthL1 bitstreams
+        else:
+            n_frames_others += 1
             continue
 
         # ============
@@ -84,14 +104,16 @@ def build_packets(input_file, args):
         # ============
         # FUTURE-TODO: implement handlers for more L3 protocols
 
-        # check if the Ethernet data contains an EthL1-EthL2-IPv6 packet
+        # [-] check if the Ethernet frame contains an EthL1-EthL2-IPv6 packet
         if isinstance(eth.data, dpkt.ip6.IP6):
             n_packets_eth_ipv6 += 1
             continue
-
-        # check if the Ethernet data contains an EthL1-EthL2-IPv4 packet. If it doesn't, ignore it.
-        if not isinstance(eth.data, dpkt.ip.IP):
-            n_packets_others += 1
+        # [+] check if the Ethernet frame contains an EthL1-EthL2-IPv4 packet
+        elif isinstance(eth.data, dpkt.ip.IP):
+            n_packets_eth_ipv4 += 1
+        # [-] other non-supported L3 packets above EthL1-EthL2 frames
+        else:
+            n_packets_eth_others += 1
             continue
 
         # unpack the data within the Ethernet frame: the confirmed EthL1-EthL2-IPv4 packet
@@ -123,20 +145,28 @@ def build_packets(input_file, args):
         # ===========================================
         # FUTURE-TODO: implement handlers for more L3plus and L4 protocols
 
-        # check if the Ethernet data contains an Eth-IPv4-ICMP packet
+        # [-] check if the Ethernet data contains an EthL1-EthL2-IPv4-ICMP packet
         if isinstance(ipv4.data, dpkt.icmp.ICMP):
             n_packets_eth_ipv4_icmp += 1
             continue
-        # check if the Ethernet data contains an Eth-IPv4-IGMP packet
+        # [-] check if the Ethernet data contains an EthL1-EthL2-IPv4-IGMP packet
         elif isinstance(ipv4.data, dpkt.igmp.IGMP):
             n_packets_eth_ipv4_igmp += 1
             continue
-        # check if the Ethernet data contains an Eth-IPv4-TCP packet
-        elif isinstance(ipv4.data, dpkt.tcp.TCP):
-            n_packets_eth_ipv4_tcp += 1
-        # check if the Ethernet data contains an Eth-IPv4-UDP packet
+        # [+] check if the Ethernet data contains an EthL1-EthL2-IPv4-UDP packet
         elif isinstance(ipv4.data, dpkt.udp.UDP):
             n_packets_eth_ipv4_udp += 1
+        # [+] check if the Ethernet data contains an EthL1-EthL2-IPv4-TCP packet
+        elif isinstance(ipv4.data, dpkt.tcp.TCP):
+            n_packets_eth_ipv4_tcp += 1
+        # [+] check if the Ethernet data contains an EthL1-EthL2-IPv4-SCTP packet
+        elif isinstance(ipv4.data, dpkt.sctp.SCTP):
+            n_packets_eth_ipv4_sctp += 1
+            continue
+        # [-] other non-supported L3+ and L4 packets above EthL1-EthL2-IPv4 packets (including Raw IPv4 packets)
+        # [!] NOTE: raw IP probes for any protocol are not checked because the researcher haven't yet found a
+        # way to correctly separate them from unsupported protocols above the chosen IP protocol field's layer
+        # yet, however it should be done for the sake of rawIP-based scans
         else:
             n_packets_eth_ipv4_others += 1
             continue
@@ -170,10 +200,10 @@ def build_packets(input_file, args):
         # note: inner_sep_counter is incremented whenever a flow reaches its end, which is defined by the protocol used
         flow_id = [src_ip, src_port, dst_ip, dst_port, l4_protocol_name, 0]
 
-        # Packet-level debug Info
+        # Bitstream-level debug Info
         if args.debug == "1":
-            print(make_header_string("Packet-level Debugging"), flush=True)
-            print("[D] Packet no.:", packet_no, flush=True)
+            print(make_header_string("Bistream-level Debugging"), flush=True)
+            print("[D] Bitstream no.:", n_bitstreams_eth, flush=True)
             print("[D] IPv4 header length:", ipv4_header_len, flush=True)
             print("[D] IPv4 options length:", ipv4_options_len, flush=True)
             print("[D] IPv4 data length:", ipv4_data_len, flush=True)
@@ -204,28 +234,34 @@ def build_packets(input_file, args):
             # UDP packet genes
             # ================
             # https://pdfs.semanticscholar.org/3648/75dcf14e886a9f9fa9310bb6fd9c8a4f4105.pdf
-            # MAYBE-TODO: in case it applies, do udp packet genes
+            # MAYBE-TODO: in case it applies, do udp packet genes (checksum? irrelevant; others seem irrelevant as well)
             udp_packet_genes = []
             packet_genes += udp_packet_genes
         # store packet genes
         packets.append(packet_genes)
 
     if args.verbose:
-        print("[-] EthL1-ARP packets:" + Colors.RED, n_packets_arp, "packets" + Colors.ENDC, flush=True)
-        print("[-] EthL1-LLC packets:" + Colors.RED, n_packets_llc, "packets" + Colors.ENDC, flush=True)
+        print("[+] EthL1 bitstreams:" + Colors.GREEN, n_bitstreams_eth, "bitstreams" + Colors.ENDC, flush=True)
+        print("[-] <Other L1> bitstreams:" + Colors.RED, n_bitstreams_others, "bitstreams" + Colors.ENDC, flush=True)
+        print("[+] EthL1-EthL2 frames:" + Colors.GREEN, n_frames_eth, "frames" + Colors.ENDC, flush=True)
+        print("[-] EthL1-ARP frames:" + Colors.RED, n_frames_arp, "frames" + Colors.ENDC, flush=True)
+        print("[-] EthL1-LLC frames:" + Colors.RED, n_frames_llc, "frames" + Colors.ENDC, flush=True)
+        print("[-] EthL1-<Other L2> frames:" + Colors.RED, n_frames_others, "frames" + Colors.ENDC, flush=True)
+        print("[+] EthL1-EthL2-IPv4 packets:" + Colors.GREEN, n_packets_eth_ipv4, "packets" + Colors.ENDC, flush=True)
+        print("[-] EthL1-EthL2-IPv6 packets:" + Colors.RED, n_packets_eth_ipv6, "packets" + Colors.ENDC, flush=True)
+        print("[-] EthL1-EthL2-<Other L3> packets:" + Colors.RED, n_packets_eth_others, "packets" + Colors.ENDC, flush=True)
         print("[-] EthL1-EthL2-IPv4-ICMP packets:" + Colors.RED, n_packets_eth_ipv4_icmp, "packets" + Colors.ENDC, flush=True)
         print("[-] EthL1-EthL2-IPv4-IGMP packets:" + Colors.RED, n_packets_eth_ipv4_igmp, "packets" + Colors.ENDC, flush=True)
-        print("[+] EthL1-EthL2-IPv4-TCP packets:" + Colors.GREEN, n_packets_eth_ipv4_tcp, "packets" + Colors.ENDC, flush=True)
         print("[+] EthL1-EthL2-IPv4-UDP packets:" + Colors.GREEN, n_packets_eth_ipv4_udp, "packets" + Colors.ENDC, flush=True)
-        print("[-] EthL1-EthL2-IPv4-<Other L4> packets:" + Colors.RED, n_packets_eth_ipv4_others, "packets" + Colors.ENDC, flush=True)
-        print("[-] EthL1-EthL2-IPv6 packets:" + Colors.RED, n_packets_eth_ipv6, "packets" + Colors.ENDC, flush=True)
-        print("[-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets:" + Colors.RED, n_packets_others, "packets" + Colors.ENDC, flush=True)
+        print("[+] EthL1-EthL2-IPv4-TCP packets:" + Colors.GREEN, n_packets_eth_ipv4_tcp, "packets" + Colors.ENDC, flush=True)
+        print("[-] EthL1-EthL2-IPv4-SCTP packets:" + Colors.RED, n_packets_eth_ipv4_sctp, "packets" + Colors.ENDC, flush=True)
+        print("[-] EthL1-EthL2-IPv4-<Other L3+/L4> packets:" + Colors.RED, n_packets_eth_ipv4_others, "packets" + Colors.ENDC, flush=True)
         print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
     
     # Verify some safe conditions
     if args.safe_check:
         if ipv4_header_len < 20 or ipv4_header_len > 60:
-            print("[!] Invalid IPv4 header length in packet no.", packet_no, file=sys.stderr, flush=True)
+            print("[!] Invalid IPv4 header length in bitstream no.", n_bitstreams_eth, file=sys.stderr, flush=True)
             sys.exit(1)
 
     return packets

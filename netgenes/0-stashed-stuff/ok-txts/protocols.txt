@@ -1,4 +1,0 @@
-Protocols:
-UDP - 
-TCP - 
-SCTP - The SCTP protocol is a relatively new alternative to the TCP and UDP protocols, combining most characteristics of TCP and UDP, and also adding new features like multi-homing and multi-streaming. It is mostly being used for SS7/SIGTRAN related services but has the potential to be used for other applications as well.
