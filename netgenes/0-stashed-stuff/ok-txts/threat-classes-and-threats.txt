@@ -1,3 +1,13 @@
+Notes about this section:
+- A Threat Class is implemented by one or more Threats.
+- A Threat Class encompasses one or more Generic Attack Techniques.
+- A Threat Class has an Intent.
+- Intent describes the main objectives behind a Threat Class.
+- A Threat encompasses one or more Specific Attack Techniques.
+- A Generic Attack Technique is implemented by one or more Tools.
+- A Specific Attack Technique is implemented by one or more Tools.
+- Tool Applicability describes criteria for acceptable Tools.
+
 1. L2/L3/L3+/L4 Threat Class - Host Discovery (by means of service discovery)
 1.1. L2 Threat - ARP Host Discovery
 1.2. L3 Threat - IP Protocol Host Discovery
@@ -7,7 +17,11 @@
 
 Intent: Probe multiple selected hosts to find active ones.
 
-Known Technique(s):
+Generic Attack Technique(s):
+- CIDR-based Selection - the attacker probes multiple hosts contained by a network range written in the CIDR (Classless Inter-Domain Routing) notation. [1]
+- Host Range Selection - the attacker probes multiple hosts by specifying a range of IP addresses. [1]
+
+Specific Attack Technique(s):
 - ARP Ping Scan (-sn -PR) - within a Local Area Network (LAN), the attacker sends an ARP request to a destination MAC address, which can either be a single MAC address, a multicast MAC address or the broadcast MAC address (the most common). If any device is listening on those channels, it will respond (given a normal system configuration) to the request with a valid MAC address associated with the IP, in accordance to its ARP table, given that default dynamic ARP table entries are enabled. This scan is very powerful to find hidden devices in a network, since ARP requests will very likely be responded to by whoever owns the requested information and is actively listening on those channels. In case of a response, we have confirmation that the host is active, unless the respondent host had ARP table entries that should already have expired or, in a more unusual case, if the respondent host was ARP spoofed. [1.1]
 - IP Protocol Ping (-sn -PO) - for each host, the attacker sends multiple raw IP packets containing the IP protocol number in the IP header. For example, the attacker can send six raw IP packets, each containing a different protocol: ICMP (protocol 1), IGMP (protocol 2), IP-in-IP (protocol 4), TCP (protocol 6), UDP (protocol 17) and SCTP (protocol 132). This method looks for either responses using the same protocol (host supports protocol) or ICMP protocol unreachable messages (host doesn't support protocol), both indicating that the the target host is alive. [1.2]
 - ICMP Echo Request Scan (-sn -PE) - for each host, the attacker sends an ICMP type 8 packet. If the host responds with an ICMP type 0 packet, it is up, else the host may be down or the packet was filtered. [1.3]
@@ -17,8 +31,6 @@ Known Technique(s):
 - UDP Ping Scan (-sn -PU) - for each host, the attacker sends a UDP request to one given port. If the host responds, the host is up, else the host may be down or the packet was filtered. [1.4]
 - TCP SYN Ping Scan (-sn -PS) - for each host, the attacker sends a TCP request with the SYN flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered. [1.5]
 - TCP ACK Ping Scan (-sn -PA) - for each host, the attacker sends a TCP packet with the ACK flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered. [1.5]
-- CIDR-based Selection - the attacker probes multiple hosts contained by a network range written in the CIDR (Classless Inter-Domain Routing) notation. [1]
-- Host Range Selection - the attacker probes multiple hosts by specifying a range of IP addresses. [1]
 
 Tool Applicability: Tools that can communicate over a network can eventually be used for host discovery, given that the protocols used to communicate are supported by the targeted machine. However, we will only consider a host discovery tool as such if it complies with at least one of the following conditions:
 - It supports sending and interpreting ARP probes for multiple hosts
@@ -43,21 +55,20 @@ ZMap - 1, 2 (ICMP, UDP, TCP)
 
 Intent: Probe multiple ports of a given host, for a given L4 protocol.
 
-Known Technique(s):
+Generic Attack Technique(s):
+- FTP Bounce Scan (-b) - this method allows an attacker to use a vulnerable FTP server as a proxy to portscan other hosts. [2]
+
+Specific Attack Technique(s):
 - UDP Scan (-sU) - the attacker sends a UDP packet to each port. If the target responds with service data, the port is open. If the target does not respond, the port is either closed or filtered. [2.1]
 - TCP Connect Scan - the attacker sends a TCP packet with the SYN flag bit set to each port. If the target responds with a SYN-ACK packet, the port is open and accepting requests: the attacker sends an ACK packet back; the target then responds with the service's specific data; then, the attacker sends a RST packet and closes the connection. If the target responds with a RST packet, the port is closed. Else, if the target does not respond, the port is filtered. [2.2]
 - TCP SYN Scan (-sS) - the attacker sends a TCP packet with the SYN flag bit set to each port. If the target responds with SYN-ACK, the port is open and accepting requests: the attacker sends a RST packet to close the connection. If the target responds with a RST packet, the port is closed. Else, if the target does not respond, the port is filtered. [2.2]
-- TCP ACK Scan (-sA) - the attacker sends a TCP packet with the ACK flag bit set to each port. If the target responds with a RST packet, the port is either open or closed, meaning that the port is unfiltered (not blocked by any firewall). Else, if the target does not respond or if it responds with certain ICMP error messages (type 3, code 0, 1, 2, 3, 9, 10 or 13), then the port is filtered. [2.2]
-- TCP Null Scan (-sN) - the attacker sends a TCP packet with no flag set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP unreachable error (type 3, code 0, 1, 2, 3, 9, 10 or 13) then the port is filtered. [2.2]
-- TCP Xmas Scan (-sX) - the attacker sends a TCP packet with the FIN, PSH and URG flag bits set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP unreachable error (type 3, code 0, 1, 2, 3, 9, 10 or 13) then the port is filtered. [2.2]
-- TCP FIN Scan (-sF) - the attacker sends a TCP packet with the FIN flag bit set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP unreachable error (type 3, code 0, 1, 2, 3, 9, 10 or 13) then the port is filtered. [2.2]
-
-Other known technique(s):
-- TCP Window Scan (-sW) - this is not a technique that would alter the sent packet, rather an analysis technique for the other TCP port scans. The attacker may analyze the response packet to check whether a port is open: a positive window size indicates an open port and a zero size window indicates a closed port; if the response packet time to live (ttl) is lower than the rest of the received RST packets the port is likely to be open. This applies to most systems, but there are other systems that may return the inverse. [2.2]
-- TCP Custom Scan (--scanflags) - the attacker sends a TCP packet with a custom set of TCP flag bits set to each port. The analysis depends on the TCP flag set used, as this means different possible responses and interpretations. It can be used, for example, to find bypassable edge-cases for firewalls and IDSs. [2.2]
+- TCP ACK Scan (-sA) - the attacker sends a TCP packet with the ACK flag bit set to each port. If the target responds with a RST packet, the port is either open or closed, meaning that the port is unfiltered (not blocked by any firewall). Else, if the target does not respond or if it responds with certain ICMP error messages (ICMP Type 3; codes 0, 1, 2, 3, 9, 10 or 13), then the port is filtered. [2.2]
+- TCP Null Scan (-sN) - the attacker sends a TCP packet with no flag set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP "Destination Unreachable" error (ICMP Type 3; codes 0, 1, 2, 3, 9, 10 or 13) then the port is filtered. [2.2]
+- TCP Xmas Scan (-sX) - the attacker sends a TCP packet with the FIN, PSH and URG flag bits set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP "Destination Unreachable" error (ICMP Type 3; codes 0, 1, 2, 3, 9, 10 or 13) then the port is filtered. [2.2]
+- TCP FIN Scan (-sF) - the attacker sends a TCP packet with the FIN flag bit set to each port. If the target responds with a RST packet, the port is considered closed. Else, if the target does not respond, the port is either open or filtered. Finally, if the target responds with an ICMP "Destination Unreachable" error (ICMP Type 3; codes 0, 1, 2, 3, 9, 10 or 13) then the port is filtered. [2.2]
 - TCP Idle Scan (-sI) - the attacker sends a SYN-ACK packet to a host, which will be dubbed "unaware host" because its technical name, "zombie", already associates to a completely different meaning in the botnet context. The unexpected SYN-ACK packet sent to the unaware host will be responded to with a RST packet sent back to the attacker, which has a certain IP ID associated with it. The attacker then sends a SYN packet to the target host with the source IP address spoofed with the IP of the unaware host, incrementing its IP ID by 1. On this moment, there are three possible scenarios: (A1) The target host responds to the unaware host with a SYN-ACK packet. Since the unaware host was not expecting the packet, it sends a RST packet to the target host, incrementing its IP ID by 1 again. (A2) The target host responds to the unaware host with a RST packet. The unaware host did not expect the packet, but since it isn't a packet that tries to initiate a connection (rather, abort it), the unaware host does not respond with any packet, thus not incrementing its own IP ID. (A3) The target host does not respond to the unaware host. As such, the unaware host does not receive any packet and, more importantly, it doesn't send a packet back, such as in scenario A2, thus not incrementing its IP ID. Continuation: Once any of the previous scenarios has taken place, the attacker will send a SYN-ACK packet to the unaware host, to which the unaware host will respond with a RST packet. The IP ID of the final RST packet will then be analyzed by the attacker for the existence of one of the following scenarios: (B1) The IP ID was incremented by 2 since the first packet received from the unaware host, which means that the target host responded with a SYN-ACK packet to the unaware host, so the probed port is open. (B2) The IP ID was only incremented by 1 since the first packet received from the unaware host, which means that the target host responded with a RST packet or did not respond at all, since in both situations the unaware host does not create any response packet for the target host. As such, from the attacker's perspective, the probed port might be either closed (scenario A2) or filtered (scenario A3). The attacker then repeats this whole process for each port that he intends to scan. [2.2]
 - TCP Maimon Scan (-sM) - this technique is named after its discoverer, Uriel Maimon. It starts with the attacker sending a TCP packet with the FIN and ACK flag bits set to each port. According to the RFC-793 (TCP RFC), the host should generate a RST packet in response, independently of the fact of the port being open or closed. However, Uriel found out that many BSD-derived systems simply drop this packet if the port is open. [2.2]
-- FTP Bounce Scan (-b) - this method allows an attacker to use a vulnerable FTP server as a proxy to portscan other hosts. [2]
+- TCP Custom Scan (--scanflags) - the attacker sends a TCP packet with a custom set of TCP flag bits set to each port. The analysis depends on the TCP flag set used, as this means different possible responses and interpretations. It can be used, for example, to find bypassable edge-cases for firewalls and IDSs. [2.2]
 - SCTP INIT Scan (-sY) - the attacker sends an SCTP INIT packet to each port of the target host. An SCTP INIT-ACK response packet indicates that the port is open and, in this case, the attacker aborts the connection right after. An SCTP ABORT response packet indicates that the port is closed and, if no response is received after several retransmissions, the port is marked as filtered. [2.3]
 - SCTP "COOKIE ECHO" Scan (-sZ) - the attacker sends an SCTP COOKIE ECHO packet to each port of the target host. If the target host doesn't respond, the port is either open or filtered. If the target host responds with an SCTP ABORT packet, then the port is closed. [2.3]
 
@@ -80,10 +91,12 @@ ZMap - 1, 2 (ICMP, UDP, TCP)
 3.1. L3 Threat - IP Protocol Scan over IPv4 (-sO)
 3.2. L3 Threat - IP Protocol Scan over IPv6
 
-Intent: Find out information about a target host using L3 mechanisms.
+Intent: Find out information about a target host using raw L3 requests.
 
-Known Techniques:
-- IP Protocol Scan over IPv4 (-sO) - the objective of this scan is determining what IP protocols, running over IPv4, are available in the target host. The attacker sends an IPv4 packet to the target host, with the "Protocol" field filled in the IPv4 header for each targeted IP protocol number. For example, the attacker can send six IP packets asking for six IP protocols support: ICMP (protocol 1), IGMP (protocol 2), IP-in-IP (protocol 4), TCP (protocol 6), UDP (protocol 17) and SCTP (protocol 132). If the attacker receives a response from the target host using the probed protocol or an ICMP port unreachable error (type 3, code 3), the protocol is supported (open). If an ICMP protocol unreachable error (type 3, code 2) is received, the protocol is marked as unsupported (closed). Other ICMP unreachable errors (type 3, code 0, 1, 9, 10, or 13) cause the protocol to be marked filtered. If no response is received after retransmissions, the protocol is marked as possibly supported (open or filtered). [3.1]
+Generic Attack Technique(s): None Yet.
+
+Specific Attack Technique(s):
+- IP Protocol Scan over IPv4 (-sO) - the objective of this scan is determining what IP protocols, running over IPv4, are available in the target host. The attacker sends an IPv4 packet to the target host, with the "Protocol" field filled in the IPv4 header for each targeted IP protocol number. For example, the attacker can send six IP packets asking for six IP protocols support: ICMP (protocol 1), IGMP (protocol 2), IP-in-IP (protocol 4), TCP (protocol 6), UDP (protocol 17) and SCTP (protocol 132). If the attacker receives a response from the target host using the probed protocol or an ICMP "Destination Unreachable - Port Unreachable" error (ICMP Type 3, code 3), the protocol is supported (open). If an ICMP "Destination Unreachable - Protocol Unreachable" error (ICMP Type 3, code 2) is received, the protocol is marked as unsupported (closed). Other ICMP "Destination Unreachable" errors (ICMP Type 3; codes 0, 1, 9, 10, or 13) cause the protocol to be marked filtered. If no response is received after retransmissions, the protocol is marked as possibly supported (open or filtered). [3.1]
 - IP Protocol Scan over IPv6 - the objective of this scan is determining what IP protocols, running over IPv6, are available in the target host. The attacker sends an IPv6 packet to the target host, with the "Next Header" field filled in the IP header for each targeted IP protocol number. Similarly to the IPv4 protocol scan, if the attacker receives a response from the target host using the probed protocol then the protocol is supported. However, the interpretation of the responses will differ since ICMPv4 and ICMPv6 responses differ. ICMPv6 response interpretation will not be contemplated in this work. [3.1]
 
 Tool Applicability: Any tool that allows sending and interpreting multiple L3-related probes for a given host.
@@ -104,9 +117,11 @@ Hping3 - 1, 2, 3, 4 (raw IP, ICMP, UDP, TCP)
 
 Intent: Test multiple credential combinations in a continuous manner to find out correct ones.
 
-Known Technique(s):
+Generic Attack Technique(s):
 - Traditional Bruteforce Attack - test multiple passwords per few accounts. [4]
 - Reverse Bruteforce Attack (a.k.a. Password Spraying Attack) - test few passwords per multiple accounts. [4]
+
+Specific Attack Technique(s): None Yet.
 
 Tool Applicability: Any tool that supports brute-forcing credentials associated with a L7 protocol.
 Tools:
@@ -120,14 +135,20 @@ CrackMapExec (SMB)
 5. L3+ Threat Class - L3+-based Resource Exhaustion Denial of Service Attack
 5.1. L3+ Threat - ICMP-based Denial of Service Attack
 
-Intent: Overwhelm a target system with multiple malicious L3-level control queries directed towards a network, with the goal of exhausting that system's network and/or computational resources.
+Intent: Overwhelm a target system with multiple malicious L3-level control queries, with the goal of exhausting that system's network and/or computational resources.
 
-Known Technique(s):
-- ICMP Flood / Ping Flood - the attacker sends multiple ICMP echo-request packets to the target system. [5.1]
-- Smurf Attack - TODO [5.1]
-- Amplification Attack - TODO (a Smurf amplifier is a computer network that lends itself to being used in a Smurf attack. Smurf amplifiers act to worsen the severity of a Smurf attack because they are configured in such a way that they generate a large number of ICMP replies to the target host at the spoofed source IP address). [5.1]
+Generic Attack Technique(s):
+- Distributed Denial of Service (DDoS) Attack - use multiple systems to attack a target system. [5]
+- Reflection and Amplification Attack - the attacker uses systems which are running specific network protocols that respond to small requests with large responses. This fact provides an attacker the possibility of sending multiple spoofed requests with the target's IP address (as source address) and redirect those systems' responses to the target system, resulting in a Distributed Denial of Service (DDoS) attack. [5]
 
-Tool Applicability: TODO
+Specific Attack Technique(s):
+- ICMP Ping (Type 8) Flood - the attacker sends multiple ICMP "Echo" (ICMP Type 8) request packets to the target system. [5.1]
+- ICMP Destination Unreachable (Type 3) Flood - the attacker sends multiple ICMP "Destination Unreachable" (ICMP Type 3) packets to the target system. Although this ICMP packet type is a response, since the ICMP protocol is not stateful, the packet will still be processed. [5.1]
+- ICMP Time Exceeded (Type 11) Flood - the attacker sends multiple ICMP "Time Exceeded" (ICMP Type 11) packets to the target system. Although this ICMP packet type is a response, since the ICMP protocol is not stateful, the packet will still be processed. [5.1]
+- Smurf Attack (specific "Reflection and Amplification Attack") - the attacker broadcasts spoofed ICMP "Echo Request" packets on a network, so that systems which are listening on the IP broadcast address send ICMP "Echo Reply" response packets to the target system. [5.1]
+- Fraggle Attack (specific "Reflection and Amplification Attack") - the attacker sends spoofed UDP requests to multiple systems at ports 7 (Echo Protocol) and 19 (CHARGEN Generator Protocol), so that those systems send ICMP "Destination Unreachable - Port Unreachable" (ICMP Type 3, code 3) response packets to the target system. [5.1]
+
+Tool Applicability: Every tool that is able to perform multiple malicious requests against a L3-level control service (subset of L3+ services) to cause network and computational resource exhaustion on the targeted system, ultimately resulting in a lack of availability to legitimate L3-level control queries.
 Tools:
 <name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
 Hping3 (raw IP, ICMP, UDP, TCP) (None in particular)
@@ -142,26 +163,34 @@ Intent: Overwhelm a target system with multiple malicious L4-level requests dire
 
 Note: Since any received packet needs to be processed by the network stack of the targeted system, a denial of service attack may still occur against closed ports, which is why we often use the term "system" rather than "server", which designates a system running a network service usable by clients. We use the term "server" whenever the attack is only applicable against one.
 
-Known Technique(s):
+Generic Attack Technique(s):
 - High-Rate Attack - quickly and continuously launch multiple requests against a target system. [6]
-- Reflection and Amplification Attack - the attacker uses servers which are running specific network protocols that respond to small requests with large responses. This fact provides an attacker the possibility of sending multiple spoofed requests with the target's IP address (as source address) and redirect those servers' responses to the target system, resulting in a Distributed Denial of Service (DDoS) attack. [6]
 - Distributed Denial of Service (DDoS) Attack - the attacker uses multiple systems to attack a target system. [6]
-- Low Rate Attack - the attacker launches multiple L4-level requests against a target server and, for each established connection, slowly sends data back to the server to keep it holding to the connection as long as possible. [6.2, 6.3]
+- Reflection and Amplification Attack - the attacker uses servers which are running specific network protocols that respond to small requests with large responses. This fact provides an attacker the possibility of sending multiple spoofed requests with the target's IP address (as source address) and redirect those servers' responses to the target system, resulting in a Distributed Denial of Service (DDoS) attack. [6]
+- Low Rate Attack - the attacker launches multiple L4-level requests against a target server and, for each established connection, slowly sends data back to the server to keep it holding to the connection as long as possible. [6]
+
+Specific Attack Technique(s):
 - UDP-based Reflection and Amplification Attack - the attacker sends multiple spoofed UDP packets to appear as if these packets originated from the target's network IP address, to multiple systems running UDP services. This results in those multiple systems reflecting large UDP response packets to the target's network, resulting in a Distributed Denial of Service (DDoS) attack. DNS and NTP are examples of UDP services that are very usually used to perform this kind of attack, but many others can be used as well. More recently, in February 2018, the Memcached service was used for this kind of attack with an unprecededent with an unprecedented amplification factor. [6.1]
 - TCP SYN-ACK Reflection and Amplification Attack - the attacker sends multiple spoofed TCP packets to appear as if these packets originated from the target's network IP address, to multiple systems running TCP services. This results in those multiple systems reflecting TCP SYN-ACK response packets to the target's network, resulting in a Distributed Denial of Service (DDoS) attack. [6.2]
-- TCP SYN Flood - the attacker sends multiple SYN packets to a target server, resulting in multiple SYN-ACK responses, only to never send any ACK back to the target server. If the attack is successful, it results in the target server maintaining multiple ports occupied for the initiated half-open connections, resulting in a denial of service for legitimate clients. [6.2]
-- TCP Sockstress Attack Group - the attacker exploits a vulnerability in the TCP 3-way handshake, creating an indefinite connection. Although application-specific payload may also be used with it, this technique exploits concepts which are mainly present at the transport layer level and it includes many variants of it, including: [6.2]
-	- Small Window Stress Attack - the attacker sends TCP packets with small-sized windows defined to the server, expressing a fake unavailability to receive packets with a data size greater than X bytes. In response to the former, the server splits up the data it has yet to send into multiple X-byte chunks and stores it on memory. The attacker will then continuously request the expected X-byte sized chunks at a specified rate and in specified intervals, which will optimally be the slowest rate and intervals at which the target server keeps the connection active, for the longest time possible and avoiding any timeout event. Since the target server will hold on to the data it is slowly sending, the server will incur in excessive memory consumption. [6.2]
-	- Connection Flood Stress - TODO
-	- Zero Window Connection Stress - TODO
-	- Segment Hole Stress - TODO
-	- Req Fin Pause Stress - TODO
-	- Activate Reno Pressure Stress - TODO
+- TCP SYN Flood Attack - the attacker sends multiple SYN packets to a target server, resulting in multiple SYN-ACK responses, only to never send any ACK back to the target server. This results in the target server maintaining multiple sockets occupied for the initiated half-open connections, resulting in a denial of service for legitimate clients who want to connect to those ports. [6.2]
+- TCP "Tsunami" Flood Attack - similar to the TCP SYN Flood attack, however sent packets contain garbage data to cause the server additional stress when processing each request. [6.2]
+- TCP Custom Flag Floods - the attacker sends multiple TCP packets with custom sets of TCP flags. Some already used attacks based on custom flag combinations are: URG-PSH-SYN Flood, URG-PSH-RST Flood, "All TCP Flags" Flood (Xmas Flood), ACK-SYN Flood, PSH-RST-FIN Flood, URG-ACK-FIN Flood, among others. [6.2]
+- TCP Connection Flood - the attacker sends multiple SYN packets to a target server, resulting in multiple SYN-ACK responses, to which the attacker will respond with ACK packets ideally in the longest time possible before the server times out from the connection attempt. This results in multiple longest-time connection initiations (3-way handshakes) between the attacker and the server to exhaust server's resources for the longest time possible, which the attacker may complement with additional measures to keep the connection active for the longest time as well.
+- TCP Connection Flood Stress (TCP Sockstress Attack 1) - similar to the TCP connection flood. [6.2]
+- TCP Zero Window Connection Stress (TCP Sockstress Attack 2) - the attacker initiates a TCP connection with the target server. The attacker sends zero-sized window TCP packets, begun to be specified in the last ACK packet of the 3-way handshake, expressing a false unavailability to receive any packets with a data size greater than 0 bytes. In response to the former, the server stores in memory all the data it has yet to send. The attacker will then continuously request the expected X-byte sized chunks at a specified rate and in specified intervals, which will optimally be the slowest rate and intervals at which the target server keeps the connection active, for the longest time possible and avoiding any timeout event. Since the server will have to hold on to the stored data, it will incur in excessive memory consumption. [6.2]
+- TCP Small Window Stress Attack (TCP Sockstress Attack 3) - the attacker initiates a TCP connection with the target server. The attacker sends small-sized window TCP packets, begun to be specified in the last ACK packet of the 3-way handshake, expressing a false unavailability to receive packets with a data size greater than X bytes (the Sockstress's framework defines 4 bytes as the default window size). In response to the former, the server splits up the data it has yet to send into multiple X-byte chunks and stores it in memory. The attacker will then continuously request the expected X-byte sized chunks at a specified rate and in specified intervals, which will optimally be the slowest rate and intervals at which the target server keeps the connection active, for the longest time possible and avoiding any timeout event. Since the server will have to hold on to the data that it is very slowly being sent, it will incur in excessive memory consumption. [6.2]
+- TCP Segment Hole Stress (TCP Sockstress Attack 4) - the attacker initiates a TCP connection with the target server. The attacker sends 4 bytes to the beginning of the TCP window, then sends 4 bytes to the end of the TCP window, and then sets the windows size to zero. The network stack vulnerable servers may respond to the former attack by allocating multiple pages of kernel memory per connection made, incurring in excessive memory consumption. Note: this attack is yet unclear in its execution, it would need to be further analyzed. [6.2]
+- TCP Req Fin Pause Stress (TCP Sockstress Attack 5) - the attacker initiates a TCP connection with the target server. The attacker sends a L7 application payload (e.g. HTTP GET) inside a TCP PSH packet. The attacker then sends a FIN packet with a zero size window, to which vulnerable servers will not respond with a FIN-ACK packet to close the connection, but rather will maintain the connection open on their side and indefinitely keep the socket occupied on the FIN_WAIT_1 state (which means that the socket knows the remote computer has closed the connection, but it is still waiting for the local application that was using the socket to acknowledge the end of the connection and finally allow releasing the socket). [6.2]
+- TCP Activate Reno Pressure Stress (TCP Sockstress Attack 6) - the attacker initiates a TCP connection with the target HTTP server, sends a L7 application payload (e.g. HTTP GET) inside a TCP PSH packet and sends three duplicate ACK packets. Note: it would be interesting to find more reliable information about this attack, however I could not find any more information on it. [6.2]
 - SCTP INIT Flood - the attacker sends multiple SCTP INIT packets to a target system that supports SCTP. [6.3]
 - SCTP Address Camping - the attacker connects to an SCTP server and "camps upon" or "holds up" a valid peer's IP address, preventing the legitimate peer from communicating with the server. This technique targets the SCTP's multi-homing feature and directly affects the peers' ability to establish a connection with the server. [6.3]
-- SCTP-based Reflection and Amplification Attack (SCTP Bombing Attacks 1-5) - TODO [6.3]
+- SCTP-based Reflection and Amplification Attack 1 (SCTP Bombing Attack 1) - TODO [6.3]
+- SCTP-based Reflection and Amplification Attack 2 (SCTP Bombing Attack 2) - TODO [6.3]
+- SCTP-based Reflection and Amplification Attack 3 (SCTP Bombing Attack 3) - TODO [6.3]
+- SCTP-based Reflection and Amplification Attack 4 (SCTP Bombing Attack 4) - TODO [6.3]
+- SCTP-based Reflection and Amplification Attack 5 (SCTP Bombing Attack 5) - TODO [6.3]
 
-Tool Applicability: Every tool that is able to perform multiple malicious requests to cause a significant resource exhaustion on a system running an HTTP server and, consequently, a toll on the HTTP server's availability.
+Tool Applicability: Every tool that is able to perform multiple malicious requests against a L4 service or any application running over a L4 service to cause network and computational resource exhaustion on the targeted server, ultimately resulting in a lack of availability to legitimate clients.
 Tools:
 <name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
 Ncat (UDP, TCP, SCTP) (None in particular)
@@ -172,20 +201,24 @@ DoS Slowloris (TCP) (HTTP/HTTPS)
 
 
 7. L7 Threat Class - HTTP-based Resource Exhaustion Denial of Service Attack
-7.1. L7 Threat - Low Rate Attack
+7.1. L7 Threat - HTTP Low and Slow Attack
 7.2. L7 Threat - HTTP Flood
 
 Intent: Overwhelm a target HTTP server with multiple malicious HTTP requests in order to exhaust its network and/or computational resources.
 
-Known Technique(s):
-- HTTP-based Low and Slow Attack - slowly exhaust the network and computational resources of a target HTTP server by establishing multiple full-open HTTP connections with it, which in turn will have to keep multiple TCP sockets occupied. [7.1]
+Generic Attack Technique(s):
+- High-Rate Attack - quickly and continuously launch multiple requests against a target HTTP server. [7]
+- Distributed Denial of Service (DDoS) Attack - the attacker uses multiple server to attack a target HTTP server. [7]
+- Reflection and Amplification Attack - the attacker uses servers which are running specific network protocols that respond to small requests with large responses. This fact provides an attacker the possibility of sending multiple spoofed requests with the target's IP address (as source address) and redirect those servers' responses to the target server, resulting in a Distributed Denial of Service (DDoS) attack. [7]
+- Low Rate Attack - the attacker launches multiple HTTP requests against a target server and, for each established connection, slowly sends data back to the server to keep it holding to the connection as long as possible. [7]
+
+Specific Attack Technique(s):
 - Slowloris - the attacker performs multiple HTTP persistent connections with the target server and slowly sends partial HTTP headers to it, which will keep it waiting for the receival of the rest of the headers. Timeouts are avoided by periodically sending "Keep alive" (not to confuse with the HTTP header value "keep-alive" used on the "connection" field) packets, i.e., "PSH-ACK" TCP packets transporting partial headers on the data field. [7.1]
 - R.U.D.Y (R-U-DEAD-YET) - the attacker generates multiple POST requests to fill out form fields and tells the server how many bytes it should expect using the "Content-Length" HTTP header field. Then, the attacker sends small-sized TCP packets with the expected data at very slow rates, which results in the server holding on to the TCP socket to receive the rest of the data for a long time. [7.1]
-- HTTP GET Flood - TODO. [7.2]
-- HTTP POST Flood - TODO. [7.2]
-- Distributed Denial of Service (DDoS) Attack - use multiple systems to attack a target server. [7]
+- HTTP GET Flood - the attacker sends multiple HTTP GET requests to the target server. [7.2]
+- HTTP POST Flood - the attacker sends multiple HTTP POST requests to the target server. [7.2]
 
-Tool Applicability: Every tool that is able to perform multiple malicious requests to cause a significant resource exhaustion on a system running an HTTP server and, consequently, a toll on the HTTP server's availability.
+Tool Applicability: Every tool that is able to perform multiple malicious requests specifically against an HTTP application to cause network and computational resource exhaustion on the targeted server, ultimately resulting in a lack of availability to legitimate clients.
 Tools:
 <name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
 DoS Goldeneye (TCP) (HTTP/HTTPS)
@@ -197,11 +230,13 @@ DoS Slowloris (TCP) (HTTP/HTTPS)
 8.1. L1-7 Threat - Network Protocol Exploitation
 8.2. L7 Threat - Application Layer Logical Exploitation
 
-Intent: Exploit a network service or application, vulnerable to a logic flaw, running on the target system. Exploitation of those are performed through specially crafted actions that highly depend on very specific vulnerabilities.
+Intent: Exploit a network service or application, vulnerable to a logic flaw, running on the target system. Exploitation of those are performed through specific actions that highly depend on very specific vulnerabilities.
 
-Known Technique(s):
-- Specially Crafted Packets - this technique involves the exploitation of a logical flaw in a network service that is actively running on the target system by sending a set of packets that, far from the expected format, are able to create a malfunction in the network service itself. This technique may make use of an unforeseen vulnerability in a designed network protocol or, if not on the protocol itself, a vulnerability in its code implementation. "Teardrop" (L3), "Ping of Death" (L3+) and "Land" (L4) are examples of this technique. [8.1]
-- Application Layer Logical Exploitation - this technique uses logical mistakes in a specific application to cause its unavailability. As an example, if a server requires default guest user credentials to provide data to any user, all users must locally own those credentials (even if "under the hood") to authenticate to the server. As such, users might also be able to issue a password change request to the server to change those credentials if this "guest user" account is not treated with caution server-side. If no control is put in place for this situation, a single user could be able to deny every other user from authenticating to and receiving data from the servers, since every users' locally saved guest user credentials would not be valid anymore. [8.2]
+Generic Attack Technique(s): None Yet.
+
+Specific Attack Technique(s):
+- Specially Crafted Packets - this technique involves the exploitation of a logical flaw in a network service that is actively running on the target system by sending a set of packets that, far from the expected format, are able to create a malfunction in the network service itself. This technique may make use of an unforeseen vulnerability in a designed network protocol or, if not on the protocol itself, a vulnerability in its code implementation. "Teardrop" (L3), "Ping of Death" (L3+), "Land" (L4 - TCP) and "SCTP Association Redirection" (L4 - SCTP) are examples of this technique. [8.1]
+- Application Layer Logical Exploitation - this technique leverages logical mistakes in a specific application to cause its unavailability. As an example, if a server requires default guest user credentials to provide data to any user, all users must locally own those credentials (even if "under the hood") to authenticate to the server. As such, users might also be able to issue a password change request to the server to change those credentials if this "guest user" account is not treated with caution server-side. If no control is put in place for this situation, a single user could be able to deny every other user from authenticating to and receiving data from the servers, since every users' locally saved guest user credentials would not be valid anymore. [8.2]
 
 Tool Applicability: Custom exploits.
 Tools:

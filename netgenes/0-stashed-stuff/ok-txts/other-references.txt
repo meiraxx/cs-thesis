@@ -20,6 +20,8 @@ More interesting but not so related references:
 - https://www.geeksforgeeks.org/difference-between-flow-control-and-congestion-control/
 - https://accedian.com/blog/network-packet-loss-retransmissions-and-duplicate-acknowledgements/
 - https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol
+- https://www.quora.com/What-is-a-PSH-ACK
+- https://packetlife.net/blog/2011/mar/2/tcp-flags-psh-and-urg/
 - https://www.ibm.com/support/knowledgecenter/ssw_aix_72/network/protocols_userdatagram.html
  https://serverfault.com/questions/903657/is-a-ddos-possible-if-the-port-being-attacked-is-closed/903659
 - https://www.tatacommunications.com/downloads/enterprise/ethernet/1B-Comparison%20Layer%201%20to%20Ethernet.pdf
@@ -29,3 +31,8 @@ More interesting but not so related references:
 - https://www.slideshare.net/contactvijay1988/introduction-to-sctp-and-benefits-over-tcp-and-udp-36433404
 - https://linux.die.net/man/7/sctp
 - https://pt.wikipedia.org/wiki/Memcached
+- https://www.iana.org/assignments/icmp-parameters/icmp-parameters.xhtml
+- https://www.cs.miami.edu/home/burt/learning/Csc524.032/notes/tcp_nutshell.html
+- https://www.gont.com.ar/papers/tn-03-09-security-assessment-TCP.pdf
+- https://www.ibm.com/mysupport/s/question/0D50z00006PEBp6CAH/finwait1-how-to-clear-the-state
+- https://www.opcsupport.com/s/article/PATUsing-netstat-reveals-lots-of-sockets-open-in-state-FINWAIT1-or-FINWAIT2KB350

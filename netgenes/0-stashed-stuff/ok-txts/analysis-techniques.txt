@@ -1,0 +1,2 @@
+Portscan:
+- TCP Window Scan (-sW) - this is not a technique that would alter the sent packet, rather an analysis technique for the other TCP port scans. The attacker may analyze the response packet to check whether a port is open: a positive window size indicates an open port and a zero size window indicates a closed port; if the response packet time to live (ttl) is lower than the rest of the received RST packets the port is likely to be open. This applies to most systems, but there are other systems that may return the inverse. [2.2]
