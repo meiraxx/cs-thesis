@@ -199,9 +199,9 @@ def output_net_genes(net_genes_generator_lst, l4_protocol, network_object_type):
     if args.output_type == "csv":
         def save_csv_file(net_genes_header_lst, net_genes_generator_lst, csv_filename):
             # CSV Header
-            net_genes_header_str = "|".join(net_genes_header_lst)
+            net_genes_header_str = ",".join(net_genes_header_lst)
             # CSV Rows
-            net_genes_str_lst = ["|".join(net_genes) for net_genes in net_genes_generator_lst]
+            net_genes_str_lst = [",".join(net_genes) for net_genes in net_genes_generator_lst]
             net_genes_output = net_genes_header_str + "\n" + "\n".join(net_genes_str_lst)
 
             # Save CSV File
