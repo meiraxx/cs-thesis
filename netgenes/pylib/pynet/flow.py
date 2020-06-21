@@ -696,7 +696,7 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
                 # and, thus, will ignore it for now because there aren't many biflows that encounter this "mistiming"
                 # (only found it in the Thursday capture, for portscans)
                 if verbose:
-                    print(Colors.RED + iterator_to_str(biflow_id), "is an out-of-order BiFlow. Ignoring..." + Colors.ENDC)
+                    print(Colors.RED + "[!] " + iterator_to_str(biflow_id), "is an out-of-order BiFlow. Ignoring..." + Colors.ENDC)
                 continue
 
             # ================================

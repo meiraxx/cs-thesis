@@ -18,9 +18,9 @@ NetGenes Supported Protocols
 ------------------------------------------------------------------------------------
 NetGenes by Protocol Stacks and NetObjects
 ------------------------------------------------------------------------------------
-[+] IPv4 BiFlow Genes: 100 BiFlow Genes
-[+] IPv4-UDP BiFlow Genes: 142 BiFlow Genes
-[+] IPv4-TCP BiFlow Genes: 294 BiFlow Genes
+[+] IPv4 BiFlow Genes: 76 BiFlow Genes
+[+] IPv4-UDP BiFlow Genes: 118 BiFlow Genes
+[+] IPv4-TCP BiFlow Genes: 174 BiFlow Genes
 [+] IPv4 BiTalker Genes: 100 BiTalker Genes
 [+] IPv4-UDP BiTalker Genes: 130 BiTalker Genes
 [+] IPv4-TCP BiTalker Genes: 178 BiTalker Genes
@@ -35,16 +35,22 @@ NetGenes by Protocol Stacks and NetObjects
 ------------
 1.1. Packets
 ------------
-[-] EthL1-ARP packets: 45829 packets
-[-] EthL1-LLC packets: 7344 packets
+[+] EthL1 bitstreams: 9322025 bitstreams
+[-] <Other L1> bitstreams: 0 bitstreams
+[+] EthL1-EthL2 frames: 9268753 frames
+[-] EthL1-ARP frames: 45829 frames
+[-] EthL1-LLC frames: 7344 frames
+[-] EthL1-<Other L2> frames: 99 frames
+[+] EthL1-EthL2-IPv4 packets: 9240723 packets
+[-] EthL1-EthL2-IPv6 packets: 28030 packets
+[-] EthL1-EthL2-<Other L3> packets: 0 packets
 [-] EthL1-EthL2-IPv4-ICMP packets: 1429 packets
 [-] EthL1-EthL2-IPv4-IGMP packets: 130 packets
-[+] EthL1-EthL2-IPv4-TCP packets: 8538148 packets
 [+] EthL1-EthL2-IPv4-UDP packets: 700922 packets
-[-] EthL1-EthL2-IPv4-<Other L4> packets: 94 packets
-[-] EthL1-EthL2-IPv6 packets: 28030 packets
-[-] <Other L1>, EthL1-<Other L2> and EthL1-EthL2-<Other L3> packets: 99 packets
-[T] Built in: 468.518 seconds
+[+] EthL1-EthL2-IPv4-TCP packets: 8538148 packets
+[-] EthL1-EthL2-IPv4-SCTP packets: 0 packets
+[-] EthL1-EthL2-IPv4-<Other L3+/L4> packets: 94 packets
+[T] Built in: 468.148 seconds
 
 ======================================================================================================
 2. Layer-3 Flow Construction and Layer-4 Separation
@@ -52,16 +58,16 @@ NetGenes by Protocol Stacks and NetObjects
 ---------------------------------------
 2.1. Layer-3 Unidirectional Flows: IPv4
 ---------------------------------------
-[+] Packets preserved: 9239070 IPv4 Packets
-[+] Flows detected: 485177 IPv4 UniFlows
-[T] Built in: 6.632 seconds
+[+] IPv4 Packets preserved: 9239070 IPv4 Packets
+[+] IPv4 UniFlows detected: 485177 IPv4 UniFlows
+[T] Built in: 6.852 seconds
 
 --------------------------------------
 2.2. Layer-3 Bidirectional Flows: IPv4
 --------------------------------------
 [+] IPv4 Packets preserved: 9239070 IPv4 Packets
 [+] IPv4 BiFlows detected: 258607 IPv4 BiFlows
-[T] Built in: 2.007 seconds
+[T] Built in: 1.972 seconds
 
 --------------------------------------------
 2.3. Bidirectional Flows: IPv4-UDP, IPv4-TCP
@@ -71,7 +77,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-TCP Packets disconected: 3686 IPv4-TCP DCed Packets
 [+] IPv4-UDP BiFlows detected: 98990 IPv4-UDP BiFlows
 [+] IPv4-TCP BiFlows detected: 167898 IPv4-TCP BiFlows
-[T] Built in: 20.186 seconds
+[T] Built in: 20.726 seconds
 
 ================================================================================================================================
 3. Layer-3/Layer-4 NetObject Construction and NetGene Extraction
@@ -83,39 +89,39 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-UDP BiFlows detected: 98990 IPv4-UDP BiFlows
 [+] IPv4-UDP BiTalkers detected: 216 IPv4-UDP BiTalkers
 [+] IPv4-UDP BiHosts detected: 122 IPv4-UDP BiHosts
-[T] Calculated and saved in: 293.484 seconds
+[T] Calculated and saved in: 232.749 seconds
 
 -----------------------------------------------------------
 3.2. IPv4-TCP NetObject Construction and NetGene Extraction
 -----------------------------------------------------------
-192.168.10.9-407-192.168.10.8-45500-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.12-199-192.168.10.8-53466-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.12-1169-192.168.10.8-53466-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.12-4279-192.168.10.8-53466-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.16-1718-192.168.10.8-45748-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.25-3306-192.168.10.8-42484-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.25-1875-192.168.10.8-42484-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.51-143-192.168.10.8-51296-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.9-4567-192.168.10.8-35792-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.12-3013-192.168.10.8-42452-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.25-720-192.168.10.8-35516-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.25-2809-192.168.10.8-35517-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.16-7512-192.168.10.8-38739-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.17-2607-192.168.10.8-65226-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.17-3003-192.168.10.8-65226-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.19-3690-192.168.10.8-59793-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.25-5414-192.168.10.8-54031-TCP-1 is an out-of-order BiFlow. Ignoring...
-192.168.10.25-5718-192.168.10.8-54031-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.9-407-192.168.10.8-45500-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.12-199-192.168.10.8-53466-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.12-1169-192.168.10.8-53466-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.12-4279-192.168.10.8-53466-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.16-1718-192.168.10.8-45748-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.25-3306-192.168.10.8-42484-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.25-1875-192.168.10.8-42484-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.51-143-192.168.10.8-51296-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.9-4567-192.168.10.8-35792-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.12-3013-192.168.10.8-42452-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.25-720-192.168.10.8-35516-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.25-2809-192.168.10.8-35517-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.16-7512-192.168.10.8-38739-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.17-2607-192.168.10.8-65226-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.17-3003-192.168.10.8-65226-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.19-3690-192.168.10.8-59793-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.25-5414-192.168.10.8-54031-TCP-1 is an out-of-order BiFlow. Ignoring...
+[!] 192.168.10.25-5718-192.168.10.8-54031-TCP-1 is an out-of-order BiFlow. Ignoring...
 [+] IPv4-TCP Packets detected: 8489002 IPv4-TCP Packets
 [+] IPv4-TCP BiFlows detected: 167898 IPv4-TCP BiFlows
 [+] IPv4-TCP BiTalkers detected: 18387 IPv4-TCP BiTalkers
 [+] IPv4-TCP BiHosts detected: 8468 IPv4-TCP BiHosts
-[T] Calculated and saved in: 1320.716 seconds
+[T] Calculated and saved in: 819.862 seconds
 
 ==========================================
 Total Extraction Time
 ==========================================
-[T] Script took 2111.545 seconds to complete
+[T] Script took 1550.31 seconds to complete
 
-[+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 281.3 MBs (megabytes)
+[+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 224.067 MBs (megabytes)
 
