@@ -144,8 +144,9 @@ def print_supported_protocols_info():
 
 def print_netgenes_info():
     print(make_header_string("NetGenes by Protocol Stacks and NetObjects", "-", "-", big_header_factor=2), flush=True)
-    # minus 4 to remove biflow_id, bitalker_id, biflow_any_first_packet_time and biflow_any_last_packet_time
-    ipv4_biflow_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "biflow", "ipv4")) - 4
+    # minus 8 to remove biflow_id, bitalker_id, bihost_fwd_id, bihost_bwd_id, biflow_src_port,
+    # biflow_dst_port, biflow_any_first_packet_time and biflow_any_last_packet_time
+    ipv4_biflow_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "biflow", "ipv4")) - 8
     ipv4_l4_biflow_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "biflow", "ipv4-l4"))
     ipv4_tcp_biflow_genes_count = len(get_network_object_header(netgenes_globals.genes_dir, "biflow", "ipv4-tcp"))
     print("[+] IPv4 BiFlow Genes:", ipv4_biflow_genes_count, "BiFlow Genes", flush=True)

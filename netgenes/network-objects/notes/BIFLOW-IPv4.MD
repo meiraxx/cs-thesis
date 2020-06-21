@@ -1,9 +1,9 @@
 # IPv4-BiFlow
 ## Extended by: BiFlow-IPv4-L4, BiFlow-IPv4-TCP
 ## CURRENT NUMBER OF GENES
-**100 Biflow Genes:**
-- 10 Conceptual Features
-- 90 Statistical Features
+**76 Biflow Genes:**
+- 22 Conceptual Features
+- 54 Statistical Features
 
 ## IDENTIFIER
 **biflow_id (joined 6-tuple):**  
@@ -38,6 +38,20 @@ biflow_bwd_packets_per_sec
 biflow_any_bytes_per_sec  
 biflow_fwd_bytes_per_sec  
 biflow_bwd_bytes_per_sec  
+
+**IP Fragmentation Flags**  
+biflow_any_eth_ip_n_active_df_flags  
+biflow_any_eth_ip_active_df_flags_rate  
+biflow_fwd_eth_ip_n_active_df_flags  
+biflow_fwd_eth_ip_active_df_flags_rate  
+biflow_bwd_eth_ip_n_active_df_flags  
+biflow_bwd_eth_ip_active_df_flags_rate  
+biflow_any_eth_ip_n_active_mf_flags  
+biflow_any_eth_ip_active_mf_flags_rate  
+biflow_fwd_eth_ip_n_active_mf_flags  
+biflow_fwd_eth_ip_active_mf_flags_rate  
+biflow_bwd_eth_ip_n_active_mf_flags  
+biflow_bwd_eth_ip_active_mf_flags_rate  
 
 ### Statistical Features
 **Time Features**  
@@ -100,41 +114,3 @@ biflow_bwd_eth_ipv4_data_len_std
 biflow_bwd_eth_ipv4_data_len_var  
 biflow_bwd_eth_ipv4_data_len_max  
 biflow_bwd_eth_ipv4_data_len_min  
-
-*IP Fragmentation Flags*  
-biflow_any_eth_ip_df_flags_total  
-biflow_any_eth_ip_df_flags_mean  
-biflow_any_eth_ip_df_flags_std  
-biflow_any_eth_ip_df_flags_var  
-biflow_any_eth_ip_df_flags_max  
-biflow_any_eth_ip_df_flags_min  
-biflow_any_eth_ip_mf_flags_total  
-biflow_any_eth_ip_mf_flags_mean  
-biflow_any_eth_ip_mf_flags_std  
-biflow_any_eth_ip_mf_flags_var  
-biflow_any_eth_ip_mf_flags_max  
-biflow_any_eth_ip_mf_flags_min  
-biflow_fwd_eth_ip_df_flags_total  
-biflow_fwd_eth_ip_df_flags_mean  
-biflow_fwd_eth_ip_df_flags_std  
-biflow_fwd_eth_ip_df_flags_var  
-biflow_fwd_eth_ip_df_flags_max  
-biflow_fwd_eth_ip_df_flags_min  
-biflow_fwd_eth_ip_mf_flags_total  
-biflow_fwd_eth_ip_mf_flags_mean  
-biflow_fwd_eth_ip_mf_flags_std  
-biflow_fwd_eth_ip_mf_flags_var  
-biflow_fwd_eth_ip_mf_flags_max  
-biflow_fwd_eth_ip_mf_flags_min  
-biflow_bwd_eth_ip_df_flags_total  
-biflow_bwd_eth_ip_df_flags_mean  
-biflow_bwd_eth_ip_df_flags_std  
-biflow_bwd_eth_ip_df_flags_var  
-biflow_bwd_eth_ip_df_flags_max  
-biflow_bwd_eth_ip_df_flags_min  
-biflow_bwd_eth_ip_mf_flags_total  
-biflow_bwd_eth_ip_mf_flags_mean  
-biflow_bwd_eth_ip_mf_flags_std  
-biflow_bwd_eth_ip_mf_flags_var  
-biflow_bwd_eth_ip_mf_flags_max  
-biflow_bwd_eth_ip_mf_flags_min  
