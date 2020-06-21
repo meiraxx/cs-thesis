@@ -12,6 +12,10 @@
 
 ## ADDITIONAL INFORMATION
 bitalker_id
+bihost_fwd_id
+bihost_bwd_id
+biflow_src_port
+biflow_dst_port
 biflow_any_first_packet_time  
 biflow_any_last_packet_time  
 

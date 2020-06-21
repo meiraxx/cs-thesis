@@ -102,8 +102,8 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
 
             first_biflow = curr_bitalker[0]
             last_biflow = curr_bitalker[-1]
-            bitalker_any_first_biflow_initiation_time = first_biflow[2]
-            bitalker_any_last_biflow_termination_time = last_biflow[3]
+            bitalker_any_first_biflow_initiation_time = first_biflow[6]
+            bitalker_any_last_biflow_termination_time = last_biflow[7]
             bitalker_any_first_biflow_initiation_time = datetime_to_unixtime(bitalker_any_first_biflow_initiation_time)
             bitalker_any_last_biflow_termination_time = datetime_to_unixtime(bitalker_any_last_biflow_termination_time)
 
@@ -231,15 +231,15 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                 if curr_biflow_index >= 1:
                     previous_biflow = curr_bitalker[curr_biflow_index-1]
                     previous_biflow_bitalker_id = previous_biflow[1]
-                    previous_biflow_initiation_timestamp = previous_biflow[2]
-                    previous_biflow_termination_timestamp = previous_biflow[3]
+                    previous_biflow_initiation_timestamp = previous_biflow[6]
+                    previous_biflow_termination_timestamp = previous_biflow[7]
 
                 curr_biflow = curr_bitalker[curr_biflow_index]
                 curr_biflow_id_str = curr_biflow[0]
                 curr_biflow_id = str_to_iterator(curr_biflow_id_str)
                 curr_biflow_bitalker_id_str = curr_biflow[1]
-                curr_biflow_initiation_timestamp = curr_biflow[2]
-                curr_biflow_termination_timestamp = curr_biflow[3]
+                curr_biflow_initiation_timestamp = curr_biflow[6]
+                curr_biflow_termination_timestamp = curr_biflow[7]
 
                 # BiFlow IIT and ITT require that there's at least two biflows
                 if curr_biflow_index >= 1:
@@ -263,19 +263,19 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                 # =============
                 # Time Concepts
                 # =============
-                curr_biflow_duration = float(curr_biflow[4])
+                curr_biflow_duration = float(curr_biflow[8])
                 bitalker_any_biflow_durations.append(curr_biflow_duration)
 
                 # ===============
                 # Packet Concepts
                 # ===============
-                curr_biflow_any_n_packets = int(curr_biflow[5])
+                curr_biflow_any_n_packets = int(curr_biflow[9])
                 bitalker_any_biflow_n_packets.append(curr_biflow_any_n_packets)
 
                 # =============
                 # IPv4 Concepts
                 # =============
-                curr_biflow_ipv4_data_len_total = int(curr_biflow[50])
+                curr_biflow_ipv4_data_len_total = int(curr_biflow[54])
                 bitalker_any_biflow_eth_ipv4_data_lens.append(curr_biflow_ipv4_data_len_total)
 
                 if curr_biflow_bitalker_id_str == bitalker_id:
@@ -301,7 +301,7 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                 if l4_protocol:
                     curr_biflow_src_port = curr_biflow_id[1]
                     curr_biflow_dst_port = curr_biflow_id[3]
-                    curr_biflow_any_eth_ipv4_l4_n_data_packets = int(curr_biflow[104])
+                    curr_biflow_any_eth_ipv4_l4_n_data_packets = int(curr_biflow[108])
 
                     bitalker_any_biflow_src_ports.append(curr_biflow_src_port)
                     bitalker_any_biflow_dst_ports.append(curr_biflow_dst_port)
@@ -321,18 +321,18 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                     if l4_protocol == "TCP":
                         # DEV-NOTE: "int" function usefully converts True and False into 1 and 0 directly
                         # get initiation type
-                        curr_biflow_eth_ipv4_tcp_initiation_two_way_handshake = int(curr_biflow[146]=="True")
+                        curr_biflow_eth_ipv4_tcp_initiation_two_way_handshake = int(curr_biflow[150]=="True")
 
                         # get connection type
-                        curr_biflow_eth_ipv4_tcp_full_duplex_connection_established = int(curr_biflow[147]=="True")
-                        curr_biflow_eth_ipv4_tcp_half_duplex_connection_established = int(curr_biflow[148]=="True")
-                        curr_biflow_eth_ipv4_tcp_connection_rejected = int(curr_biflow[149]=="True")
-                        curr_biflow_eth_ipv4_tcp_connection_dropped = int(curr_biflow[150]=="True")
+                        curr_biflow_eth_ipv4_tcp_full_duplex_connection_established = int(curr_biflow[151]=="True")
+                        curr_biflow_eth_ipv4_tcp_half_duplex_connection_established = int(curr_biflow[152]=="True")
+                        curr_biflow_eth_ipv4_tcp_connection_rejected = int(curr_biflow[153]=="True")
+                        curr_biflow_eth_ipv4_tcp_connection_dropped = int(curr_biflow[154]=="True")
 
                         # get termination type
-                        curr_biflow_eth_ipv4_tcp_termination_graceful = int(curr_biflow[151]=="True")
-                        curr_biflow_eth_ipv4_tcp_termination_abort = int(curr_biflow[152]=="True")
-                        curr_biflow_eth_ipv4_tcp_termination_null = int(curr_biflow[153]=="True")
+                        curr_biflow_eth_ipv4_tcp_termination_graceful = int(curr_biflow[155]=="True")
+                        curr_biflow_eth_ipv4_tcp_termination_abort = int(curr_biflow[156]=="True")
+                        curr_biflow_eth_ipv4_tcp_termination_null = int(curr_biflow[157]=="True")
 
                         # save initiation type
                         bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_biflow_eth_ipv4_tcp_initiation_two_way_handshake)
