@@ -4,9 +4,9 @@ Notes about this section:
 - A Threat Class has an Intent.
 - Intent describes the main objectives behind a Threat Class.
 - A Threat encompasses one or more Specific Attack Techniques.
-- A Generic Attack Technique is implemented by one or more Tools.
-- A Specific Attack Technique is implemented by one or more Tools.
-- Tool Applicability describes criteria for acceptable Tools.
+- A Generic Attack Technique is implemented by one or more Programs.
+- A Specific Attack Technique is implemented by one or more Programs.
+- Program Applicability describes criteria for acceptable Programs.
 
 1. L2/L3/L3+/L4 Threat Class - Host Discovery (by means of service discovery)
 1.1. L2 Threat - ARP Host Discovery
@@ -32,12 +32,12 @@ Specific Attack Technique(s):
 - TCP SYN Ping Scan (-sn -PS) - for each host, the attacker sends a TCP request with the SYN flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered. [1.5]
 - TCP ACK Ping Scan (-sn -PA) - for each host, the attacker sends a TCP packet with the ACK flag activated to one test port. If the host responds with SYN-ACK or RST, the host is up, else the host may be down or the packet was filtered. [1.5]
 
-Tool Applicability: Tools that can communicate over a network can eventually be used for host discovery, given that the protocols used to communicate are supported by the targeted machine. However, we will only consider a host discovery tool as such if it complies with at least one of the following conditions:
+Program Applicability: Programs that can communicate over a network can eventually be used for host discovery, given that the protocols used to communicate are supported by the targeted machine. However, we will only consider a host discovery program as such if it complies with at least one of the following conditions:
 - It supports sending and interpreting ARP probes for multiple hosts
 - It supports sending and interpreting IP-protocol probes (raw IP packets specifying the probed IP protocol number on the IP header) for multiple hosts
 - It supports sending and interpreting TCP, UDP and ICMP probes for multiple hosts
-Optionally, these tools can also support other protocols such as SCTP. Also, the existence of any L5-7 protocol is irrelevant for this category.
-Tools:
+Optionally, these programs can also support other protocols such as SCTP. Also, the existence of any L5-7 protocol is irrelevant for this category.
+Programs:
 <name> (<L1-4 protocols supported>)
 NetDiscover (ARP)
 UnicornScan - 1, 2, 3 (TCP, UDP, ICMP)
@@ -72,12 +72,12 @@ Specific Attack Technique(s):
 - SCTP INIT Scan (-sY) - the attacker sends an SCTP INIT packet to each port of the target host. An SCTP INIT-ACK response packet indicates that the port is open and, in this case, the attacker aborts the connection right after. An SCTP ABORT response packet indicates that the port is closed and, if no response is received after several retransmissions, the port is marked as filtered. [2.3]
 - SCTP "COOKIE ECHO" Scan (-sZ) - the attacker sends an SCTP COOKIE ECHO packet to each port of the target host. If the target host doesn't respond, the port is either open or filtered. If the target host responds with an SCTP ABORT packet, then the port is closed. [2.3]
 
-Tool Applicability: Any tool that communicates over a network can eventually be used for network host discovery using a certain network protocol, given that the probed protocol is present on the probed machine. Given the latter, we will only consider a host discovery tool as such if at least one of the following conditions are true:
+Program Applicability: Any program that communicates over a network can eventually be used for network host discovery using a certain network protocol, given that the probed protocol is present on the probed machine. Given the latter, we will only consider a host discovery program as such if at least one of the following conditions are true:
 - It supports sending and interpreting ARP probes for multiple hosts
 - It supports sending and interpreting raw IP packets specifying the probed IP protocol number on the IP header for multiple hosts (IP-protocol probes)
 - It supports sending and interpreting TCP, UDP and ICMP probes (given their prevalence on today's networks) for multiple hosts
-Optionally, these tools can also support other much less adopted protocols such as SCTP. Also, the existence of any L5-7 protocol is irrelevant for this category.
-Tools:
+Optionally, these programs can also support other much less adopted protocols such as SCTP. Also, the existence of any L5-7 protocol is irrelevant for this category.
+Programs:
 <name> (<L1-4 protocols supported>)
 UnicornScan - 1, 2, 3 (TCP, UDP, ICMP)
 Nmap - 1, 2, 3 (ARP, raw IP, ICMP, UDP, TCP, SCTP)
@@ -99,8 +99,8 @@ Specific Attack Technique(s):
 - IP Protocol Scan over IPv4 (-sO) - the objective of this scan is determining what IP protocols, running over IPv4, are available in the target host. The attacker sends an IPv4 packet to the target host, with the "Protocol" field filled in the IPv4 header for each targeted IP protocol number. For example, the attacker can send six IP packets asking for six IP protocols support: ICMP (protocol 1), IGMP (protocol 2), IP-in-IP (protocol 4), TCP (protocol 6), UDP (protocol 17) and SCTP (protocol 132). If the attacker receives a response from the target host using the probed protocol or an ICMP "Destination Unreachable - Port Unreachable" error (ICMP Type 3, code 3), the protocol is supported (open). If an ICMP "Destination Unreachable - Protocol Unreachable" error (ICMP Type 3, code 2) is received, the protocol is marked as unsupported (closed). Other ICMP "Destination Unreachable" errors (ICMP Type 3; codes 0, 1, 9, 10, or 13) cause the protocol to be marked filtered. If no response is received after retransmissions, the protocol is marked as possibly supported (open or filtered). [3.1]
 - IP Protocol Scan over IPv6 - the objective of this scan is determining what IP protocols, running over IPv6, are available in the target host. The attacker sends an IPv6 packet to the target host, with the "Next Header" field filled in the IP header for each targeted IP protocol number. Similarly to the IPv4 protocol scan, if the attacker receives a response from the target host using the probed protocol then the protocol is supported. However, the interpretation of the responses will differ since ICMPv4 and ICMPv6 responses differ. ICMPv6 response interpretation will not be contemplated in this work. [3.1]
 
-Tool Applicability: Any tool that allows sending and interpreting multiple L3-related probes for a given host.
-Tools:
+Program Applicability: Any program that allows sending and interpreting multiple L3-related probes for a given host.
+Programs:
 <name> (<L1-4 protocols supported>)
 Nmap - 1, 2, 3 (ARP, raw IP, ICMP, UDP, TCP, SCTP)
 Hping3 - 1, 2, 3, 4 (raw IP, ICMP, UDP, TCP)
@@ -123,8 +123,8 @@ Generic Attack Technique(s):
 
 Specific Attack Technique(s): None Yet.
 
-Tool Applicability: Any tool that supports brute-forcing credentials associated with a L7 protocol.
-Tools:
+Program Applicability: Any program that supports brute-forcing credentials associated with a L7 protocol.
+Programs:
 <name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
 Ncat (UDP, TCP, SCTP) (None in particular)
 Patator (TCP) (FTP, SSH, Telnet, SMTP, HTTP/HTTPS, RDP, AJP, POP, IMAP, LDAP, SMB, SNMP)
@@ -148,8 +148,8 @@ Specific Attack Technique(s):
 - Smurf Attack (specific "Reflection and Amplification Attack") - the attacker broadcasts spoofed ICMP "Echo Request" packets on a network, so that systems which are listening on the IP broadcast address send ICMP "Echo Reply" response packets to the target system. [5.1]
 - Fraggle Attack (specific "Reflection and Amplification Attack") - the attacker sends spoofed UDP requests to multiple systems at ports 7 (Echo Protocol) and 19 (CHARGEN Generator Protocol), so that those systems send ICMP "Destination Unreachable - Port Unreachable" (ICMP Type 3, code 3) response packets to the target system. [5.1]
 
-Tool Applicability: Every tool that is able to perform multiple malicious requests against a L3-level control service (subset of L3+ services) to cause network and computational resource exhaustion on the targeted system, ultimately resulting in a lack of availability to legitimate L3-level control queries.
-Tools:
+Program Applicability: Every program that is able to perform multiple malicious requests against a L3-level control service (subset of L3+ services) to cause network and computational resource exhaustion on the targeted system, ultimately resulting in a lack of availability to legitimate L3-level control queries.
+Programs:
 <name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
 Hping3 (raw IP, ICMP, UDP, TCP) (None in particular)
 
@@ -190,8 +190,8 @@ Specific Attack Technique(s):
 - SCTP-based Reflection and Amplification Attack 4 (SCTP Bombing Attack 4) - TODO [6.3]
 - SCTP-based Reflection and Amplification Attack 5 (SCTP Bombing Attack 5) - TODO [6.3]
 
-Tool Applicability: Every tool that is able to perform multiple malicious requests against a L4 service or any application running over a L4 service to cause network and computational resource exhaustion on the targeted server, ultimately resulting in a lack of availability to legitimate clients.
-Tools:
+Program Applicability: Every program that is able to perform multiple malicious requests against a L4 service or any application running over a L4 service to cause network and computational resource exhaustion on the targeted server, ultimately resulting in a lack of availability to legitimate clients.
+Programs:
 <name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
 Ncat (UDP, TCP, SCTP) (None in particular)
 Hping3 (raw IP, ICMP, UDP, TCP) (None in particular)
@@ -218,8 +218,8 @@ Specific Attack Technique(s):
 - HTTP GET Flood - the attacker sends multiple HTTP GET requests to the target server. [7.2]
 - HTTP POST Flood - the attacker sends multiple HTTP POST requests to the target server. [7.2]
 
-Tool Applicability: Every tool that is able to perform multiple malicious requests specifically against an HTTP application to cause network and computational resource exhaustion on the targeted server, ultimately resulting in a lack of availability to legitimate clients.
-Tools:
+Program Applicability: Every program that is able to perform multiple malicious requests specifically against an HTTP application to cause network and computational resource exhaustion on the targeted server, ultimately resulting in a lack of availability to legitimate clients.
+Programs:
 <name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
 DoS Goldeneye (TCP) (HTTP/HTTPS)
 DoS Hulk (TCP) (HTTP/HTTPS)
@@ -238,7 +238,7 @@ Specific Attack Technique(s):
 - Specially Crafted Packets - this technique involves the exploitation of a logical flaw in a network service that is actively running on the target system by sending a set of packets that, far from the expected format, are able to create a malfunction in the network service itself. This technique may make use of an unforeseen vulnerability in a designed network protocol or, if not on the protocol itself, a vulnerability in its code implementation. "Teardrop" (L3), "Ping of Death" (L3+), "Land" (L4 - TCP) and "SCTP Association Redirection" (L4 - SCTP) are examples of this technique. [8.1]
 - Application Layer Logical Exploitation - this technique leverages logical mistakes in a specific application to cause its unavailability. As an example, if a server requires default guest user credentials to provide data to any user, all users must locally own those credentials (even if "under the hood") to authenticate to the server. As such, users might also be able to issue a password change request to the server to change those credentials if this "guest user" account is not treated with caution server-side. If no control is put in place for this situation, a single user could be able to deny every other user from authenticating to and receiving data from the servers, since every users' locally saved guest user credentials would not be valid anymore. [8.2]
 
-Tool Applicability: Custom exploits.
-Tools:
+Program Applicability: Custom exploits.
+Programs:
 <name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
 NA NA NA

@@ -1,4 +1,0 @@
-#TCP
-bihost labelling: {bihost_id: '147.32.84.165-TCP'}
-bitalker labelling: {$or: [{bihost_fwd_id: '147.32.84.165-TCP'}, {bihost_bwd_id: '147.32.84.165-TCP'}]}
-biflow labelling: {$or: [{bihost_fwd_id: '147.32.84.165-TCP'}, {bihost_bwd_id: '147.32.84.165-TCP'}]}

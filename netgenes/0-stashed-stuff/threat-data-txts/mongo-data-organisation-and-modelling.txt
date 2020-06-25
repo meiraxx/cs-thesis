@@ -1,0 +1,3 @@
+https://docs.mongodb.com/manual/applications/data-models/
+https://www.w3resource.com/mongodb/databases-documents-collections.php
+https://dev.to/cameronblandford/how-do-you-handle-many-to-many-relationships-in-mongo-3iih

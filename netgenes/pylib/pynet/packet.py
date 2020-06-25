@@ -227,7 +227,8 @@ def build_packets(input_file, args):
             tcp_urg_flag = ( l4_layer.flags & dpkt.tcp.TH_URG ) != 0
             tcp_ece_flag = ( l4_layer.flags & dpkt.tcp.TH_ECE ) != 0
             tcp_cwr_flag = ( l4_layer.flags & dpkt.tcp.TH_CWR ) != 0
-            tcp_packet_genes = [tcp_fin_flag, tcp_syn_flag, tcp_rst_flag, tcp_psh_flag, tcp_ack_flag, tcp_urg_flag, tcp_ece_flag, tcp_cwr_flag]
+            
+            tcp_packet_genes = [l4_layer.seq, l4_layer.ack, tcp_fin_flag, tcp_syn_flag, tcp_rst_flag, tcp_psh_flag, tcp_ack_flag, tcp_urg_flag, tcp_ece_flag, tcp_cwr_flag]
             packet_genes += tcp_packet_genes
         elif l4_protocol_name == "UDP":
             # ================
