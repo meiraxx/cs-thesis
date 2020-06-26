@@ -203,13 +203,13 @@ def build_packets(input_file, args):
         # Bitstream-level debug Info
         if args.debug == "1":
             print(make_header_string("Bistream-level Debugging"), flush=True)
-            print("[D] Bitstream no.:", n_bitstreams_eth, flush=True)
-            print("[D] IPv4 header length:", ipv4_header_len, flush=True)
-            print("[D] IPv4 options length:", ipv4_options_len, flush=True)
-            print("[D] IPv4 data length:", ipv4_data_len, flush=True)
-            print("[D] Transport header length:", l4_header_len, flush=True)
-            print("[D] Transport options length:", l4_options_len, flush=True)
-            print("[D] Transport data length:", l4_data_len, flush=True)
+            print("[D1] Bitstream no.:", n_bitstreams_eth, flush=True)
+            print("[D1] IPv4 header length:", ipv4_header_len, flush=True)
+            print("[D1] IPv4 options length:", ipv4_options_len, flush=True)
+            print("[D1] IPv4 data length:", ipv4_data_len, flush=True)
+            print("[D1] Transport header length:", l4_header_len, flush=True)
+            print("[D1] Transport options length:", l4_options_len, flush=True)
+            print("[D1] Transport data length:", l4_data_len, flush=True)
 
         packet_genes = [flow_id,] + ipv4_packet_genes + l4_packet_genes
         if l4_protocol_name == "TCP":

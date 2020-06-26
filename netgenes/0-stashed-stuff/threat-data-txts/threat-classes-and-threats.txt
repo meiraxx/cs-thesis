@@ -8,7 +8,7 @@ Notes about this section:
 - A Specific Attack Technique is implemented by one or more Programs.
 - Program Applicability describes criteria for acceptable Programs.
 
-1. L2/L3/L3+/L4 Threat Class - Host Discovery (by means of service discovery)
+1. L2/L3/L3+/L4 Threat Class - Host and Service Discovery
 1.1. L2 Threat - ARP Host Discovery
 1.2. L3 Threat - IP Protocol Host Discovery
 1.3. L3+ Threat - ICMP Host Discovery

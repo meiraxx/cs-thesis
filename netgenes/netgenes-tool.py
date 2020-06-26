@@ -290,7 +290,7 @@ def generate_network_objets(input_file):
         print("[+] IPv4-UDP BiFlows detected:" + Colors.GREEN, n_ipv4_udp_biflows, "IPv4-UDP BiFlows" + Colors.ENDC, flush=True)
         print("[+] IPv4-TCP BiFlows detected:" + Colors.GREEN, n_ipv4_tcp_biflows, "IPv4-TCP BiFlows" + Colors.ENDC, flush=True)
         print("[T] Built in:" + Colors.YELLOW, round(time.time() - module_init_time, 3), "seconds" + Colors.ENDC, flush=True, end="\n\n")
-
+    
     # ======================================================================
     # NetObject Construction and NetGene Extraction: organizing juicy data |
     # ======================================================================
@@ -472,7 +472,7 @@ def run():
 # [!]: Error Information
 # [+]: Normal Information
 # [T]: Time Information
-# [D]: Debug Information
+# [Dn]: Debug Information (n=1: bitstream-related, n=2: flow-related)
 if __name__ == "__main__":
     args = NetGenesArgs().args
     netgenes_globals = NetGenesGlobals(args)
