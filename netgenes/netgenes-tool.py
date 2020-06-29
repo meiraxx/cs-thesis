@@ -63,6 +63,12 @@ from pylib.pynet import flow
 from pylib.pynet import talker
 from pylib.pynet import host
 
+# quick work-around for terminal color in Windows
+if os.name == "nt":
+    from colorama import init
+    init()
+    del(init)
+
 # ====================
 # NetGenes Arguments |
 # ====================
@@ -472,7 +478,7 @@ def run():
 # [!]: Error Information
 # [+]: Normal Information
 # [T]: Time Information
-# [Dn]: Debug Information (n=1: bitstream-related, n=2: flow-related)
+# [Dn]: Debug Information (n=1: bitstream- and packet- related, n=2: flow-related)
 if __name__ == "__main__":
     args = NetGenesArgs().args
     netgenes_globals = NetGenesGlobals(args)

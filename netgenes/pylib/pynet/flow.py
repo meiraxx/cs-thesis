@@ -65,81 +65,45 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
     build layer-4 bidirectional flows according to TCP and UDP RFCs"""
     def build_rfc793_tcp_biflows(tmp_tcp_biflows, tmp_tcp_biflow_ids, debug=False):
         """Local helper function to build TCP BiFlows according to RFC793"""
-        # Aux class
-        class RFC793:
-            def __init__(self):
-                # INITIATION STATES
-                self.flow_initiated = False
-                self.flow_initiation_r1 = False
-                self.flow_initiation_r2 = False
-                self.flow_initiation_r3 = False
-
-                # TERMINATION STATES
-                self.flow_terminated = False
-                self.flow_termination_r1 = False
-                self.flow_termination_r2 = False
-                self.flow_termination_r3 = False
-
-                # CONCEPTUAL FEATURES
-                self.biflow_eth_ipv4_tcp_initiation_two_way_handshake = False
-                self.biflow_eth_ipv4_tcp_full_duplex_connection_established = False
-                self.biflow_eth_ipv4_tcp_half_duplex_connection_established = False
-                self.biflow_eth_ipv4_tcp_connection_rejected = False
-                self.biflow_eth_ipv4_tcp_connection_dropped = False
-                self.biflow_eth_ipv4_tcp_termination_graceful = False
-                self.biflow_eth_ipv4_tcp_termination_abort = False
-                self.biflow_eth_ipv4_tcp_termination_null = False
-
-            def reset_states_and_genes(self):
-                # if the flow hasn't terminated, won't reset states and genes
-                if not self.flow_terminated:
-                    return
-
-                # INITIATION STATES
-                self.flow_initiated = False
-                self.flow_initiation_r1 = False
-                self.flow_initiation_r2 = False
-                self.flow_initiation_r3 = False
-
-                # TERMINATION STATES
-                self.flow_terminated = False
-                self.flow_termination_r1 = False
-                self.flow_termination_r2 = False
-                self.flow_termination_r3 = False
-
-                # CONCEPTUAL FEATURES
-                self.biflow_eth_ipv4_tcp_initiation_two_way_handshake = False
-                self.biflow_eth_ipv4_tcp_full_duplex_connection_established = False
-                self.biflow_eth_ipv4_tcp_half_duplex_connection_established = False
-                self.biflow_eth_ipv4_tcp_connection_rejected = False
-                self.biflow_eth_ipv4_tcp_connection_dropped = False
-                self.biflow_eth_ipv4_tcp_termination_graceful = False
-                self.biflow_eth_ipv4_tcp_termination_abort = False
-                self.biflow_eth_ipv4_tcp_termination_null = False
-
-            def get_rfc793_tcp_biflow_conceptual_features(self):
-                rfc793_tcp_biflow_conceptual_features = [
-                    self.biflow_eth_ipv4_tcp_initiation_two_way_handshake,
-                    self.biflow_eth_ipv4_tcp_full_duplex_connection_established,
-                    self.biflow_eth_ipv4_tcp_half_duplex_connection_established,
-                    self.biflow_eth_ipv4_tcp_connection_rejected,
-                    self.biflow_eth_ipv4_tcp_connection_dropped,
-                    self.biflow_eth_ipv4_tcp_termination_graceful,
-                    self.biflow_eth_ipv4_tcp_termination_abort,
-                    self.biflow_eth_ipv4_tcp_termination_null
-                ]
-
-                return rfc793_tcp_biflow_conceptual_features
-        # Aux function
-        def set_inner_sep_counter(packet_list, inner_sep_counter):
-            """Local helper function to update flows' packets to the right inner_sep_counter,
-            thus correcting its flow_id"""
-            for i, packet in enumerate(packet_list):
-                # set each packet's inner_sep_counter
-                packet_list[i][0][5] = inner_sep_counter
+        # ====================
+        # START: Aux Functions
+        # ====================
+        def set_flow_inner_sep_counter(packet_list, flow_inner_sep_counter):
+            """Local helper function to update flows' packets to the right flow_inner_sep_counter,
+            thus correcting their flow_id values"""
+            packet_list_len = len(packet_list)
+            for i in range(packet_list_len):
+                # set each packet's flow_inner_sep_counter
+                packet_list[i][0][5] = flow_inner_sep_counter
             return packet_list
 
-        # COULD-TODO: validate using tcp_seq
+        def same_seq_packet_test(packet1, packet2):
+            """Checks if packet1 and packet2 have the same SEQ."""
+            tcp_seq1, tcp_seq2 = packet1[8], packet2[8]
+            return (tcp_seq1 == tcp_seq2)
+
+        def duplicate_packet_test(packet1, packet2):
+            """Checks if packet1 and packet2 are duplicates (retransmission/duplicate), which
+            means the packets share the same SEQ, same ACK and same flags."""
+            tcp_seq1, tcp_ack1 = packet1[8], packet1[9]
+            tcp_flags1 = packet1[-8:]
+            tcp_seq2, tcp_ack2 = packet2[8], packet2[9]
+            tcp_flags2 = packet2[-8:]
+            return (tcp_seq1 == tcp_seq2) and (tcp_ack1 == tcp_ack2) and (tcp_flags1 == tcp_flags2)
+
+        def sequential_packet_test(packet1, packet2):
+            """Checks if packet2 is the SEQ/ACK sequential packet after packet1"""
+            # account for SYN flag bit
+            tcp_data_len1 = 1 if packet1[7] == 0 else packet1[7]
+            tcp_seq1, tcp_ack1 = packet1[8], packet1[9]
+            tcp_data_len2 = 1 if packet2[7] == 0 else packet2[7]
+            tcp_seq2, tcp_ack2 = packet2[8], packet2[9]
+            return (tcp_ack2 == tcp_seq1 + tcp_data_len1)
+
+        # ==================
+        # END: Aux Functions
+        # ==================
+
         rfc793_tcp_biflow_conceptual_features = dict()
         rfc793_tcp_biflows = dict()
         rfc793_tcp_biflow_ids = []
@@ -147,339 +111,256 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
 
         # create RFC793-compliant TCP flows
         for tmp_tcp_biflow_id in tmp_tcp_biflow_ids:
-            curr_flow = tmp_tcp_biflows[tmp_tcp_biflow_id]
-            # sorting the packets in each flow by timestamp
-            curr_flow.sort(key=lambda x: x[1])
-            flow_any_n_packets = len(curr_flow)
-
-            if flow_any_n_packets == 0:
+            curr_5tuple_flow = tmp_tcp_biflows[tmp_tcp_biflow_id]
+            curr_5tuple_flow_n_packets = len(curr_5tuple_flow)
+            if curr_5tuple_flow_n_packets == 0:
                 print("[!] A flow can't have 0 packets.", flush=True)
                 exit()
-            else:
-                # =================================
-                # RFC793-compliant TCP BiFlow Genes
-                # =================================
-                rfc793 = RFC793()
-                rfc793_tcp_biflow_id = None
 
-                # ==============
-                # RFC793 parsing
-                # ==============
-                # SHOULD-TODO: Improve this spaghetti hardcoded code. Try to do static parsing of the whole flow
-                # before guessing connection-states dynamically (like TCP does, it's not ideal here)
-                # BUG[RFC793-1]: without SEQ/ACK parsing, connection flag bugs in some cases when there are
-                # TCP out-of-order and duplicate/retransmission (includes decision changing) packets between
-                # the TCP initialization and finalization streams. For example, it causes dropped=True instead
-                # of full-duplex=True and fake absence of graceful termination, among others probably...
-                # (this needs to be parsed correctly, as in: (1) need to check that packet is fwd and then bwd,
-                # (2) seq and ack values should be validated and used to follow the stream as well - more complex due to
-                # duplicate/retransmission packets...). These situations typically happen in cases of higher latency.
-                curr_packet_index = 0
-                previous_packet_index = 0
-                inner_sep_counter = 0
+            if debug == "2":
+                print("[D2] Wireshark Flow: %s" %(biflow_id_to_pcap_filter(tmp_tcp_biflow_id)), flush=True)
 
-                # Saved flow states
-                last_duplicate_tcp_seq = None
-                fixed_tcp_seq1 = None
-                fixed_fin1,fixed_syn1,fixed_rst1,fixed_psh1,fixed_ack1,fixed_urg1,fixed_ece1,fixed_cwr1 = [None]*8
-                fixed_tcp_seq2 = None
-                fixed_fin2,fixed_syn2,fixed_rst2,fixed_psh2,fixed_ack2,fixed_urg2,fixed_ece2,fixed_cwr2 = [None]*8
+            # ===============================
+            # RFC793 Parsing and Flow Control
+            # ===============================
+            rfc793_tcp_biflow_id = None
+            # sorting the packets in each flow by timestamp
+            curr_5tuple_flow.sort(key=lambda x: x[1])
+
+            # tcp_data_len - packet[7], tcp_seq - packet[8], tcp_ack - packet[9], tcp_flags - packet[-8:]
+            # Flow controller could be a list of: (1) ranges between which flows exist;
+            # (2) flow initialization method; (3) flow connection state; (4) flow termination method
+            # 5tuple-flow and tcp-separated flow beginnings coincide
+            initiation_packet_index = 0
+            termination_packet_index = None
+            # counter to separate several tcp-separated flows (6tuple-flow) inside the same 5tuple-flow
+            flow_inner_sep_counter = 0
+
+            first_init_packet, second_init_packet, third_init_packet = None, None, None
+            first_term_packet, second_term_packet, third_term_packet = None, None, None
+            flow_initiation_type = "Initiation not seen"
+            flow_connection_type  = "Connection type undetermined"
+            flow_termination_type = "Termination not seen"
+            for i in range(curr_5tuple_flow_n_packets):
+                is_curr_penultimate_packet = (i == curr_5tuple_flow_n_packets-2)
+                is_curr_last_packet = (i == curr_5tuple_flow_n_packets-1)
+                # ====================================================================
+                # Get first, second and third relative (from current position) packets
+                # ====================================================================              
+                first_rel_packet = curr_5tuple_flow[i]
+                tcp_data_len1 = first_rel_packet[7]
+                tcp_seq1 = first_rel_packet[8]
+                tcp_ack1 = first_rel_packet[9]
+                flag_fin1, flag_syn1, flag_rst1, flag_psh1, flag_ack1, flag_urg1, flag_ece1, flag_cwr1 = first_rel_packet[-8:]
 
                 if debug == "2":
-                    print("[D2] Wireshark Flow: %s" %(biflow_id_to_pcap_filter(tmp_tcp_biflow_id)))
-                while curr_packet_index < flow_any_n_packets:
-                    if debug == "2":
-                        print("[D2] Packet: %s/%s " %(curr_packet_index+1,flow_any_n_packets))
-                    # ===============
-                    # TCP PACKET INFO
-                    # ===============
-                    # Current packet
-                    curr_packet = curr_flow[curr_packet_index]
-                    tcp_seq1 = curr_packet[8]
-                    #tcp_ack1 = curr_packet[9]
-                    fin1,syn1,rst1,psh1,ack1,urg1,ece1,cwr1 = curr_packet[-8:]
+                    print("[D2] Packet %s/%s" %(i+1, curr_5tuple_flow_n_packets), flush=True)
+                    print("[D2] Data Length: %s (Data Length)" %(tcp_data_len1), flush=True)
+                    print("[D2] SEQ/ACK: %s (SEQ), %s (ACK)" %(tcp_seq1, tcp_ack1), flush=True)
+                    print("[D2] Flags: %s (FIN), %s (SYN), %s (RST), %s (PSH)" %(flag_fin1, flag_syn1, flag_rst1, flag_psh1), flush=True)
+                    print("[D2] Flags: %s (ACK), %s (URG), %s (ECE), %s (CWR)" %(flag_ack1, flag_urg1, flag_ece1, flag_cwr1), flush=True)
+                
+                # =======================
+                # TCP Initiation P1-P2-P3
+                # =======================
+                # if the initiation is not complete...
+                if flow_initiation_type != "3-way Handshake":
+                    # if first_init_packet wasn't seen, tcp_ack1 value is 0 and it's a SYN packet, then
+                    # first_rel_packet is first_init_packet
+                    # DEV-NOTE: to include connections with an unseen initiation, remove condition "flag_syn1"
+                    if (not first_init_packet) and (tcp_ack1 == 0) and flag_syn1:
+                        first_init_packet = first_rel_packet
+                        flow_initiation_type = "Requested Connection"
+                        initiation_packet_index = i
+                        # Init1 - Requested connection (syn)
+                        # Valid connection states:
+                        # Init1.1 - Dropped Connection (current packet is last non-duplicate packet)
+                        # BUG-TODO: currently, just checking last packet, need to test with multiple
+                        # duplicate syn packets (thus, belonging to the same flow)
+                        if is_curr_last_packet:
+                            flow_connection_type = "Dropped Connection"
+                    # else first_init_packet remains unknown and we'll have to keep parsing
 
-                    # Second packet from current
-                    try:
-                        second_packet = curr_flow[curr_packet_index+1]
-                        tcp_seq2 = second_packet[8]
-                        #tcp_ack2 = second_packet[9]
-                        fin2,syn2,rst2,psh2,ack2,urg2,ece2,cwr2 = second_packet[-8:]
-                    except IndexError:
-                        fin2,syn2,rst2,psh2,ack2,urg2,ece2,cwr2 = [False]*8
+                    if is_curr_last_packet:
+                        second_rel_packet = None
+                    elif first_init_packet and not second_init_packet:
+                        init_flag_fin1, init_flag_syn1, init_flag_rst1, init_flag_psh1, init_flag_ack1,\
+                        init_flag_urg1, init_flag_ece1, init_flag_cwr1 = first_init_packet[-8:]
+                        second_rel_packet = curr_5tuple_flow[i+1]
+                        flag_fin2, flag_syn2, flag_rst2, flag_psh2, flag_ack2, flag_urg2, flag_ece2, flag_cwr2 = second_rel_packet[-8:]
+                        tcp_seq_p1_p2 = sequential_packet_test(first_init_packet, second_rel_packet)
+                        if debug == "2":
+                            print("[D2] InitP1: %s" %(first_init_packet))
+                            print("[D2] P2: %s" %(second_rel_packet))
+                            print("[D2] InitP1-P2 sequential: %s" %(tcp_seq_p1_p2))
 
-                    # Third packet from current
-                    try:
-                        third_packet = curr_flow[curr_packet_index+2]
-                        tcp_seq3 = third_packet[8]
-                        #tcp_ack3 = third_packet[9]
-                        fin3,syn3,rst3,psh3,ack3,urg3,ece3,cwr3 = third_packet[-8:]
-                    except IndexError:
-                        fin3,syn3,rst3,psh3,ack3,urg2,ece3,cwr3 = [False]*8
+                        # if first_init_packet and second_rel_packet are sequential, test flag combinations
+                        if tcp_seq_p1_p2:
+                            if init_flag_syn1 and flag_ack2:
+                                # Init2 - 2-way Handshake (syn, ack)
+                                # Valid connection states:
+                                # Init2.1 - Half-duplex Connection (syn, syn-ack)
+                                # Init2.2 - Rejected Connection (syn, rst-ack)
+                                second_init_packet = second_rel_packet
+                                flow_initiation_type = "2-way Handshake"
+                                if flag_syn2:
+                                    flow_connection_type = "Half-duplex Connection"
+                                elif flag_rst2:
+                                    flow_connection_type = "Rejected Connection"
+                        # else the real second_init_packet remains unknown and we'll have to keep parsing
                     
-                    # ====================
-                    # TCP DUPLICATE IGNORE
-                    # ====================
-                    # BUG[RFC793-2] if parallel same-SEQ diff-flag flows are created and even responded to,
-                    # it's really hard to parse out these results. I have only seen this in flow termination
-                    # events, but it is possible that it may happen in flow initiation as well. However, for
-                    # this edge-case, worst case scenario the flow termination will be "null" rather
-                    # than "graceful" or an "abort" termination, which is not too bad compared to initations
-                    # and connection state mistakes. However, this should eventually be fixed.
-                    # [SEQ-1] check for duplicate packets and save current packet state if:
-                    # (1) packet is a real duplicate (same SEQ and flags)
-                    # (2) if the new duplicate is not saved yet (fixed_tcp_seq1|fixed_tcp_seq2)
-                    # (3) packet isn't another duplicate of the last duplicate packet (last_duplicate_tcp_seq)
-                    if (last_duplicate_tcp_seq != tcp_seq1):
-                        # 1-2 sequential duplicate packet
-                        duplicate_r1_1 = (tcp_seq1 == tcp_seq2) and \
-                            [fin1,syn1,rst1,psh1,ack1,urg1,ece1,cwr1]==[fin2,syn2,rst2,psh2,ack2,urg2,ece2,cwr2]
-                        if fixed_tcp_seq1 == None and duplicate_r1_1:
-                            if debug == 2:
-                                print("[D2] 1-2 sequential DUPLICATE: %s | %s" %(tcp_seq1, tcp_seq2))
-                            fixed_tcp_seq1 = tcp_seq1
-                            last_duplicate_tcp_seq = tcp_seq1
-                            fixed_fin1,fixed_syn1,fixed_rst1,fixed_psh1,fixed_ack1,fixed_urg1,fixed_ece1,fixed_cwr1 = \
-                                fin1,syn1,rst1,psh1,ack1,urg1,ece1,cwr1
-                    elif (last_duplicate_tcp_seq != tcp_seq2):
-                        # 2-3 sequential duplicate packet
-                        duplicate_r1_2 = (tcp_seq2 == tcp_seq3) and \
-                            [fin2,syn2,rst2,psh1,ack2,urg2,ece2,cwr2]==[fin3,syn3,rst3,psh3,ack3,urg3,ece3,cwr3]
-                        if fixed_tcp_seq2 == None and duplicate_r1_2:
-                            if debug == "2":
-                                print(curr_packet_index, tcp_seq1)
-                                print("[D2] 2-3 sequential DUPLICATE: %s | %s" %(tcp_seq2, tcp_seq3))
-                            fixed_tcp_seq2 = tcp_seq2
-                            last_duplicate_tcp_seq = tcp_seq2
-                            fixed_fin2,fixed_syn2,fixed_rst2,fixed_psh2,fixed_ack2,fixed_urg2,fixed_ece2,fixed_cwr2 = \
-                                fin2,syn2,rst2,psh2,ack2,urg2,ece2,cwr2
+                    if is_curr_penultimate_packet:
+                        second_rel_packet = None
+                    elif is_curr_last_packet:
+                        third_rel_packet = None
+                    elif first_init_packet and second_init_packet and not third_init_packet:
+                        init_flag_fin1, init_flag_syn1, init_flag_rst1, init_flag_psh1, init_flag_ack1,\
+                        init_flag_urg1, init_flag_ece1, init_flag_cwr1 = first_init_packet[-8:]
+                        init_flag_fin2, init_flag_syn2, init_flag_rst2, init_flag_psh2, init_flag_ack2,\
+                        init_flag_urg2, init_flag_ece2, init_flag_cwr2 = second_init_packet[-8:]
+                        third_rel_packet = curr_5tuple_flow[i+2]
+                        flag_fin3, flag_syn3, flag_rst3, flag_psh3, flag_ack3, flag_urg3, flag_ece3, flag_cwr3 = third_rel_packet[-8:]
+                        tcp_seq_p2_p3 = sequential_packet_test(second_init_packet, third_rel_packet)
+                        if debug == "2":
+                            print("[D2] InitP2: %s" %(second_init_packet))
+                            print("[D2] P3: %s" %(third_rel_packet))
+                            print("[D2] InitP2-P3 sequential: %s" %(tcp_seq_p2_p3))
+                        # if second_init_packet and third_rel_packet are sequential
+                        # third_rel_packet is the third_init_packet
+                        if tcp_seq_p2_p3:
+                            if init_flag_syn1 and (init_flag_syn2 and init_flag_ack2) and flag_ack3:
+                                # Init3 - 3-way Handshake (syn,syn-ack,ack)
+                                # Valid connection states:
+                                # Init3.1 - Full-duplex Connection
+                                third_init_packet = third_rel_packet
+                                flow_initiation_type = "3-way Handshake"
+                                flow_connection_type = "Full-duplex Connection"
+                        # else the real third_init_packet remains unknown and we'll have to keep parsing
 
-                    # =========================
-                    # TCP FLOW INITIATION RULES
-                    # =========================
-                    # Begin Flow: tcp_three_way_handshake (r1), tcp_two_way_handshake (r2) and connection request (r3)
-                    # 3-way handshake (full-duplex): (syn,syn-ack,ack) or (syn,syn-ack,syn-ack)
-                    # Non-duplicate flag values will force first flag values
-                    non_duplicate_syn1 = (syn1 and not ack1) if fixed_tcp_seq1 == None else (fixed_syn1 and not fixed_ack1)
-                    non_duplicate_syn2_ack2 = (syn2 and ack2) if fixed_tcp_seq2 == None else (fixed_syn2 and fixed_ack2)
-                    non_duplicate_ack2 = ack2 if fixed_tcp_seq2 == None else fixed_ack2
-                    non_duplicate_syn2 = (syn2 and not ack2) if fixed_tcp_seq2 == None else (fixed_syn2 and not fixed_ack2)
-                    non_duplicate_fin1 = fin1 if fixed_tcp_seq1 == None else fixed_fin1
-                    non_duplicate_fin2_ack2 = (fin2 and ack2) if fixed_tcp_seq2 == None else (fixed_fin2 and fixed_ack2)
-                    # Other rules
-                    is_curr_last_packet = (curr_packet_index == flow_any_n_packets-1)
+                # ========================
+                # TCP Termination P1-P2-P3
+                # ========================
+                # if, at least, a connection was requested...
+                if flow_initiation_type != "Initiation not seen":
+                    # if first_term_packet wasn't seen and current packet is a FIN packet
+                    # then, first_rel_packet is first_term_packet
+                    if (not first_term_packet) and flag_fin1:
+                        first_term_packet = first_rel_packet
+                    # else, if termination wasn't seen yet, constantly check for RST flag and
+                    # for last packet termination
+                    elif flow_termination_type == "Termination not seen":
+                        if flag_rst1:
+                            # Term1 - Abort Termination (rst)
+                            first_term_packet = first_rel_packet
+                            flow_termination_type = "Abort Termination"
+                            # MAYBE-TODO: packets outside flows after termination are being discarded
+                            # (to make it consistent with Wireshark, this could be solved by saving
+                            # same-seq/duplicate packets inside the same 6tuple flow, but doing it this
+                            # way is more consistent)
+                            termination_packet_index = i
+                        elif is_curr_last_packet:
+                            # Term2 - Null Termination (current packet is the last packet)
+                            first_term_packet = first_rel_packet
+                            flow_termination_type = "Null Termination"
+                            termination_packet_index = i
+                    # else first_term_packet remains unknown and we'll have to keep parsing
 
-                    if debug == "2":
-                        print("[D2] Init1 - Syn, Syn-Ack, Ack:", non_duplicate_syn1, non_duplicate_syn2_ack2, ack3)
-                        print("[D2] Init2 - Syn, Ack:", non_duplicate_syn1, non_duplicate_syn2_ack2)
-                        print("[D2] Init3 - Syn, Syn:", syn1, is_curr_last_packet)
-                        print([fin2,syn2,rst2,psh1,ack2,urg2,ece2,cwr2])
-                    rfc793.flow_initiation_r1 = non_duplicate_syn1 and non_duplicate_syn2_ack2 and ack3
-                    # 2-way handshake (half-duplex): (syn,ack) or (syn,syn-ack)
-                    rfc793.flow_initiation_r2 = non_duplicate_syn1 and non_duplicate_ack2
-                    # Connection request: (syn)
-                    rfc793.flow_initiation_r3 = False
-                    
-                    # ==========================
-                    # TCP FLOW TERMINATION RULES
-                    # ==========================
-                    # End Flow: tcp_graceful_termination (r1), tcp_abort_termination (r2) and last packet (r3)
-                    if debug == "2":
-                        print("[D2] Term1 - Fin, Fin-Ack, Ack:", non_duplicate_fin1, non_duplicate_fin2_ack2, ack3)
-                        print("[D2] Term2 - Rst, !Rst:", rst1, not rst2)
-                        print("[D2] Term3 - isLastPacket():", is_curr_last_packet)
+                    if is_curr_last_packet:
+                        second_rel_packet = None
+                    elif first_term_packet and not second_term_packet:
+                        term_flag_fin1, term_flag_syn1, term_flag_rst1, term_flag_psh1, term_flag_ack1,\
+                        term_flag_urg1, term_flag_ece1, term_flag_cwr1 = first_term_packet[-8:]
+                        second_rel_packet = curr_5tuple_flow[i+1]
+                        flag_fin2, flag_syn2, flag_rst2, flag_psh2, flag_ack2, flag_urg2, flag_ece2, flag_cwr2 = second_rel_packet[-8:]
+                        tcp_seq_p1_p2 = sequential_packet_test(first_term_packet, second_rel_packet)
+                        if debug == "2":
+                            print("[D2] TermP1: %s" %(first_term_packet))
+                            print("[D2] P2: %s" %(second_rel_packet))
+                            print("[D2] TermP1-P2 sequential: %s" %(tcp_seq_p1_p2))
+                        # if first_term_packet and second_rel_packet are sequential, test flag combinations
+                        if tcp_seq_p1_p2:
+                            # Unfinished Term3 - Graceful Termination (fin, fin-ack)
+                            if term_flag_fin1 and (flag_fin2 and flag_ack2): second_term_packet = second_rel_packet
+                        # else the real second_term_packet remains unknown and we'll have to keep parsing
+                    if is_curr_penultimate_packet:
+                        second_rel_packet = None
+                    elif is_curr_last_packet:
+                        third_rel_packet = None
+                    elif first_term_packet and second_term_packet and not third_term_packet:
+                        term_flag_fin1, term_flag_syn1, term_flag_rst1, term_flag_psh1, term_flag_ack1,\
+                        term_flag_urg1, term_flag_ece1, term_flag_cwr1 = first_term_packet[-8:]
+                        term_flag_fin2, term_flag_syn2, term_flag_rst2, term_flag_psh2, term_flag_ack2,\
+                        term_flag_urg2, term_flag_ece2, term_flag_cwr2 = second_term_packet[-8:]
+                        third_rel_packet = curr_5tuple_flow[i+2]
+                        flag_fin3, flag_syn3, flag_rst3, flag_psh3, flag_ack3, flag_urg3, flag_ece3, flag_cwr3 = third_rel_packet[-8:]
+                        tcp_seq_p2_p3 = sequential_packet_test(second_term_packet, third_rel_packet)
+                        if debug == "2":
+                            print("[D2] TermP2: %s" %(second_term_packet))
+                            print("[D2] P3: %s" %(third_rel_packet))
+                            print("[D2] TermP2-P3 sequential: %s" %(tcp_seq_p2_p3))
+                        # if second_term_packet and third_rel_packet are sequential, test flag combinations
+                        if tcp_seq_p2_p3:
+                            # Term3 - Graceful Termination (fin, fin-ack, ack)
+                            if term_flag_fin1 and (term_flag_fin2 and term_flag_fin2) and flag_ack3:
+                                third_term_packet = third_rel_packet
+                                flow_termination_type = "Graceful Termination"
+                                # MAYBE-TODO: packets outside flows after termination are being discarded
+                                # (to make it consistent with Wireshark, this could be solved by saving
+                                # same-seq/duplicate packets inside the same 6tuple flow, but doing it this
+                                # way is more consistent)
+                                termination_packet_index = i
+                        # else the real third_term_packet remains unknown and we'll have to keep parsing
 
-                    # graceful termination
-                    rfc793.flow_termination_r1 = non_duplicate_fin1 and non_duplicate_fin2_ack2 and ack3
-                    # abort termination
-                    rfc793.flow_termination_r2 = rst1 and not rst2
-                    # null termination
-                    rfc793.flow_termination_r3 = is_curr_last_packet
+                if debug == "2":
+                    print("[D2] %s (Flow Initiation Type)" %(flow_initiation_type))
+                    print("[D2] %s (Flow Connection Type)" %(flow_connection_type))
+                    print("[D2] %s (Flow Termination Type)" %(flow_termination_type))
 
-                    if not rfc793.flow_initiated:
-                        # ===================
-                        # TCP FLOW INITIATION
-                        # ===================
-                        # Note 1: Consider flow begin or ignore it (considering it is safer, but not considering it will
-                        # leave out flows that have started before the capture)
-                        # Note 2: We consider flows only the ones that start with a 2 or 3-way handshake (r1,r2). In case
-                        # there's no second acknowledgement, the connection was dropped and, nonetheless, the researcher
-                        # considers it a flow
+                # =======================================
+                # TREAT EACH CONNECTION STATE DIFFERENTLY
+                # =======================================
+                # if initiation was not seen, packet is discarded
+                if flow_initiation_type == "Initiation not seen":
+                    n_disconected_rfc793_packets += 1
 
-                        # -------------------
-                        # Three-way Handshake
-                        # -------------------
-                        if rfc793.flow_initiation_r1:
-                            # Note: Any three-way handshake initiates a full-duplex connection, no need to duplicate variables
-                            # ----------------------------------
-                            # Established Full-Duplex Connection
-                            # ----------------------------------
-                            rfc793.flow_initiated = True
-                            # RESET saved Flow states
-                            last_duplicate_tcp_seq = None
-                            fixed_tcp_seq1 = None
-                            fixed_fin1,fixed_syn1,fixed_rst1,fixed_psh1,fixed_ack1,fixed_urg1,fixed_ece1,fixed_cwr1 = [None]*8
-                            fixed_tcp_seq2 = None
-                            fixed_fin2,fixed_syn2,fixed_rst2,fixed_psh2,fixed_ack2,fixed_urg2,fixed_ece2,fixed_cwr2 = [None]*8
-                            rfc793.biflow_eth_ipv4_tcp_full_duplex_connection_established = True
-                        # -----------------
-                        # Two-way Handshake
-                        # -----------------
-                        elif rfc793.flow_initiation_r2:
-                            # Note: Rare occurrence, except in the case of rejected connections:
-                            # 1. After receiving syn, the receiving endpoint acknowledges the connection request and aborts it.
-                            # The connection is acknowledged (ack) and immediately terminated (rst) in the same packet: REJECT.
-                            # The most common 2nd packet flags are (rst-ack), ack used for the connection acknowledgement (two-way handshake)
-                            # and reset used for immediately rejecting the connection
-                            # 2. After receiving syn, the receiving endpoint acknowledges the connection request and accepts it.
-                            # The connection is acknowledged (syn-ack) but never initiated: (syn, syn-ack). It might or not be
-                            # terminated afterwards, since it is very common that it's a portscan and a reset is received right
-                            # afterwards or, in more uncommon cases where an attacker can close a TCP connection and not send a
-                            # RST packet, no message is received at all by the endpoint, but these termination cases are handled
-                            # by our flow termination rules later.
-                            rfc793.flow_initiated = True
-                            # RESET saved Flow states
-                            last_duplicate_tcp_seq = None
-                            fixed_tcp_seq1 = None
-                            fixed_fin1,fixed_syn1,fixed_rst1,fixed_psh1,fixed_ack1,fixed_urg1,fixed_ece1,fixed_cwr1 = [None]*8
-                            fixed_tcp_seq2 = None
-                            fixed_fin2,fixed_syn2,fixed_rst2,fixed_psh2,fixed_ack2,fixed_urg2,fixed_ece2,fixed_cwr2 = [None]*8
-                            rfc793.biflow_eth_ipv4_tcp_initiation_two_way_handshake = True
-
-                            # -------------------
-                            # Rejected Connection
-                            # -------------------
-                            if rst2:
-                                rfc793.biflow_eth_ipv4_tcp_connection_rejected = True
-                            # ----------------------------------
-                            # Established Half-Duplex Connection
-                            # ----------------------------------
-                            else:
-                                rfc793.biflow_eth_ipv4_tcp_half_duplex_connection_established = True
-                        # ---------------------------------
-                        # Unacknowledged Connection Request
-                        # ---------------------------------
-                        elif rfc793.flow_initiation_r3:
-                            # 1. After receiving syn, the receiving endpoint ignores the connection request and drops it: DROP.
-                            # ------------------
-                            # Dropped connection
-                            # ------------------
-                            rfc793.flow_initiated = True
-                            # RESET saved Flow states
-                            last_duplicate_tcp_seq = None
-                            fixed_tcp_seq1 = None
-                            fixed_fin1,fixed_syn1,fixed_rst1,fixed_psh1,fixed_ack1,fixed_urg1,fixed_ece1,fixed_cwr1 = [None]*8
-                            fixed_tcp_seq2 = None
-                            fixed_fin2,fixed_syn2,fixed_rst2,fixed_psh2,fixed_ack2,fixed_urg2,fixed_ece2,fixed_cwr2 = [None]*8
-                            rfc793.biflow_eth_ipv4_tcp_connection_dropped = True
-
-                    # the flow end conditions are r1 and r2, (fin,fin-ack,ack)/(rst,!rst,---),
-                    # or if the packet is the last one of the existing communication
-                    # SHOULD-TODO: Improve this spaghetti hardcoded code
-                    if rfc793.flow_initiated:
-                        rfc793_tcp_biflow_id = (tmp_tcp_biflow_id[0], tmp_tcp_biflow_id[1], tmp_tcp_biflow_id[2],\
-                            tmp_tcp_biflow_id[3], tmp_tcp_biflow_id[4], tmp_tcp_biflow_id[5] + inner_sep_counter)
-                        # ====================
-                        # TCP FLOW TERMINATION
-                        # ====================
-                        
-                        # graceful termination
-                        if rfc793.flow_termination_r1:
-                            rfc793.flow_initiated = False
-                            rfc793.flow_terminated = True
-                            # RESET saved Flow states
-                            last_duplicate_tcp_seq = None
-                            fixed_tcp_seq1 = None
-                            fixed_fin1,fixed_syn1,fixed_rst1,fixed_psh1,fixed_ack1,fixed_urg1,fixed_ece1,fixed_cwr1 = [None]*8
-                            fixed_tcp_seq2 = None
-                            fixed_fin2,fixed_syn2,fixed_rst2,fixed_psh2,fixed_ack2,fixed_urg2,fixed_ece2,fixed_cwr2 = [None]*8
-                            rfc793.biflow_eth_ipv4_tcp_termination_graceful = True
-                            # keep tcp biflow and packets
-                            rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = rfc793.get_rfc793_tcp_biflow_conceptual_features()
-                            packet_list = curr_flow[previous_packet_index:curr_packet_index+3]
-                            packet_list = set_inner_sep_counter(packet_list, inner_sep_counter)
-                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = packet_list
-                            rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
-                            previous_packet_index = curr_packet_index + 3
-                            inner_sep_counter += 1
-                        # abort termination
-                        elif rfc793.flow_termination_r2:
-                            rfc793.flow_initiated = False
-                            rfc793.flow_terminated = True
-                            # RESET saved Flow states
-                            last_duplicate_tcp_seq = None
-                            fixed_tcp_seq1 = None
-                            fixed_fin1,fixed_syn1,fixed_rst1,fixed_psh1,fixed_ack1,fixed_urg1,fixed_ece1,fixed_cwr1 = [None]*8
-                            fixed_tcp_seq2 = None
-                            fixed_fin2,fixed_syn2,fixed_rst2,fixed_psh2,fixed_ack2,fixed_urg2,fixed_ece2,fixed_cwr2 = [None]*8
-                            rfc793.biflow_eth_ipv4_tcp_termination_abort = True
-                            # keep tcp biflow and packets
-                            rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = rfc793.get_rfc793_tcp_biflow_conceptual_features()
-                            packet_list = curr_flow[previous_packet_index:curr_packet_index+1]
-                            packet_list = set_inner_sep_counter(packet_list, inner_sep_counter)
-                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = packet_list
-                            rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
-                            previous_packet_index = curr_packet_index + 1
-                            inner_sep_counter += 1
-                        # null termination
-                        elif rfc793.flow_termination_r3:
-                            rfc793.flow_initiated = False
-                            rfc793.flow_terminated = True
-                            # RESET saved Flow states
-                            last_duplicate_tcp_seq = None
-                            fixed_tcp_seq1 = None
-                            fixed_fin1,fixed_syn1,fixed_rst1,fixed_psh1,fixed_ack1,fixed_urg1,fixed_ece1,fixed_cwr1 = [None]*8
-                            fixed_tcp_seq2 = None
-                            fixed_fin2,fixed_syn2,fixed_rst2,fixed_psh2,fixed_ack2,fixed_urg2,fixed_ece2,fixed_cwr2 = [None]*8
-                            rfc793.biflow_eth_ipv4_tcp_termination_null = True
-                            # keep tcp biflow and packets
-                            rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = rfc793.get_rfc793_tcp_biflow_conceptual_features()
-                            packet_list = curr_flow[previous_packet_index:curr_packet_index+1]
-                            packet_list = set_inner_sep_counter(packet_list, inner_sep_counter)
-                            rfc793_tcp_biflows[rfc793_tcp_biflow_id] = packet_list
-                            rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
-                            previous_packet_index = curr_packet_index + 1
-                            inner_sep_counter += 1
-                    elif not rfc793_tcp_biflow_id:
-                        # disconected packet
-                        n_disconected_rfc793_packets += 1
-                    else:
-                        # just packets
-                        pass
-
-                    # =====================
-                    # TCP BiFlow Debug Info
-                    # =====================
-                    if debug == "2":
-                        # Initiation/Connection Types
-                        if rfc793.biflow_eth_ipv4_tcp_full_duplex_connection_established:
-                            print("[D2] IPv4-TCP Full-Duplex Connection Established (3-way Handshake)", flush=True)
-                        elif rfc793.biflow_eth_ipv4_tcp_half_duplex_connection_established:
-                            print("[D2] IPv4-TCP Half-Duplex Connection Established (2-way Handshake)", flush=True)
-                        elif rfc793.biflow_eth_ipv4_tcp_connection_rejected:
-                            print("[D2] IPv4-TCP Rejected Connection (2-way Handshake)", flush=True)
-                        elif rfc793.biflow_eth_ipv4_tcp_connection_dropped:
-                            print("[D2] IPv4-TCP Dropped Connection (No Handshake)", flush=True)
-                        else:
-                            print("[D2] Initiation not reached yet.", flush=True)
-
-                        # Termination Types
-                        if rfc793.biflow_eth_ipv4_tcp_termination_graceful:
-                            print("[D2] IPv4-TCP Graceful Termination", flush=True)
-                        elif rfc793.biflow_eth_ipv4_tcp_termination_abort:
-                            print("[D2] IPv4-TCP Abort Termination", flush=True)
-                        elif rfc793.biflow_eth_ipv4_tcp_termination_null:
-                            print("[D2] IPv4-TCP Null Termination", flush=True)
-                        else:
-                            print("[D2] Termination not reached yet.", flush=True)
-
-                    # =====================================================================================================
-                    # Flow Termination: reset all inside loop, in case there's a 6-tuple biflow inside this 5-tuple parsing
-                    # =====================================================================================================
-                    rfc793.reset_states_and_genes()
-
-                    # keep iterating through the packets
-                    curr_packet_index += 1
+                # if termination was seen, then,
+                # it's time that packets are saved for
+                # the terminated 6tuple BiFlow
+                if flow_termination_type != "Termination not seen":
+                    # 6tuple BiFlow Id
+                    rfc793_tcp_biflow_id = (tmp_tcp_biflow_id[0], tmp_tcp_biflow_id[1], tmp_tcp_biflow_id[2],\
+                        tmp_tcp_biflow_id[3], tmp_tcp_biflow_id[4], tmp_tcp_biflow_id[5] + flow_inner_sep_counter)
+                    # ---------------------------------------------------------
+                    # Keep 6tuple BiFlow, its packets and its inherent features
+                    # ---------------------------------------------------------
+                    rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = [
+                        flow_initiation_type == "2-way Handshake",
+                        flow_connection_type == "Full-duplex Connection",
+                        flow_connection_type == "Half-duplex Connection",
+                        flow_connection_type == "Rejected Connection",
+                        flow_connection_type == "Dropped Connection",
+                        flow_termination_type == "Graceful Termination",
+                        flow_termination_type == "Abort Termination",
+                        flow_termination_type == "Null Termination"
+                    ]
+                    packet_list = curr_5tuple_flow[initiation_packet_index:termination_packet_index+1]
+                    packet_list = set_flow_inner_sep_counter(packet_list, flow_inner_sep_counter)
+                    rfc793_tcp_biflows[rfc793_tcp_biflow_id] = packet_list
+                    rfc793_tcp_biflow_ids.append(rfc793_tcp_biflow_id)
+                    # ------------------------------
+                    # RESET all 6tuple BiFlow values
+                    # ------------------------------
+                    # increment 6tuple counter
+                    flow_inner_sep_counter += 1
+                    # (if there is one) next initiation packet index
+                    initiation_packet_index = termination_packet_index+1
+                    # reset all other values to their defaults
+                    termination_packet_index = None
+                    first_init_packet, second_init_packet, third_init_packet = None, None, None
+                    first_term_packet, second_term_packet, third_term_packet = None, None, None
+                    flow_initiation_type = "Initiation not seen"
+                    flow_connection_type  = "Connection type undetermined"
+                    flow_termination_type = "Termination not seen"
 
         return rfc793_tcp_biflows, rfc793_tcp_biflow_ids, rfc793_tcp_biflow_conceptual_features, n_disconected_rfc793_packets
 

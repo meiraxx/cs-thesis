@@ -1,0 +1,4 @@
+https://towardsdatascience.com/7-data-types-a-better-way-to-think-about-data-types-for-machine-learning-939fae99a689
+https://hackernoon.com/what-is-one-hot-encoding-why-and-when-do-you-have-to-use-it-e3c6186d008f
+
+For example, categorical values may be replaced with boolean values (one-hot encoding technique), which is what we do for the TCP flow features: flow initiation type, flow connection type and flow termination type.
