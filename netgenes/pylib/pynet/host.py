@@ -130,9 +130,17 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
             # ---------------------
             # TCP Innitiation Types
             # ---------------------
+            bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations = list()
+            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations = list()
+            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations = list()
+
             bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = list()
             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = list()
             bihost_bwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = list()
+
+            bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations = list()
+            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations = list()
+            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations = list()
 
             # --------------------
             # TCP Connection Types
@@ -240,39 +248,46 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                         # --------------------
                         # TCP Initiation Types
                         # --------------------
-                        curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = int(curr_bitalker[135])
+                        curr_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations = int(curr_bitalker[135])
+                        bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations)
+
+                        curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = int(curr_bitalker[141])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations)
 
+                        curr_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations = int(curr_bitalker[147])
+                        bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations)
                         # --------------------
                         # TCP Connection Types
                         # --------------------
-                        curr_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established = int(curr_bitalker[141])
-                        bihost_any_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established)
+                        curr_bitalker_eth_ipv4_tcp_biflow_connections_dropped = int(curr_bitalker[153])
+                        bihost_any_bitalker_eth_ipv4_tcp_biflow_connections_dropped.append(curr_bitalker_eth_ipv4_tcp_biflow_connections_dropped)
 
-                        curr_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established = int(curr_bitalker[147])
-                        bihost_any_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established)
-
-                        curr_bitalker_eth_ipv4_tcp_biflow_connections_rejected = int(curr_bitalker[153])
+                        curr_bitalker_eth_ipv4_tcp_biflow_connections_rejected = int(curr_bitalker[159])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_connections_rejected.append(curr_bitalker_eth_ipv4_tcp_biflow_connections_rejected)
 
-                        curr_bitalker_eth_ipv4_tcp_biflow_connections_dropped = int(curr_bitalker[159])
-                        bihost_any_bitalker_eth_ipv4_tcp_biflow_connections_dropped.append(curr_bitalker_eth_ipv4_tcp_biflow_connections_dropped)
+                        curr_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established = int(curr_bitalker[165])
+                        bihost_any_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established)
+
+                        curr_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established = int(curr_bitalker[171])
+                        bihost_any_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established)
 
                         # ---------------------
                         # TCP Termination Types
                         # ---------------------
-                        curr_bitalker_eth_ipv4_tcp_biflow_null_terminations = int(curr_bitalker[165])
-                        bihost_any_bitalker_eth_ipv4_tcp_biflow_null_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_null_terminations)
-
-                        curr_bitalker_eth_ipv4_tcp_biflow_graceful_terminations = int(curr_bitalker[171])
-                        bihost_any_bitalker_eth_ipv4_tcp_biflow_graceful_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_graceful_terminations)
-
                         curr_bitalker_eth_ipv4_tcp_biflow_abort_terminations = int(curr_bitalker[177])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_abort_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_abort_terminations)
 
+                        curr_bitalker_eth_ipv4_tcp_biflow_null_terminations = int(curr_bitalker[183])
+                        bihost_any_bitalker_eth_ipv4_tcp_biflow_null_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_null_terminations)
+
+                        curr_bitalker_eth_ipv4_tcp_biflow_graceful_terminations = int(curr_bitalker[189])
+                        bihost_any_bitalker_eth_ipv4_tcp_biflow_graceful_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_graceful_terminations)
+
                         if curr_bitalker_direction == "fwd":
                             # init
+                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations)
                             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations)
+                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations)
                             # connect
                             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established)
                             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established)
@@ -285,7 +300,10 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_abort_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_abort_terminations)
                         else:
                             # init
+                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations)
                             bihost_bwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations)
+                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations)
+                            
                             # connect
                             bihost_bwd_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_full_duplex_connections_established)
                             bihost_bwd_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established.append(curr_bitalker_eth_ipv4_tcp_biflow_half_duplex_connections_established)
@@ -426,6 +444,39 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                     # ------------------------------
                     # TCP BiTalker Innitiation Types
                     # ------------------------------
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_total = round(sum(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_mean = round(np.mean(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_std = round(np.std(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_var = round(np.var(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_max = round(max(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_min = round(min(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+
+                    if len(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations) == 0:
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_total = bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_max = \
+                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_min = 0
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_mean = bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_std = \
+                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_var = 0.0
+                    else:
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_total = round(sum(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_mean = round(np.mean(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_std = round(np.std(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_var = round(np.var(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_max = round(max(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_min = round(min(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                    
+                    if len(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations) == 0:
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_total = bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_max = \
+                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_min = 0
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_mean = bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_std = \
+                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_var = 0.0
+                    else:
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_total = round(sum(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_mean = round(np.mean(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_std = round(np.std(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_var = round(np.var(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_max = round(max(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations_min = round(min(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations), 3)
+
                     bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_total = round(sum(bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)
                     bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_mean = round(np.mean(bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)
                     bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_std = round(np.std(bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)
@@ -458,6 +509,39 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                         bihost_bwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_var = round(np.var(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)
                         bihost_bwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_max = round(max(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)
                         bihost_bwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_min = round(min(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)
+
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_total = round(sum(bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_mean = round(np.mean(bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_std = round(np.std(bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_var = round(np.var(bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_max = round(max(bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_min = round(min(bihost_any_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+
+                    if len(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations) == 0:
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_total = bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_max = \
+                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_min = 0
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_mean = bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_std = \
+                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_var = 0.0
+                    else:
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_total = round(sum(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_mean = round(np.mean(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_std = round(np.std(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_var = round(np.var(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_max = round(max(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_min = round(min(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                    
+                    if len(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations) == 0:
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_total = bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_max = \
+                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_min = 0
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_mean = bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_std = \
+                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_var = 0.0
+                    else:
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_total = round(sum(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_mean = round(np.mean(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_std = round(np.std(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_var = round(np.var(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_max = round(max(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations_min = round(min(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations), 3)
 
                     # -----------------------------
                     # TCP BiTalker Connection Types

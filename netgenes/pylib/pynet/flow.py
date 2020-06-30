@@ -142,6 +142,10 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
             flow_connection_type  = "Connection type undetermined"
             flow_termination_type = "Termination not seen"
             for i in range(curr_5tuple_flow_n_packets):
+                # in case there's more 6tuple flows, need to skip already processed packets
+                # (e.g., needed in case of graceful termination)
+                if i < initiation_packet_index:
+                    continue
                 is_curr_penultimate_packet = (i == curr_5tuple_flow_n_packets-2)
                 is_curr_last_packet = (i == curr_5tuple_flow_n_packets-1)
                 # ====================================================================
@@ -167,18 +171,29 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                 if flow_initiation_type != "3-way Handshake":
                     # if first_init_packet wasn't seen, tcp_ack1 value is 0 and it's a SYN packet, then
                     # first_rel_packet is first_init_packet
-                    # DEV-NOTE: to include connections with an unseen initiation, remove condition "flag_syn1"
-                    if (not first_init_packet) and (tcp_ack1 == 0) and flag_syn1:
+                    # DEV-NOTE: condition "(tcp_ack1 == 0)" removed due to cases where first packet is a SYN packet with
+                    # a non-zero ACK value, which is not normal TCP behavior, but we must account for these cases because
+                    # machines still respond to such packets smartly devised by adversaries
+                    # DEV-NOTE: to include connections with an unseen initiation, also remove the condition "flag_syn1"
+                    if (not first_init_packet) and flag_syn1:
                         first_init_packet = first_rel_packet
                         flow_initiation_type = "Requested Connection"
                         initiation_packet_index = i
-                        # Init1 - Requested connection (syn)
+                        # Init1 - Requested Connection (syn)
                         # Valid connection states:
                         # Init1.1 - Dropped Connection (current packet is last non-duplicate packet)
-                        # BUG-TODO: currently, just checking last packet, need to test with multiple
-                        # duplicate syn packets (thus, belonging to the same flow)
-                        if is_curr_last_packet:
-                            flow_connection_type = "Dropped Connection"
+                        # DEV-NOTE: need to test with multiple duplicate syn packets
+                        # (thus, belonging to the same flow)
+                        for j in range(i+1, curr_5tuple_flow_n_packets):
+                            packet_n = curr_5tuple_flow[j]
+                            tcp_dup_p1_pn = duplicate_packet_test(first_init_packet, packet_n)
+                            # if a non-duplicate packet was found, then it is not a dropped connection
+                            if not tcp_dup_p1_pn:
+                                break
+                            # else, if n is a duplicate syn packet and it is also the last one,
+                            # then it's a dropped connection
+                            elif (j == curr_5tuple_flow_n_packets-1):
+                                flow_connection_type = "Dropped Connection"
                     # else first_init_packet remains unknown and we'll have to keep parsing
 
                     if is_curr_last_packet:
@@ -199,14 +214,15 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                             if init_flag_syn1 and flag_ack2:
                                 # Init2 - 2-way Handshake (syn, ack)
                                 # Valid connection states:
-                                # Init2.1 - Half-duplex Connection (syn, syn-ack)
-                                # Init2.2 - Rejected Connection (syn, rst-ack)
+                                # Init2.1 - Rejected Connection (syn, rst-ack)
+                                # Init2.2 - Established Half-duplex Connection (syn, syn-ack)
                                 second_init_packet = second_rel_packet
                                 flow_initiation_type = "2-way Handshake"
-                                if flag_syn2:
-                                    flow_connection_type = "Half-duplex Connection"
-                                elif flag_rst2:
+
+                                if flag_rst2:
                                     flow_connection_type = "Rejected Connection"
+                                elif flag_syn2:
+                                    flow_connection_type = "Established Half-duplex Connection"
                         # else the real second_init_packet remains unknown and we'll have to keep parsing
                     
                     if is_curr_penultimate_packet:
@@ -231,10 +247,10 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                             if init_flag_syn1 and (init_flag_syn2 and init_flag_ack2) and flag_ack3:
                                 # Init3 - 3-way Handshake (syn,syn-ack,ack)
                                 # Valid connection states:
-                                # Init3.1 - Full-duplex Connection
+                                # Init3.1 - Established Full-duplex Connection
                                 third_init_packet = third_rel_packet
                                 flow_initiation_type = "3-way Handshake"
-                                flow_connection_type = "Full-duplex Connection"
+                                flow_connection_type = "Established Full-duplex Connection"
                         # else the real third_init_packet remains unknown and we'll have to keep parsing
 
                 # ========================
@@ -308,7 +324,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                                 # (to make it consistent with Wireshark, this could be solved by saving
                                 # same-seq/duplicate packets inside the same 6tuple flow, but doing it this
                                 # way is more consistent)
-                                termination_packet_index = i
+                                termination_packet_index = i + 2
                         # else the real third_term_packet remains unknown and we'll have to keep parsing
 
                 if debug == "2":
@@ -334,14 +350,16 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                     # Keep 6tuple BiFlow, its packets and its inherent features
                     # ---------------------------------------------------------
                     rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = [
+                        flow_initiation_type == "Requested Connection",
                         flow_initiation_type == "2-way Handshake",
-                        flow_connection_type == "Full-duplex Connection",
-                        flow_connection_type == "Half-duplex Connection",
-                        flow_connection_type == "Rejected Connection",
+                        flow_initiation_type == "3-way Handshake",
                         flow_connection_type == "Dropped Connection",
-                        flow_termination_type == "Graceful Termination",
+                        flow_connection_type == "Rejected Connection",
+                        flow_connection_type == "Established Half-duplex Connection",
+                        flow_connection_type == "Established Full-duplex Connection",
                         flow_termination_type == "Abort Termination",
-                        flow_termination_type == "Null Termination"
+                        flow_termination_type == "Null Termination",
+                        flow_termination_type == "Graceful Termination"
                     ]
                     packet_list = curr_5tuple_flow[initiation_packet_index:termination_packet_index+1]
                     packet_list = set_flow_inner_sep_counter(packet_list, flow_inner_sep_counter)
@@ -427,14 +445,16 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
                 # ====================================
                 # TCP
                 if l4_protocol == "TCP":
-                    biflow_eth_ipv4_tcp_initiation_two_way_handshake = curr_biflow_l4_conceptual_features[0]
-                    biflow_eth_ipv4_tcp_full_duplex_connection_established = curr_biflow_l4_conceptual_features[1]
-                    biflow_eth_ipv4_tcp_half_duplex_connection_established = curr_biflow_l4_conceptual_features[2]
-                    biflow_eth_ipv4_tcp_connection_rejected = curr_biflow_l4_conceptual_features[3]
-                    biflow_eth_ipv4_tcp_connection_dropped = curr_biflow_l4_conceptual_features[4]
-                    biflow_eth_ipv4_tcp_termination_graceful = curr_biflow_l4_conceptual_features[5]
-                    biflow_eth_ipv4_tcp_termination_abort = curr_biflow_l4_conceptual_features[6]
-                    biflow_eth_ipv4_tcp_termination_null = curr_biflow_l4_conceptual_features[7]
+                    biflow_eth_ipv4_tcp_initiation_requested_connection = curr_biflow_l4_conceptual_features[0]
+                    biflow_eth_ipv4_tcp_initiation_two_way_handshake = curr_biflow_l4_conceptual_features[1]
+                    biflow_eth_ipv4_tcp_initiation_three_way_handshake = curr_biflow_l4_conceptual_features[2]
+                    biflow_eth_ipv4_tcp_connection_dropped = curr_biflow_l4_conceptual_features[3]
+                    biflow_eth_ipv4_tcp_connection_rejected = curr_biflow_l4_conceptual_features[4]
+                    biflow_eth_ipv4_tcp_connection_established_half_duplex = curr_biflow_l4_conceptual_features[5]
+                    biflow_eth_ipv4_tcp_connection_established_full_duplex = curr_biflow_l4_conceptual_features[6]
+                    biflow_eth_ipv4_tcp_termination_abort = curr_biflow_l4_conceptual_features[7]
+                    biflow_eth_ipv4_tcp_termination_null = curr_biflow_l4_conceptual_features[8]
+                    biflow_eth_ipv4_tcp_termination_graceful = curr_biflow_l4_conceptual_features[9]
 
             # =========================
             # PREPARE DATA STRUCTURES |
