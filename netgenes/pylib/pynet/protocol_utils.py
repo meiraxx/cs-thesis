@@ -1,4 +1,5 @@
 import socket, ipaddress
+from dpkt.compat import compat_ord
 
 def mac_addr(address):
     """

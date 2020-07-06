@@ -17,6 +17,9 @@ Note: Filters do not include features, only additional information elements, sin
 **BiFlow Useful Filters:**  
 - ...
 
+**BiFlow Useful Sorts:**  
+- {"biflow_any_first_packet_time": 1, "biflow_any_last_packet_time": 1}
+
 **BiFlow Views:**  
 - 1: {\_id: 0, biflow_id: 1, bitalker_id:1, bihost_fwd_id: 1, bihost_bwd_id: 1, biflow_src_port: 1, biflow_dst_port: 1}
 

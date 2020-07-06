@@ -1,6 +1,5 @@
 import os
 import datetime
-from dpkt.compat import compat_ord
 
 class Colors:
     RED = '\033[91m'
