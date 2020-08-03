@@ -321,22 +321,21 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                     # TCP Concepts
                     # ============
                     if l4_protocol == "TCP":
-                        # DEV-NOTE: "int" function usefully converts True and False into 1 and 0 directly
                         # get initiation type
-                        curr_biflow_eth_ipv4_tcp_initiation_requested_connection = int(curr_biflow[126]=="True")
-                        curr_biflow_eth_ipv4_tcp_initiation_two_way_handshake = int(curr_biflow[127]=="True")
-                        curr_biflow_eth_ipv4_tcp_initiation_three_way_handshake = int(curr_biflow[128]=="True")
+                        curr_biflow_eth_ipv4_tcp_initiation_requested_connection = int(curr_biflow[126])
+                        curr_biflow_eth_ipv4_tcp_initiation_two_way_handshake = int(curr_biflow[127])
+                        curr_biflow_eth_ipv4_tcp_initiation_three_way_handshake = int(curr_biflow[128])
 
                         # get connection type
-                        curr_biflow_eth_ipv4_tcp_connection_dropped = int(curr_biflow[129]=="True")
-                        curr_biflow_eth_ipv4_tcp_connection_rejected = int(curr_biflow[130]=="True")
-                        curr_biflow_eth_ipv4_tcp_connection_established_half_duplex = int(curr_biflow[131]=="True")
-                        curr_biflow_eth_ipv4_tcp_connection_established_full_duplex = int(curr_biflow[132]=="True")
+                        curr_biflow_eth_ipv4_tcp_connection_dropped = int(curr_biflow[129])
+                        curr_biflow_eth_ipv4_tcp_connection_rejected = int(curr_biflow[130])
+                        curr_biflow_eth_ipv4_tcp_connection_established_half_duplex = int(curr_biflow[131])
+                        curr_biflow_eth_ipv4_tcp_connection_established_full_duplex = int(curr_biflow[132])
                         
                         # get termination type
-                        curr_biflow_eth_ipv4_tcp_termination_abort = int(curr_biflow[133]=="True")
-                        curr_biflow_eth_ipv4_tcp_termination_null = int(curr_biflow[134]=="True")
-                        curr_biflow_eth_ipv4_tcp_termination_graceful = int(curr_biflow[135]=="True")
+                        curr_biflow_eth_ipv4_tcp_termination_abort = int(curr_biflow[133])
+                        curr_biflow_eth_ipv4_tcp_termination_null = int(curr_biflow[134])
+                        curr_biflow_eth_ipv4_tcp_termination_graceful = int(curr_biflow[135])
 
                         # save initiation type
                         bitalker_eth_ipv4_tcp_biflow_requested_connection_initiations.append(curr_biflow_eth_ipv4_tcp_initiation_requested_connection)

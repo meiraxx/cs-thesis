@@ -349,17 +349,18 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                     # ---------------------------------------------------------
                     # Keep 6tuple BiFlow, its packets and its inherent features
                     # ---------------------------------------------------------
+                    # DEV-NOTE: "int" function usefully directly converts True and False to 1 and 0
                     rfc793_tcp_biflow_conceptual_features[rfc793_tcp_biflow_id] = [
-                        flow_initiation_type == "Requested Connection",
-                        flow_initiation_type == "2-way Handshake",
-                        flow_initiation_type == "3-way Handshake",
-                        flow_connection_type == "Dropped Connection",
-                        flow_connection_type == "Rejected Connection",
-                        flow_connection_type == "Established Half-duplex Connection",
-                        flow_connection_type == "Established Full-duplex Connection",
-                        flow_termination_type == "Abort Termination",
-                        flow_termination_type == "Null Termination",
-                        flow_termination_type == "Graceful Termination"
+                        int(flow_initiation_type == "Requested Connection"),
+                        int(flow_initiation_type == "2-way Handshake"),
+                        int(flow_initiation_type == "3-way Handshake"),
+                        int(flow_connection_type == "Dropped Connection"),
+                        int(flow_connection_type == "Rejected Connection"),
+                        int(flow_connection_type == "Established Half-duplex Connection"),
+                        int(flow_connection_type == "Established Full-duplex Connection"),
+                        int(flow_termination_type == "Abort Termination"),
+                        int(flow_termination_type == "Null Termination"),
+                        int(flow_termination_type == "Graceful Termination")
                     ]
                     packet_list = curr_5tuple_flow[initiation_packet_index:termination_packet_index+1]
                     packet_list = set_flow_inner_sep_counter(packet_list, flow_inner_sep_counter)

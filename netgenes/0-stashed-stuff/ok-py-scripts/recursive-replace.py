@@ -8,6 +8,8 @@ for dname, dirs, files in os.walk("csv"):
 			s = f.read()
 
 		s = s.replace(",", ",")
+		#s = s.replace("False", "0")
+		#s = s.replace("True", "1")
 
 		with open(fpath, "w") as f:
 			f.write(s)
