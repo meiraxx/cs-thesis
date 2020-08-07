@@ -1,15 +1,16 @@
 import os
 
+def replace_string_in_file(file_path, original_string, new_string):
+	with open(file_path, "r") as f:
+		s = f.read()
+
+	s = s.replace(original_string, new_string)
+
+	with open(file_path, "w") as f:
+		f.write(s)
+
 for dname, dirs, files in os.walk("csv"):
 	for fname in files:
-		fpath = os.path.join(dname, fname)
-		
-		with open(fpath, "r") as f:
-			s = f.read()
-
-		s = s.replace(",", ",")
-		#s = s.replace("False", "0")
-		#s = s.replace("True", "1")
-
-		with open(fpath, "w") as f:
-			f.write(s)
+		replace_string_in_file(fpath, "|", ",")
+		#replace_string_in_file(fpath, "False", "0")
+		#replace_string_in_file(fpath, "True", "1")
