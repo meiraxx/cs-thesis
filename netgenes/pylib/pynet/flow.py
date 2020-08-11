@@ -478,9 +478,9 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
             # -------------------
             # Inter-arrival Times
             # -------------------
-            biflow_any_iats = list()
-            biflow_fwd_iats = list()
-            biflow_bwd_iats = list()
+            biflow_any_packet_iats = list()
+            biflow_fwd_packet_iats = list()
+            biflow_bwd_packet_iats = list()
 
             # ====
             # IPv4
@@ -593,11 +593,11 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
                     previous_packet_time = datetime_to_unixtime(previous_packet_timestamp)
                     curr_packet_time = datetime_to_unixtime(curr_packet_timestamp)
                     curr_packet_iat = (curr_packet_time - previous_packet_time)/time_scale_factor
-                    biflow_any_iats.append(curr_packet_iat)
+                    biflow_any_packet_iats.append(curr_packet_iat)
                     if previous_packet_biflow_id == biflow_id:
-                        biflow_fwd_iats.append(curr_packet_iat)
+                        biflow_fwd_packet_iats.append(curr_packet_iat)
                     else:
-                        biflow_bwd_iats.append(curr_packet_iat)
+                        biflow_bwd_packet_iats.append(curr_packet_iat)
 
                 # =============
                 # IPv4 Concepts
@@ -839,40 +839,40 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
             # Packet Inter-arrival Times
             # ==========================
             # Packet IATs need at least 2 packets to be properly populated
-            if len(biflow_any_iats) == 0:
-                biflow_any_iat_total = biflow_any_iat_max = biflow_any_iat_min = 0.0
-                biflow_any_iat_mean = biflow_any_iat_std = biflow_any_iat_var = 0.0
+            if len(biflow_any_packet_iats) == 0:
+                biflow_any_packet_iat_total = biflow_any_packet_iat_max = biflow_any_packet_iat_min = 0.0
+                biflow_any_packet_iat_mean = biflow_any_packet_iat_std = biflow_any_packet_iat_var = 0.0
             else:
-                biflow_any_iat_total = round(sum(biflow_any_iats), 3)
-                biflow_any_iat_mean = round(np.mean(biflow_any_iats), 3)
-                biflow_any_iat_std = round(np.std(biflow_any_iats), 3)
-                biflow_any_iat_var = round(np.var(biflow_any_iats), 3)
-                biflow_any_iat_max = round(max(biflow_any_iats), 3)
-                biflow_any_iat_min = round(min(biflow_any_iats), 3)
+                biflow_any_packet_iat_total = round(sum(biflow_any_packet_iats), 3)
+                biflow_any_packet_iat_mean = round(np.mean(biflow_any_packet_iats), 3)
+                biflow_any_packet_iat_std = round(np.std(biflow_any_packet_iats), 3)
+                biflow_any_packet_iat_var = round(np.var(biflow_any_packet_iats), 3)
+                biflow_any_packet_iat_max = round(max(biflow_any_packet_iats), 3)
+                biflow_any_packet_iat_min = round(min(biflow_any_packet_iats), 3)
 
             # Packet IATs need at least 2 packets to be properly populated
-            if len(biflow_fwd_iats) == 0:
-                biflow_fwd_iat_total = biflow_fwd_iat_max = biflow_fwd_iat_min = 0.0
-                biflow_fwd_iat_mean = biflow_fwd_iat_std = biflow_fwd_iat_var = 0.0
+            if len(biflow_fwd_packet_iats) == 0:
+                biflow_fwd_packet_iat_total = biflow_fwd_packet_iat_max = biflow_fwd_packet_iat_min = 0.0
+                biflow_fwd_packet_iat_mean = biflow_fwd_packet_iat_std = biflow_fwd_packet_iat_var = 0.0
             else:
-                biflow_fwd_iat_total = round(sum(biflow_fwd_iats), 3)
-                biflow_fwd_iat_mean = round(np.mean(biflow_fwd_iats), 3)
-                biflow_fwd_iat_std = round(np.std(biflow_fwd_iats), 3)
-                biflow_fwd_iat_var = round(np.var(biflow_fwd_iats), 3)
-                biflow_fwd_iat_max = round(max(biflow_fwd_iats), 3)
-                biflow_fwd_iat_min = round(min(biflow_fwd_iats), 3)
+                biflow_fwd_packet_iat_total = round(sum(biflow_fwd_packet_iats), 3)
+                biflow_fwd_packet_iat_mean = round(np.mean(biflow_fwd_packet_iats), 3)
+                biflow_fwd_packet_iat_std = round(np.std(biflow_fwd_packet_iats), 3)
+                biflow_fwd_packet_iat_var = round(np.var(biflow_fwd_packet_iats), 3)
+                biflow_fwd_packet_iat_max = round(max(biflow_fwd_packet_iats), 3)
+                biflow_fwd_packet_iat_min = round(min(biflow_fwd_packet_iats), 3)
 
             # Packet IATs need at least 2 packets to be properly populated
-            if len(biflow_bwd_iats) == 0:
-                biflow_bwd_iat_total = biflow_bwd_iat_max = biflow_bwd_iat_min = 0.0
-                biflow_bwd_iat_mean = biflow_bwd_iat_std = biflow_bwd_iat_var = 0.0
+            if len(biflow_bwd_packet_iats) == 0:
+                biflow_bwd_packet_iat_total = biflow_bwd_packet_iat_max = biflow_bwd_packet_iat_min = 0.0
+                biflow_bwd_packet_iat_mean = biflow_bwd_packet_iat_std = biflow_bwd_packet_iat_var = 0.0
             else:
-                biflow_bwd_iat_total = round(sum(biflow_bwd_iats), 3)
-                biflow_bwd_iat_mean = round(np.mean(biflow_bwd_iats), 3)
-                biflow_bwd_iat_std = round(np.std(biflow_bwd_iats), 3)
-                biflow_bwd_iat_var = round(np.var(biflow_bwd_iats), 3)
-                biflow_bwd_iat_max = round(max(biflow_bwd_iats), 3)
-                biflow_bwd_iat_min = round(min(biflow_bwd_iats), 3)
+                biflow_bwd_packet_iat_total = round(sum(biflow_bwd_packet_iats), 3)
+                biflow_bwd_packet_iat_mean = round(np.mean(biflow_bwd_packet_iats), 3)
+                biflow_bwd_packet_iat_std = round(np.std(biflow_bwd_packet_iats), 3)
+                biflow_bwd_packet_iat_var = round(np.var(biflow_bwd_packet_iats), 3)
+                biflow_bwd_packet_iat_max = round(max(biflow_bwd_packet_iats), 3)
+                biflow_bwd_packet_iat_min = round(min(biflow_bwd_packet_iats), 3)
 
             # ======================
             # IP Fragmentation Flags

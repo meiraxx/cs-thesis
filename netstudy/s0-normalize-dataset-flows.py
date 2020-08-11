@@ -63,12 +63,12 @@ def get_standard_flow_label_keys(df, interest_header_lst, has_author_flow_id):
 def normalize_flow_based_datasets(dataset_name, interest_header, fname_dict, has_author_flow_id):
 	"""
 	Supported datasets: CIC-IDS-2017 and CTU-13
-	Uses custom-separated files to organize label-separated files with the following fields:
+	Uses custom-separated files to organize normalized files with the following fields:
 	"Protocol", "Source IP", "Source Port", "Destination IP", "Destination Port",
 	"Author Flow ID", "Author Label".
 	"""
-	input_dir = os.path.join("author-labeled-flows", dataset_name)
-	output_dir = os.path.join("normalized-labeled-flows", dataset_name)
+	input_dir = os.path.join("s0-author-labeled-flows", dataset_name)
+	output_dir = os.path.join("s1-author-normalized-labeled-flows", dataset_name)
 	mkdir_p(output_dir)
 	interest_header_lst = interest_header.split(",")
 
@@ -79,9 +79,25 @@ def normalize_flow_based_datasets(dataset_name, interest_header, fname_dict, has
 			# handle bad-formatted data
 			handle_bad_data(fpath, fname)
 
-			# get all unique flows into dataframe
-			#df = pandas.read_csv(fpath, index_col=False, encoding='unicode_escape')[interest_header_lst].drop_duplicates()
-			df = pandas.read_csv(fpath, index_col=False)[interest_header_lst].drop_duplicates()
+			# Note: for some reason I don't know, there are duplicate flows in some datasets:
+			# (cic-flow-meter does not perform flow-id separation for different flows,
+			# rather keeps it the same, and only uses the 5-minute timeout for flow separation,
+			# but this does still not explain why there are duplicates, I must see why this happens)
+			# e.g.:
+			# 6,192.168.10.9,1038,192.168.10.3,88,BENIGN,192.168.10.3-192.168.10.9-88-1038-6
+			# 6,192.168.10.3,88,192.168.10.9,1045,BENIGN,192.168.10.3-192.168.10.9-88-1045-6
+			# ...
+
+			"""
+			Choose one:
+			# get all unique rows into dataframe and escape unicoded fields
+			df = pandas.read_csv(fpath, encoding='unicode_escape')[interest_header_lst].drop_duplicates()
+			# get all unique rows into dataframe
+			df = pandas.read_csv(fpath)[interest_header_lst].drop_duplicates()
+			# get all rows into dataframe
+			df = pandas.read_csv(fpath)[interest_header_lst]
+			"""
+			df = pandas.read_csv(fpath)[interest_header_lst].drop_duplicates()
 
 			df = get_standard_flow_label_keys(df, interest_header_lst, has_author_flow_id)
 
@@ -93,6 +109,11 @@ def normalize_flow_based_datasets(dataset_name, interest_header, fname_dict, has
 				df.to_csv(output_fpath, index=False)
 
 if __name__ == "__main__":
+	"""
+	Running this script requires the "s0-author-labeled-flows" directory, present in:
+	- CIC-IDS-2017 labels ("GeneratedLabelledFlows" directory, <week-day name>-*.csv)
+	- CTU-13 labels (<capture name>.binetflow files)
+	"""
 	# ------------
 	# CIC-IDS-2017
 	# ------------

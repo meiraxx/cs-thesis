@@ -55,24 +55,24 @@ biflow_bwd_eth_ip_active_mf_flags_rate
 
 ### Statistical Features
 **Time Features**  
-biflow_any_iat_total  
-biflow_any_iat_mean  
-biflow_any_iat_std  
-biflow_any_iat_var  
-biflow_any_iat_max  
-biflow_any_iat_min  
-biflow_fwd_iat_total  
-biflow_fwd_iat_mean  
-biflow_fwd_iat_std  
-biflow_fwd_iat_var  
-biflow_fwd_iat_max  
-biflow_fwd_iat_min  
-biflow_bwd_iat_total  
-biflow_bwd_iat_mean  
-biflow_bwd_iat_std  
-biflow_bwd_iat_var  
-biflow_bwd_iat_max  
-biflow_bwd_iat_min  
+biflow_any_packet_iat_total  
+biflow_any_packet_iat_mean  
+biflow_any_packet_iat_std  
+biflow_any_packet_iat_var  
+biflow_any_packet_iat_max  
+biflow_any_packet_iat_min  
+biflow_fwd_packet_iat_total  
+biflow_fwd_packet_iat_mean  
+biflow_fwd_packet_iat_std  
+biflow_fwd_packet_iat_var  
+biflow_fwd_packet_iat_max  
+biflow_fwd_packet_iat_min  
+biflow_bwd_packet_iat_total  
+biflow_bwd_packet_iat_mean  
+biflow_bwd_packet_iat_std  
+biflow_bwd_packet_iat_var  
+biflow_bwd_packet_iat_max  
+biflow_bwd_packet_iat_min  
 
 **IPv4 Metadata Features**  
 *Packet IPv4 Header Lengths*  

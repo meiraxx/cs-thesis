@@ -4,7 +4,7 @@ import subprocess
 import time
 from pymongo import MongoClient
 
-netobject_types_dir = {
+file_to_netobject_types = {
 	"ipv4-tcp-biflows.csv": "tcp_biflows",
 	"ipv4-tcp-bitalkers.csv": "tcp_bitalkers",
 	"ipv4-tcp-bihosts.csv": "tcp_bihosts",
@@ -14,12 +14,13 @@ netobject_types_dir = {
 }
 
 mongo_client = MongoClient("mongodb://localhost:27017")
-# sys.argv[1] -> netgenes-labeled-csv-data-files
-for dname, dirs, files in os.walk(sys.argv[1]):
+file_directory = "s1-netgenes-unlabeled-csv-data-files"
+
+for dname, dirs, files in os.walk(file_directory):
 	for fname in files:
 		dataset_id = os.path.basename(os.path.normpath(dname))
 		rel_fpath = os.path.join(dname, fname)
-		netobject_type = netobject_types_dir[fname]
+		netobject_type = file_to_netobject_types[fname]
 
 		# Drop current collection before importing another
 		curr_db = mongo_client[dataset_id]
@@ -31,12 +32,11 @@ print("[+] All collections (and, consequently, respective databases) dropped..."
 	" waiting 2 seconds before reconnecting to MongoDb and importing the new databases.")
 time.sleep(2)
 
-# sys.argv[1] -> netgenes-labeled-csv-data-files
-for dname, dirs, files in os.walk(sys.argv[1]):
+for dname, dirs, files in os.walk(file_directory):
 	for fname in files:
 		dataset_id = os.path.basename(os.path.normpath(dname))
 		rel_fpath = os.path.join(dname, fname)
-		netobject_type = netobject_types_dir[fname]
+		netobject_type = file_to_netobject_types[fname]
 
 		# Import CSV into MongoDb, as is
 		cmd = "mongoimport --db=%s --collection=%s --type=csv --headerline --file=%s"\

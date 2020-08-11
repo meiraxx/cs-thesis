@@ -1,26 +1,26 @@
 # IPv4-TCP BiFlow
 ## CURRENT NUMBER OF GENES
-**56 BiFlow Genes:**
-- 56 Conceptual Features
+**58 BiFlow Genes:**
+- 58 Conceptual Features
 - 0 Statistical Features
 
 ## GENES
 ### Conceptual Features
 **TCP Flow Initiation Type Features**  
-biflow_eth_ipv4_tcp_initiation_no_handshake (DUPLICATE)  
-biflow_eth_ipv4_tcp_initiation_two_way_handshake  
-biflow_eth_ipv4_tcp_initiation_three_way_handshake (DUPLICATE)  
+biflow_eth_ipv4_tcp_initiation_requested_connection
+biflow_eth_ipv4_tcp_initiation_two_way_handshake
+biflow_eth_ipv4_tcp_initiation_three_way_handshake
 
 **TCP Flow Connection Type Features**  
-biflow_eth_ipv4_tcp_full_duplex_connection_established  
-biflow_eth_ipv4_tcp_half_duplex_connection_established  
-biflow_eth_ipv4_tcp_connection_rejected  
 biflow_eth_ipv4_tcp_connection_dropped  
+biflow_eth_ipv4_tcp_connection_rejected  
+biflow_eth_ipv4_tcp_connection_established_half_duplex  
+biflow_eth_ipv4_tcp_connection_established_full_duplex  
 
 **TCP Flow Termination Type Features**  
-biflow_eth_ipv4_tcp_termination_graceful  
 biflow_eth_ipv4_tcp_termination_abort  
 biflow_eth_ipv4_tcp_termination_null  
+biflow_eth_ipv4_tcp_termination_graceful  
 
 **TCP Flow Flags**  
 biflow_any_eth_ipv4_tcp_n_active_fin_flags  
