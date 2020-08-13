@@ -3,7 +3,7 @@ import errno
 import pandas
 import numpy as np
 from random import randint
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING, DESCENDING
 
 def mkdir_p(path):
 	try:
@@ -32,7 +32,7 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 	# ------------
 	# Add "Author Flow ID" if needed, but only some datasets have it
 	normalized_header_str = "L3-L4 Protocol,Source IP,Source Port,Destination IP,Destination Port,Author Label"
-	input_dir = os.path.join("s1-author-normalized-labeled-flows", dataset_name)
+	input_dir = os.path.join("s2-author-normalized-labeled-flows", dataset_name)
 	
 	# NetGenes MongoDb Client
 	mongo_client = MongoClient("mongodb://localhost:27017")
@@ -45,7 +45,7 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 		"biflow_dst_port": 1
 	}
 
-	dataset_logs_dir = os.path.join("s2-flow-mapping-logs", dataset_name)
+	dataset_logs_dir = os.path.join("s3-flow-mapping-logs", dataset_name)
 	mkdir_p(dataset_logs_dir)
 	for dname, dirs, files in os.walk(input_dir):
 		for fname in files:
@@ -59,7 +59,9 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 			database_id = os.path.splitext(fname)[0]
 			curr_db = mongo_client[database_id]
 			print("Database: '%s'" %(database_id))
-			unset_flow_logs = ""
+			flow_logs = ""
+			tcp_index_created = False
+			udp_index_created = False
 			for index, row in df.iterrows():
 				# Get parameters from DF
 				author_protocol = str(row["L3-L4 Protocol"])
@@ -97,20 +99,45 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 					"biflow_dst_port": src_port
 				}
 
+				if not tcp_index_created and netobject_type == "tcp_biflows":
+					# create a compound index
+					resp = curr_collection.create_index(
+						[
+							("bihost_fwd_id", ASCENDING),
+							("bihost_bwd_id", ASCENDING),
+							("biflow_src_port", ASCENDING),
+							("biflow_dst_port", ASCENDING)
+						]
+					)
+					tcp_index_created = True
+
+				if not udp_index_created and netobject_type == "udp_biflows":
+					# create a compound index
+					resp = curr_collection.create_index(
+						[
+							("bihost_fwd_id", ASCENDING),
+							("bihost_bwd_id", ASCENDING),
+							("biflow_src_port", ASCENDING),
+							("biflow_dst_port", ASCENDING)
+						]
+					)
+					udp_index_created = True
+
 				# df contains the author file of a dataset, which we use to
 				# label the corresponding NetGenes dataset file
 				update_data = {
-					"Threat Class": row["Author Label"],
+					"Threat Class": row["Author Label"] + str(randint(1, 9)),
 					"Threat": row["Author Label"],
 					"Tool": row["Author Label"]
 				}
 
 				# Update current collection with 4 new fields
+				# filter: {$or: [{Mapping: "Inverse"}, {Mapping: "Standard"}]}
 				update_data["Mapping"] = "Standard"
 				standard_biflow_modifications = curr_collection.update_many(standard_biflow_filter,
 					{"$set": update_data})
 
-				flow_log = "Collection: %s | Standard modification: %s | Standard filter: %s" %(
+				curr_flow_log = "Collection: %s | Standard modification: %s | Standard filter: %s" %(
 					netobject_type, standard_biflow_modifications.modified_count,standard_biflow_filter)
 
 				if standard_biflow_modifications.modified_count == 0:
@@ -118,15 +145,14 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 					inverse_biflow_modifications = curr_collection.update_many(inverse_biflow_filter,
 						{"$set": update_data})
 					if inverse_biflow_modifications.modified_count == 0:
-						flow_log = "Collection: %s | No modification | Standard filter: %s | Inverse filter: %s" %(
+						curr_flow_log = "Collection: %s | No modification | Standard filter: %s | Inverse filter: %s" %(
 						netobject_type, standard_biflow_filter, inverse_biflow_filter)
 					else:
-						flow_log = "Collection: %s | Inverse modification: %s | Inverse filter: %s" %(
+						curr_flow_log = "Collection: %s | Inverse modification: %s | Inverse filter: %s" %(
 						netobject_type, inverse_biflow_modifications.modified_count, inverse_biflow_filter)
 				
-				print(flow_log)
-				if standard_biflow_modifications.modified_count == 0 or inverse_biflow_modifications.modified_count == 0:
-					unset_flow_logs += flow_log
+				flow_logs += curr_flow_log + "\n"
+				#print(curr_flow_log)
 				# else, everything ok
 
 				"""
@@ -142,15 +168,15 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 				
 			dataset_logs_fpath = os.path.join(dataset_logs_dir, "%s.txt" %(database_id))
 			with open(dataset_logs_fpath, "w") as f:
-				f.write(unset_flow_logs)
+				f.write(flow_logs)
 
 	mongo_client.close()
 	return
 
 if __name__ == "__main__":
 	"""
-	Running this script requires the "author-normalized-labeled-flows" and the
-	"netgenes-unlabeled-csv-data-files" directories.
+	Running this script requires the "s2-author-normalized-labeled-flows" and the
+	netgenes unlabeled files imported to the MongoDb.
 	
 	Label every:
 	- Flow
@@ -170,10 +196,11 @@ if __name__ == "__main__":
 		"6": "tcp",
 		"17": "udp"
 	}
-	map_original_to_netgenes_dataset("CIC-IDS-2017", cicids2017_author_protocol_to_netgenes_protocol)
+	# use "s2-author-normalized-labeled-flows" information to label dataset in MongoDb
+	#map_original_to_netgenes_dataset("CIC-IDS-2017", cicids2017_author_protocol_to_netgenes_protocol)
+	# TODO: update biflow netgenes labels for threat class, threat and tool
 	# TODO: update bitalkers and bihosts labels based on biflow labels (can be done independently of the previous mapping)
 
-	"""
 	# ------
 	# CTU-13
 	# ------
@@ -181,6 +208,7 @@ if __name__ == "__main__":
 		"tcp": "tcp",
 		"udp": "udp"
 	}
-	map_original_to_netgenes_dataset("CTU-13", ctu13_author_protocol_to_netgenes_protocol)
+	# use "s2-author-normalized-labeled-flows" information to label dataset in MongoDb
+	#map_original_to_netgenes_dataset("CTU-13", ctu13_author_protocol_to_netgenes_protocol)
+	# TODO: update biflow netgenes labels for threat class, threat and tool
 	# TODO: update bitalkers and bihosts labels based on biflow labels (can be done independently of the previous mapping)
-	"""

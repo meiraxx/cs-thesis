@@ -99,6 +99,10 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
             # Additional Information
             # ======================
             curr_bitalker = bitalkers[bitalker_id]
+            # curr_bitalker needs to be sorted by the initial timestamp of flow, exactly
+            # like with packets in flows
+            # sorting the flows in each talker by initiation timestamp
+            curr_bitalker.sort(key=lambda x: x[6])
 
             first_biflow = curr_bitalker[0]
             last_biflow = curr_bitalker[-1]

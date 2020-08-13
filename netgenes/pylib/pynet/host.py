@@ -59,11 +59,17 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
             elif l4_protocol == "TCP":
                 ipv4_all_bihost_genes_header_list += ipv4_tcp_bihost_genes_header_list
 
+        
         for bihost_id in bihost_ids:
             # ======================
             # Additional Information
             # ======================
             curr_bihost = bihosts[bihost_id]
+            # DEV-NOTE: x[0] is bitalker, x[1] is direction
+            # curr_bihost needs to be sorted by the initial timestamp of flow, exactly
+            # like with packets in flows and flows in talkers
+            # sorting the talkers in each host by initiation timestamp
+            curr_bihost.sort(key=lambda x: x[0][3])
 
             first_bitalker = curr_bihost[0][0]
             last_bitalker = curr_bihost[-1][0]

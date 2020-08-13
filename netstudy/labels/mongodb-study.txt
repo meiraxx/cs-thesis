@@ -1,0 +1,2 @@
+Friday:
+TCP BiFlows - 347197 ALL / 347197 PortScans

@@ -1,0 +1,15 @@
+Web Attack - Brute Force
+FTP-Patator
+DoS Hulk
+Heartbleed
+Bot
+PortScan
+SSH-Patator
+Web Attack - XSS
+BENIGN
+DoS Slowhttptest
+DDoS
+DoS slowloris
+Web Attack - Sql Injection
+DoS GoldenEye
+Infiltration

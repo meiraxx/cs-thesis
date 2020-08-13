@@ -1,0 +1,12 @@
+Collection: udp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.165-UDP', 'bihost_bwd_id': '147.32.80.9-UDP', 'biflow_src_port': 1025, 'biflow_dst_port': 53}
+Collection: tcp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.165-TCP', 'bihost_bwd_id': '74.125.232.201-TCP', 'biflow_src_port': 1027, 'biflow_dst_port': 80}
+Collection: udp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.165-UDP', 'bihost_bwd_id': '65.55.56.40-UDP', 'biflow_src_port': 123, 'biflow_dst_port': 123}
+Collection: udp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.191-UDP', 'bihost_bwd_id': '147.32.80.9-UDP', 'biflow_src_port': 1025, 'biflow_dst_port': 53}
+Collection: tcp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.191-TCP', 'bihost_bwd_id': '74.125.232.200-TCP', 'biflow_src_port': 1027, 'biflow_dst_port': 80}
+Collection: udp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.192-UDP', 'bihost_bwd_id': '147.32.80.9-UDP', 'biflow_src_port': 1025, 'biflow_dst_port': 53}
+Collection: udp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.191-UDP', 'bihost_bwd_id': '65.55.56.40-UDP', 'biflow_src_port': 123, 'biflow_dst_port': 123}
+Collection: tcp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.192-TCP', 'bihost_bwd_id': '74.125.232.199-TCP', 'biflow_src_port': 1027, 'biflow_dst_port': 80}
+Collection: udp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.192-UDP', 'bihost_bwd_id': '65.55.56.40-UDP', 'biflow_src_port': 123, 'biflow_dst_port': 123}
+Collection: tcp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.192-TCP', 'bihost_bwd_id': '78.40.125.4-TCP', 'biflow_src_port': 1037, 'biflow_dst_port': 6667}
+Collection: tcp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.165-TCP', 'bihost_bwd_id': '38.229.70.20-TCP', 'biflow_src_port': 1038, 'biflow_dst_port': 6667}
+Collection: tcp_biflows | Standard modification: 1 | Standard filter: {'bihost_fwd_id': '147.32.84.191-TCP', 'bihost_bwd_id': '216.155.130.130-TCP', 'biflow_src_port': 1038, 'biflow_dst_port': 6667}
