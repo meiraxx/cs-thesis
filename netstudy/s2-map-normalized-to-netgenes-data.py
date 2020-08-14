@@ -45,8 +45,6 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 		"biflow_dst_port": 1
 	}
 
-	dataset_logs_dir = os.path.join("s3-flow-mapping-logs", dataset_name)
-	mkdir_p(dataset_logs_dir)
 	for dname, dirs, files in os.walk(input_dir):
 		for fname in files:
 			# ------------
@@ -58,10 +56,17 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 			# Select NetGenes MongoDb Database
 			database_id = os.path.splitext(fname)[0]
 			curr_db = mongo_client[database_id]
-			print("Database: '%s'" %(database_id))
-			flow_logs = ""
-			tcp_index_created = False
-			udp_index_created = False
+			print("[+] Mapping original dataset flows and labels to database (flows) '%s'" %(database_id))
+
+			biflow_compound_index = [
+				("bihost_fwd_id", ASCENDING),
+				("bihost_bwd_id", ASCENDING),
+				("biflow_src_port", ASCENDING),
+				("biflow_dst_port", ASCENDING)
+			]
+			curr_db["tcp_biflows"].create_index(biflow_compound_index)
+			curr_db["udp_biflows"].create_index(biflow_compound_index)
+
 			for index, row in df.iterrows():
 				# Get parameters from DF
 				author_protocol = str(row["L3-L4 Protocol"])
@@ -99,34 +104,10 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 					"biflow_dst_port": src_port
 				}
 
-				if not tcp_index_created and netobject_type == "tcp_biflows":
-					# create a compound index
-					resp = curr_collection.create_index(
-						[
-							("bihost_fwd_id", ASCENDING),
-							("bihost_bwd_id", ASCENDING),
-							("biflow_src_port", ASCENDING),
-							("biflow_dst_port", ASCENDING)
-						]
-					)
-					tcp_index_created = True
-
-				if not udp_index_created and netobject_type == "udp_biflows":
-					# create a compound index
-					resp = curr_collection.create_index(
-						[
-							("bihost_fwd_id", ASCENDING),
-							("bihost_bwd_id", ASCENDING),
-							("biflow_src_port", ASCENDING),
-							("biflow_dst_port", ASCENDING)
-						]
-					)
-					udp_index_created = True
-
 				# df contains the author file of a dataset, which we use to
 				# label the corresponding NetGenes dataset file
 				update_data = {
-					"Threat Class": row["Author Label"] + str(randint(1, 9)),
+					"Threat Class": row["Author Label"],
 					"Threat": row["Author Label"],
 					"Tool": row["Author Label"]
 				}
@@ -138,7 +119,7 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 					{"$set": update_data})
 
 				curr_flow_log = "Collection: %s | Standard modification: %s | Standard filter: %s" %(
-					netobject_type, standard_biflow_modifications.modified_count,standard_biflow_filter)
+					netobject_type, standard_biflow_modifications.modified_count, standard_biflow_filter)
 
 				if standard_biflow_modifications.modified_count == 0:
 					update_data["Mapping"] = "Inverse"
@@ -150,27 +131,118 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 					else:
 						curr_flow_log = "Collection: %s | Inverse modification: %s | Inverse filter: %s" %(
 						netobject_type, inverse_biflow_modifications.modified_count, inverse_biflow_filter)
-				
-				flow_logs += curr_flow_log + "\n"
-				#print(curr_flow_log)
 				# else, everything ok
-
-				"""
-				standardly_queried_biflows = curr_collection.find(standard_biflow_filter, biflow_view)
-				for standardly_queried_biflow in standardly_queried_biflows:
-					print(standardly_queried_biflow)
-				inversely_queried_biflows = curr_collection.find(inverse_biflow_filter, biflow_view)
-				for inversely_queried_biflow in inversely_queried_biflows:
-					print(inversely_queried_biflow)
-				#mongo_client.close()
-				#exit()
-				"""
-				
-			dataset_logs_fpath = os.path.join(dataset_logs_dir, "%s.txt" %(database_id))
-			with open(dataset_logs_fpath, "w") as f:
-				f.write(flow_logs)
-
+				#print(curr_flow_log)
 	mongo_client.close()
+
+def get_compound_label_values(mapping_results, threat_class_results, threat_results, tool_results, separator):
+	mapping_compound_value = separator.join(mapping_results)
+	threat_class_compound_value = separator.join(threat_class_results)
+	threat_compound_value = separator.join(threat_results)
+	tool_compound_value = separator.join(tool_results)
+
+	return mapping_compound_value, threat_class_compound_value, threat_compound_value, tool_compound_value
+
+def update_bitalkers_bihosts(dataset_name, database_list):
+	print("[+] Now, updating bitalkers and bihosts for '%s'..." %(dataset_name))
+	mongo_client = MongoClient("mongodb://localhost:27017")
+	biflow_collection_list = ["tcp_biflows", "udp_biflows"]
+	bitalker_collection_list = ["tcp_bitalkers", "udp_bitalkers"]
+	bihost_collection_list = ["tcp_bihosts", "udp_bihosts"]
+	protocol_to_bitalker = {
+		"tcp": "tcp_bitalkers",
+		"udp": "udp_bitalkers",
+	}
+	protocol_to_bihost = {
+		"tcp": "tcp_bihosts",
+		"udp": "udp_bihosts",
+	}
+
+	for database_id in database_list:
+		curr_db = mongo_client[database_id]
+		print("[+] Database: '%s'" %(database_id))
+		bitalker_ids = dict()
+		bihost_ids = dict()
+
+		curr_db["tcp_biflows"].create_index([("bitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		curr_db["udp_biflows"].create_index([("bitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		curr_db["tcp_bitalkers"].create_index([("bitalker_id", ASCENDING)])
+		curr_db["udp_bitalkers"].create_index([("bitalker_id", ASCENDING)])
+		curr_db["tcp_bitalkers"].create_index([("bitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		curr_db["udp_bitalkers"].create_index([("bitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+
+		curr_db["tcp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING)])
+		curr_db["tcp_bitalkers"].create_index([("bihost_bwd_id", ASCENDING)])
+		curr_db["udp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING)])
+		curr_db["udp_bitalkers"].create_index([("bihost_bwd_id", ASCENDING)])
+		curr_db["tcp_bihosts"].create_index([("bihost_id", ASCENDING)])
+		curr_db["udp_bihosts"].create_index([("bihost_id", ASCENDING)])
+
+		for i, bitalker_collection_name in enumerate(bitalker_collection_list):
+			bitalker_collection = curr_db[bitalker_collection_name]
+			bitalker_results = bitalker_collection.find({}, {"_id": 0, "bitalker_id": 1})
+			biflow_collection_name = biflow_collection_list[i]
+			curr_protocol = biflow_collection_name.split("_")[0]
+			bitalker_ids[curr_protocol] = [bitalker_result["bitalker_id"] for bitalker_result in bitalker_results]
+
+		for i, bihost_collection_name in enumerate(bihost_collection_list):
+			bihost_collection = curr_db[bihost_collection_name]
+			bihost_results = bihost_collection.find({}, {"_id": 0, "bihost_id": 1})
+			biflow_collection_name = biflow_collection_list[i]
+			curr_protocol = biflow_collection_name.split("_")[0]
+			bihost_ids[curr_protocol] = [bihost_result["bihost_id"] for bihost_result in bihost_results]
+
+		# tcp_biflow, udp_biflow
+		for biflow_collection_name in biflow_collection_list:
+			curr_protocol = biflow_collection_name.split("_")[0]
+			bitalker_collection_name = protocol_to_bitalker[curr_protocol]
+			bihost_collection_name = protocol_to_bihost[curr_protocol]
+
+			biflow_collection = curr_db[biflow_collection_name]
+			bitalker_collection = curr_db[bitalker_collection_name]
+			bihost_collection = curr_db[bihost_collection_name]
+
+			for bitalker_id in bitalker_ids[curr_protocol]:
+				fk_bitalker_filter = {"$or": [{"Mapping": "Inverse"}, {"Mapping": "Standard"}], "bitalker_id": bitalker_id}
+				bitalker_filter = {"bitalker_id": bitalker_id}
+				#labels_view = {"_id": 0, "Mapping": 1, "Threat Class": 1, "Threat": 1, "Tool": 1}
+				#bitalker_flow_results = biflow_collection.find(fk_bitalker_filter, labels_view).distinct("Threat Class")
+				bitalker_flow_mapping_results = biflow_collection.distinct("Mapping", fk_bitalker_filter)
+				bitalker_flow_threat_class_results = biflow_collection.distinct("Threat Class", fk_bitalker_filter)
+				bitalker_flow_threat_results = biflow_collection.distinct("Threat", fk_bitalker_filter)
+				bitalker_flow_tool_results = biflow_collection.distinct("Tool", fk_bitalker_filter)
+				mapping, threat_class, threat, tool = get_compound_label_values(bitalker_flow_mapping_results, bitalker_flow_threat_class_results, bitalker_flow_threat_results, bitalker_flow_tool_results, "&")
+				update_data = {
+					"Mapping": mapping,
+					"Threat Class": threat_class,
+					"Threat": threat,
+					"Tool": tool
+				}
+				bitalker_modifications = bitalker_collection.update_many(bitalker_filter, {"$set": update_data})
+				#print("%s:%s" %(bitalker_filter, update_data))
+			print("  [+] Finished updating '%s' BiTalkers..." %(curr_protocol))
+			for bihost_id in bihost_ids[curr_protocol]:
+				fk_bihost_filter = {
+					"$or": [{"Mapping": "Inverse"}, {"Mapping": "Standard"}],
+					"$or": [{"bihost_fwd_id": bihost_id}, {"bihost_bwd_id": bihost_id}]
+				}
+				bihost_filter = {"bihost_id": bihost_id}
+				#labels_view = {"_id": 0, "Threat Class": 1, "Threat": 1, "Tool": 1}
+				#bihost_flow_results = bitalker_collection.find(fk_bihost_filter, labels_view)
+				bihost_bitalker_mapping_results = bitalker_collection.distinct("Mapping", fk_bihost_filter)
+				bihost_bitalker_threat_class_results = bitalker_collection.distinct("Threat Class", fk_bihost_filter)
+				bihost_bitalker_threat_results = bitalker_collection.distinct("Threat", fk_bihost_filter)
+				bihost_bitalker_tool_results = bitalker_collection.distinct("Tool", fk_bihost_filter)
+				mapping, threat_class, threat, tool = get_compound_label_values(bihost_bitalker_mapping_results, bihost_bitalker_threat_class_results, bihost_bitalker_threat_results, bihost_bitalker_tool_results, "+")
+				update_data = {
+					"Mapping": mapping,
+					"Threat Class": threat_class,
+					"Threat": threat,
+					"Tool": tool
+				}
+				bihost_modifications = bihost_collection.update_many(bihost_filter, {"$set": update_data})
+				#print("%s:%s" %(bihost_filter, update_data))
+			print("  [+] Finished updating '%s' BiHosts..." %(curr_protocol))
 	return
 
 if __name__ == "__main__":
@@ -199,7 +271,10 @@ if __name__ == "__main__":
 	# use "s2-author-normalized-labeled-flows" information to label dataset in MongoDb
 	#map_original_to_netgenes_dataset("CIC-IDS-2017", cicids2017_author_protocol_to_netgenes_protocol)
 	# TODO: update biflow netgenes labels for threat class, threat and tool
-	# TODO: update bitalkers and bihosts labels based on biflow labels (can be done independently of the previous mapping)
+	# update bitalkers and bihosts labels based on biflow labels (can be done independently of the previous mapping)
+	database_list = ["Friday-WorkingHours", "Monday-WorkingHours", "Thursday-WorkingHours",
+		"Tuesday-WorkingHours", "Wednesday-WorkingHours"]
+	update_bitalkers_bihosts("CIC-IDS-2017", database_list)
 
 	# ------
 	# CTU-13
@@ -211,4 +286,10 @@ if __name__ == "__main__":
 	# use "s2-author-normalized-labeled-flows" information to label dataset in MongoDb
 	#map_original_to_netgenes_dataset("CTU-13", ctu13_author_protocol_to_netgenes_protocol)
 	# TODO: update biflow netgenes labels for threat class, threat and tool
-	# TODO: update bitalkers and bihosts labels based on biflow labels (can be done independently of the previous mapping)
+	# update bitalkers and bihosts labels based on biflow labels (can be done independently of the previous mapping)
+	database_list = ["botnet-capture-20110810-neris","botnet-capture-20110811-neris",
+	"botnet-capture-20110812-rbot", "botnet-capture-20110815-fast-flux", "botnet-capture-20110815-fast-flux-2",
+	"botnet-capture-20110815-rbot-dos", "botnet-capture-20110816-donbot", "botnet-capture-20110816-qvod",
+	"botnet-capture-20110816-sogou", "botnet-capture-20110817-bot", "botnet-capture-20110818-bot",
+	"botnet-capture-20110818-bot-2", "botnet-capture-20110819-bot"]
+	update_bitalkers_bihosts("CTU-13", database_list)
