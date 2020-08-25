@@ -2,7 +2,7 @@ import os
 import errno
 import pandas
 import numpy as np
-from random import randint
+#from random import randint
 from pymongo import MongoClient, ASCENDING, DESCENDING
 
 def mkdir_p(path):
@@ -269,7 +269,7 @@ if __name__ == "__main__":
 		"17": "udp"
 	}
 	# use "s2-author-normalized-labeled-flows" information to label dataset in MongoDb
-	#map_original_to_netgenes_dataset("CIC-IDS-2017", cicids2017_author_protocol_to_netgenes_protocol)
+	map_original_to_netgenes_dataset("CIC-IDS-2017", cicids2017_author_protocol_to_netgenes_protocol)
 	# TODO: update biflow netgenes labels for threat class, threat and tool
 	# update bitalkers and bihosts labels based on biflow labels (can be done independently of the previous mapping)
 	database_list = ["Friday-WorkingHours", "Monday-WorkingHours", "Thursday-WorkingHours",
@@ -284,7 +284,7 @@ if __name__ == "__main__":
 		"udp": "udp"
 	}
 	# use "s2-author-normalized-labeled-flows" information to label dataset in MongoDb
-	#map_original_to_netgenes_dataset("CTU-13", ctu13_author_protocol_to_netgenes_protocol)
+	map_original_to_netgenes_dataset("CTU-13", ctu13_author_protocol_to_netgenes_protocol)
 	# TODO: update biflow netgenes labels for threat class, threat and tool
 	# update bitalkers and bihosts labels based on biflow labels (can be done independently of the previous mapping)
 	database_list = ["botnet-capture-20110810-neris","botnet-capture-20110811-neris",

@@ -171,12 +171,39 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                 if flow_initiation_type != "3-way Handshake":
                     # if first_init_packet wasn't seen, tcp_ack1 value is 0 and it's a SYN packet, then
                     # first_rel_packet is first_init_packet
-                    # DEV-NOTE: condition "(tcp_ack1 == 0)" removed due to cases where first packet is a SYN packet with
+                    # DEV-NOTE 1: condition "(tcp_ack1 == 0)" removed due to cases where first packet is a SYN packet with
                     # a non-zero ACK value, which is not normal TCP behavior, but we must account for these cases because
                     # machines still respond to such packets smartly devised by adversaries
-                    # DEV-NOTE: to include connections with an unseen initiation, also remove the condition "flag_syn1"
-                    if (not first_init_packet) and flag_syn1:
+                    # DEV-NOTE 2: to include connections with an unseen initiation, also remove the condition "flag_syn1"
+                    # DEV-NOTE 3: the network interface processing buffer may cause edge-cases where a SYN-ACK packet is
+                    # seen before the SYN packet (for example), as well as any other packets, which would require that
+                    # we follow every SEQ-ACK link independently of its timestamp order to fix. This is not trivially
+                    # fixed in this code because we count on flows ordered by timestamp to determine their order, as well
+                    # as calculate multiple features based on timestamps...
+                    # e.g.: 172.16.0.1-57352-192.168.10.50-80-TCP-0 (CIC-IDS-2017 Friday-WorkingHours)
+                    # Quick work-around to DEV-NOTE 3 is not allowing SYN-ACK packets as first packet to cover
+                    # the edge-case in the first packets (where it usually happens) where SYN and SYN-ACK are switched
+                    # up. It won't cover all cases, nor is it the correct way to solve this problem. This way,
+                    # connections could be started with SYN-ACK packet instead of SYN and this flow extractor would
+                    # be blind to those cases.
+                    #if (not first_init_packet) and (flag_syn1 and not flag_ack1):
+                    if (not first_init_packet) and (flag_syn1):
                         first_init_packet = first_rel_packet
+                        # First Init Packet defines the current BiFlow we are in in terms of 4 parameters:
+                        # Source IP, Source Port, Destination IP, Destination Port. This 4 parameters may
+                        # be different relatively to the previous ones because the real initiation
+                        # may not start with the first packet seen in it (5-tuple flow initiation vs
+                        # 6-tuple flow initation)
+                        biflow_parameters = first_rel_packet[0]
+
+                        # save 6-tuple BiFlow Id
+                        """
+                        # BEFORE: rfc793_tcp_biflow_id = (tmp_tcp_biflow_id[0], tmp_tcp_biflow_id[1], tmp_tcp_biflow_id[2],
+                        # tmp_tcp_biflow_id[3], tmp_tcp_biflow_id[4], tmp_tcp_biflow_id[5] + flow_inner_sep_counter)
+                        """
+                        rfc793_tcp_biflow_id = (biflow_parameters[0], biflow_parameters[1], biflow_parameters[2],
+                            biflow_parameters[3], tmp_tcp_biflow_id[4], tmp_tcp_biflow_id[5] + flow_inner_sep_counter)
+
                         flow_initiation_type = "Requested Connection"
                         initiation_packet_index = i
                         # Init1 - Requested Connection (syn)
@@ -190,7 +217,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                             # if a non-duplicate packet was found, then it is not a dropped connection
                             if not tcp_dup_p1_pn:
                                 break
-                            # else, if n is a duplicate syn packet and it is also the last one,
+                            # else, if n is a duplicate syn packet and it is the last one,
                             # then it's a dropped connection
                             elif (j == curr_5tuple_flow_n_packets-1):
                                 flow_connection_type = "Dropped Connection"
@@ -339,13 +366,9 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                 if flow_initiation_type == "Initiation not seen":
                     n_disconected_rfc793_packets += 1
 
-                # if termination was seen, then,
-                # it's time that packets are saved for
+                # if termination was seen, then, it's time that packets are saved for
                 # the terminated 6tuple BiFlow
                 if flow_termination_type != "Termination not seen":
-                    # 6tuple BiFlow Id
-                    rfc793_tcp_biflow_id = (tmp_tcp_biflow_id[0], tmp_tcp_biflow_id[1], tmp_tcp_biflow_id[2],\
-                        tmp_tcp_biflow_id[3], tmp_tcp_biflow_id[4], tmp_tcp_biflow_id[5] + flow_inner_sep_counter)
                     # ---------------------------------------------------------
                     # Keep 6tuple BiFlow, its packets and its inherent features
                     # ---------------------------------------------------------

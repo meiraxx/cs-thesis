@@ -1,0 +1,14 @@
+FORMAT:
+<dataset name> <dataset file>:
+<protocol> - Threat Class (Tool) flows - <author n flows> | <netgenes n flows> (<standardly mapped n flows> + <inversely mapped n flows>)
+
+CIC-IDS-2017 Friday-WorkingHours:
+TCP - PortScan (nmap) flows - 158930 | 159679 (159674 + 5)
+TCP - Bot (ARES) flows - 1966 | 2229 (1503 + 726)
+TCP - DDoS (DDoS LOIT) flows - 128027 | 38380 (38086 + 294)
+
+CIC-IDS-2017 Monday-WorkingHours:
+TCP BENIGN (BENIGN) flows - 305423 | 132218
+UDP BENIGN (BENIGN) flows - 224178 | 132218
+
+CIC-IDS-2017 Thursday-WorkingHours:
