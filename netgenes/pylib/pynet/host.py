@@ -109,6 +109,13 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
             bihost_any_first_bitalker_initiation_time = unixtime_to_datetime(bihost_any_first_bitalker_initiation_time)
             bihost_any_last_bitalker_termination_time = unixtime_to_datetime(bihost_any_last_bitalker_termination_time)
 
+            # -----------------
+            # Number of BiFlows
+            # -----------------
+            bihost_any_bitalker_n_biflows = list()
+            bihost_fwd_bitalker_n_biflows = list()
+            bihost_bwd_bitalker_n_biflows = list()
+
             # =============================
             # BiTalker Statistical Features
             # =============================
@@ -204,6 +211,11 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                 curr_bitalker_initiation_timestamp = curr_bitalker[3]
                 curr_bitalker_termination_timestamp = curr_bitalker[4]
 
+                # -----------------
+                # Number of BiFlows
+                # -----------------
+                curr_bitalker_any_n_biflows = int(curr_bitalker[6])
+                bihost_any_bitalker_n_biflows.append(curr_bitalker_any_n_biflows)
                 # ------------------
                 # IPv4 Data Lengthes
                 # ------------------
@@ -212,12 +224,14 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
 
                 if curr_bitalker_direction == "fwd":
                     # Statistical
+                    bihost_fwd_bitalker_n_biflows.append(curr_bitalker_any_n_biflows)
                     bihost_fwd_bitalker_any_biflow_eth_ipv4_data_lens.append(curr_bitalker_any_biflow_eth_ipv4_data_lens_total)
 
                     # Conceptual
                     bihost_fwd_n_bitalkers += 1
                 else:
                     # Statistical
+                    bihost_bwd_bitalker_n_biflows.append(curr_bitalker_any_n_biflows)
                     bihost_bwd_bitalker_any_biflow_eth_ipv4_data_lens.append(curr_bitalker_any_biflow_eth_ipv4_data_lens_total)
 
                     # Conceptual
@@ -325,6 +339,42 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
             # =============================
             # Statistical Features - Calc |
             # =============================
+            # -----------------
+            # Number of BiFlows
+            # -----------------
+            bihost_any_bitalker_n_biflows_total = round(sum(bihost_any_bitalker_n_biflows), 3)
+            bihost_any_bitalker_n_biflows_mean = round(np.mean(bihost_any_bitalker_n_biflows), 3)
+            bihost_any_bitalker_n_biflows_std = round(np.std(bihost_any_bitalker_n_biflows), 3)
+            bihost_any_bitalker_n_biflows_var = round(np.var(bihost_any_bitalker_n_biflows), 3)
+            bihost_any_bitalker_n_biflows_max = round(max(bihost_any_bitalker_n_biflows), 3)
+            bihost_any_bitalker_n_biflows_min = round(min(bihost_any_bitalker_n_biflows), 3)
+
+            if len(bihost_fwd_bitalker_n_biflows) == 0:
+                bihost_fwd_bitalker_n_biflows_total = bihost_fwd_bitalker_n_biflows_max = \
+                    bihost_fwd_bitalker_n_biflows_min = 0
+                bihost_fwd_bitalker_n_biflows_mean = bihost_fwd_bitalker_n_biflows_std = \
+                    bihost_fwd_bitalker_n_biflows_var = 0.0
+            else:
+                bihost_fwd_bitalker_n_biflows_total = round(sum(bihost_fwd_bitalker_n_biflows), 3)
+                bihost_fwd_bitalker_n_biflows_mean = round(np.mean(bihost_fwd_bitalker_n_biflows), 3)
+                bihost_fwd_bitalker_n_biflows_std = round(np.std(bihost_fwd_bitalker_n_biflows), 3)
+                bihost_fwd_bitalker_n_biflows_var = round(np.var(bihost_fwd_bitalker_n_biflows), 3)
+                bihost_fwd_bitalker_n_biflows_max = round(max(bihost_fwd_bitalker_n_biflows), 3)
+                bihost_fwd_bitalker_n_biflows_min = round(min(bihost_fwd_bitalker_n_biflows), 3)
+
+            if len(bihost_bwd_bitalker_n_biflows) == 0:
+                bihost_bwd_bitalker_n_biflows_total = bihost_bwd_bitalker_n_biflows_max = \
+                    bihost_bwd_bitalker_n_biflows_min = 0
+                bihost_bwd_bitalker_n_biflows_mean = bihost_bwd_bitalker_n_biflows_std = \
+                    bihost_bwd_bitalker_n_biflows_var = 0.0
+            else:
+                bihost_bwd_bitalker_n_biflows_total = round(sum(bihost_bwd_bitalker_n_biflows), 3)
+                bihost_bwd_bitalker_n_biflows_mean = round(np.mean(bihost_bwd_bitalker_n_biflows), 3)
+                bihost_bwd_bitalker_n_biflows_std = round(np.std(bihost_bwd_bitalker_n_biflows), 3)
+                bihost_bwd_bitalker_n_biflows_var = round(np.var(bihost_bwd_bitalker_n_biflows), 3)
+                bihost_bwd_bitalker_n_biflows_max = round(max(bihost_bwd_bitalker_n_biflows), 3)
+                bihost_bwd_bitalker_n_biflows_min = round(min(bihost_bwd_bitalker_n_biflows), 3)
+
             # ------------------
             # IPv4 Data Lengthes
             # ------------------
