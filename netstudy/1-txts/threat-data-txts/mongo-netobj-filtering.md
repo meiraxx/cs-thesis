@@ -5,7 +5,7 @@ Note: Filters do not include features, only additional information elements, sin
 ### BiFlow
 **BiFlow Filters:**  
 - biflow filtering: {bihost_fwd_id: '147.32.84.165-TCP', bihost_bwd_id: '111.89.136.28-TCP', biflow_src_port: 50810, biflow_dst_port: 80}
-- by BiTalker: "{bitalker_id: '147.32.84.165-111.89.136.28-TCP'}"
+- by UniTalker: "{unitalker_id: '147.32.84.165-111.89.136.28-TCP'}"
 - by BiHost: "{$or: [{bihost_fwd_id: '147.32.84.165-TCP'}, {bihost_bwd_id: '147.32.84.165-TCP'}]}"
 - by source host: "{bihost_fwd_id: '147.32.84.165-TCP'}"
 - by destination host: "{bihost_bwd_id: '111.89.136.28-TCP'}"
@@ -13,18 +13,18 @@ Note: Filters do not include features, only additional information elements, sin
 - by destination port: "{biflow_dst_port: 80}"
 - source/forward UniTalker: {$and: [{bihost_fwd_id: '147.32.84.165-TCP'}, {bihost_bwd_id: '111.89.136.28-TCP'}]}
 - destination/backward UniTalker: {$and: [{bihost_fwd_id: '111.89.136.28-TCP'}, {bihost_bwd_id: '147.32.84.165-TCP'}]}
-- alternative BiTalker filter: "{$or: [{$and: [{bihost_fwd_id: '147.32.84.165-TCP'}, {bihost_bwd_id: '111.89.136.28-TCP'}]}, {$and: [{bihost_fwd_id: '111.89.136.28-TCP'}, {bihost_bwd_id: '147.32.84.165-TCP'}]}]}"
+- BiTalker filter: "{$or: [{$and: [{bihost_fwd_id: '147.32.84.165-TCP'}, {bihost_bwd_id: '111.89.136.28-TCP'}]}, {$and: [{bihost_fwd_id: '111.89.136.28-TCP'}, {bihost_bwd_id: '147.32.84.165-TCP'}]}]}"
 - threat class filtering: {"Threat Class": "PortScan"}
 - non-labeled filtering: {"Threat Class": {$not: {$regex: "PortScan"}}}
 
 **BiFlow Sorts:**  
 - 1: {biflow_any_first_packet_time: 1, biflow_any_last_packet_time: 1}
-- 2: {bitalker_id: 1, biflow_any_first_packet_time: 1, biflow_any_last_packet_time: 1}
+- 2: {bihost_fwd_id: 1, bihost_bwd_id: 1, biflow_any_first_packet_time: 1, biflow_any_last_packet_time: 1}
 - 3: {bihost_fwd_id: 1, biflow_any_first_packet_time: 1, biflow_any_last_packet_time: 1}
 
 **BiFlow Views:**  
-- 1: {\_id: 0, biflow_id: 1, bitalker_id:1, bihost_fwd_id: 1, bihost_bwd_id: 1, biflow_src_port: 1, biflow_dst_port: 1, "Threat Class": 1}
-- 2: {\_id: 0, biflow_id: 1, bitalker_id: 1, bihost_fwd_id: 1, bihost_bwd_id: 1, biflow_src_port: 1, biflow_dst_port: 1, biflow_any_first_packet_time: 1, biflow_any_last_packet_time: 1, "Threat Class": 1}
+- 1: {\_id: 0, biflow_id: 1, bihost_fwd_id: 1, bihost_bwd_id: 1, biflow_src_port: 1, biflow_dst_port: 1, "Threat Class": 1}
+- 2: {\_id: 0, biflow_id: 1, bihost_fwd_id: 1, bihost_bwd_id: 1, biflow_src_port: 1, biflow_dst_port: 1, biflow_any_first_packet_time: 1, biflow_any_last_packet_time: 1, "Threat Class": 1}
 
 ## BiTalker
 **BiTalker Filters:**  

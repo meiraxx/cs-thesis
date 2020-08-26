@@ -762,9 +762,9 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
             # ADDITIONAL INFORMATION
             # ======================
             # Get bitalker_id and convert bitalker_id and biflow_id to strings
-            bitalker_id = iterator_to_str(biflow_id_to_bitalker_id(biflow_id))
-            bihost_fwd_id = iterator_to_str(bitalker_id_to_bihost_id(str_to_iterator(bitalker_id)))
-            bihost_bwd_id = iterator_to_str(bitalker_id_to_bihost_id(str_to_iterator(bitalker_id), _fwd=False))
+            unitalker_id = iterator_to_str(biflow_id_to_bitalker_id(biflow_id))
+            bihost_fwd_id = iterator_to_str(bitalker_id_to_bihost_id(str_to_iterator(unitalker_id)))
+            bihost_bwd_id = iterator_to_str(bitalker_id_to_bihost_id(str_to_iterator(unitalker_id), _fwd=False))
             biflow_src_port = biflow_id[1]
             biflow_dst_port = biflow_id[3]
             biflow_id = iterator_to_str(biflow_id)

@@ -1,5 +1,5 @@
 biflow_id
-bitalker_id
+unitalker_id
 bihost_fwd_id
 bihost_bwd_id
 biflow_src_port

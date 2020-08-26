@@ -164,12 +164,18 @@ def update_bitalkers_bihosts(dataset_name, database_list):
 		bitalker_ids = dict()
 		bihost_ids = dict()
 
-		curr_db["tcp_biflows"].create_index([("bitalker_id", ASCENDING), ("Mapping", ASCENDING)])
-		curr_db["udp_biflows"].create_index([("bitalker_id", ASCENDING), ("Mapping", ASCENDING)])
-		curr_db["tcp_bitalkers"].create_index([("bitalker_id", ASCENDING)])
-		curr_db["udp_bitalkers"].create_index([("bitalker_id", ASCENDING)])
-		curr_db["tcp_bitalkers"].create_index([("bitalker_id", ASCENDING), ("Mapping", ASCENDING)])
-		curr_db["udp_bitalkers"].create_index([("bitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		curr_db["tcp_biflows"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		curr_db["udp_biflows"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		# Accessing bitalker records with unitalker key (wrong)
+		#curr_db["tcp_bitalkers"].create_index([("unitalker_id", ASCENDING)])
+		#curr_db["udp_bitalkers"].create_index([("unitalker_id", ASCENDING)])
+		#curr_db["tcp_bitalkers"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		#curr_db["udp_bitalkers"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		# Accessing with bitalker definition
+		curr_db["tcp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING), ("bihost_bwd_id", ASCENDING)])
+		curr_db["udp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING), ("bihost_bwd_id", ASCENDING)])
+		curr_db["tcp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING), ("bihost_bwd_id", ASCENDING), ("Mapping", ASCENDING)])
+		curr_db["udp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING), ("bihost_bwd_id", ASCENDING), ("Mapping", ASCENDING)])
 
 		curr_db["tcp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING)])
 		curr_db["tcp_bitalkers"].create_index([("bihost_bwd_id", ASCENDING)])
@@ -203,15 +209,29 @@ def update_bitalkers_bihosts(dataset_name, database_list):
 			bihost_collection = curr_db[bihost_collection_name]
 
 			for bitalker_id in bitalker_ids[curr_protocol]:
-				fk_bitalker_filter = {"$or": [{"Mapping": "Inverse"}, {"Mapping": "Standard"}], "bitalker_id": bitalker_id}
-				bitalker_filter = {"bitalker_id": bitalker_id}
+				fk_bitalker_filter = {"$or": [{"Mapping": "Inverse"}, {"Mapping": "Standard"}], "unitalker_id": bitalker_id}
+				bitalker_flow_mapping_results = biflow_collection.distinct("Mapping", fk_bitalker_filter)
+				if not bitalker_flow_mapping_results:
+					# continue if there are no results in the mapping
+					continue
+				#bitalker_filter = {"bitalker_id": bitalker_id}
+				splitted_unitalker_id = bitalker_id.split("-")
+				bihost_fwd = "-".join([splitted_unitalker_id[0], splitted_unitalker_id[2]])
+				bihost_bwd = "-".join([splitted_unitalker_id[1], splitted_unitalker_id[2]])
+				bitalker_filter = {
+					"$or": [
+						{"$and": [{"bihost_fwd_id": bihost_fwd}, {"bihost_bwd_id": bihost_bwd}]},
+						{"$and": [{"bihost_fwd_id": bihost_bwd}, {"bihost_bwd_id": bihost_fwd}]}
+					]
+				}
+				
 				#labels_view = {"_id": 0, "Mapping": 1, "Threat Class": 1, "Threat": 1, "Tool": 1}
 				#bitalker_flow_results = biflow_collection.find(fk_bitalker_filter, labels_view).distinct("Threat Class")
-				bitalker_flow_mapping_results = biflow_collection.distinct("Mapping", fk_bitalker_filter)
 				bitalker_flow_threat_class_results = biflow_collection.distinct("Threat Class", fk_bitalker_filter)
 				bitalker_flow_threat_results = biflow_collection.distinct("Threat", fk_bitalker_filter)
 				bitalker_flow_tool_results = biflow_collection.distinct("Tool", fk_bitalker_filter)
 				mapping, threat_class, threat, tool = get_compound_label_values(bitalker_flow_mapping_results, bitalker_flow_threat_class_results, bitalker_flow_threat_results, bitalker_flow_tool_results, "&")
+
 				update_data = {
 					"Mapping": mapping,
 					"Threat Class": threat_class,
@@ -227,9 +247,13 @@ def update_bitalkers_bihosts(dataset_name, database_list):
 					"$or": [{"bihost_fwd_id": bihost_id}, {"bihost_bwd_id": bihost_id}]
 				}
 				bihost_filter = {"bihost_id": bihost_id}
+				bihost_bitalker_mapping_results = bitalker_collection.distinct("Mapping", fk_bihost_filter)
+				if not bihost_bitalker_mapping_results:
+					# continue if there are no results in the mapping
+					continue
+
 				#labels_view = {"_id": 0, "Threat Class": 1, "Threat": 1, "Tool": 1}
 				#bihost_flow_results = bitalker_collection.find(fk_bihost_filter, labels_view)
-				bihost_bitalker_mapping_results = bitalker_collection.distinct("Mapping", fk_bihost_filter)
 				bihost_bitalker_threat_class_results = bitalker_collection.distinct("Threat Class", fk_bihost_filter)
 				bihost_bitalker_threat_results = bitalker_collection.distinct("Threat", fk_bihost_filter)
 				bihost_bitalker_tool_results = bitalker_collection.distinct("Tool", fk_bihost_filter)
