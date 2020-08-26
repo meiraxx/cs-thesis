@@ -1,0 +1,5 @@
+TODOS for study scripts:
+- Gather and study flow information for all datasets
+- Extract, (generically) study and gather labeled threat_class and tool CSVs
+- Organize threat_class and tool CSVs as test files, and use tools in a controlled environment to specifically study their generated network features
+

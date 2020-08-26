@@ -166,11 +166,13 @@ def update_bitalkers_bihosts(dataset_name, database_list):
 
 		curr_db["tcp_biflows"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
 		curr_db["udp_biflows"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		"""
 		# Accessing bitalker records with unitalker key (wrong)
 		#curr_db["tcp_bitalkers"].create_index([("unitalker_id", ASCENDING)])
 		#curr_db["udp_bitalkers"].create_index([("unitalker_id", ASCENDING)])
 		#curr_db["tcp_bitalkers"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
 		#curr_db["udp_bitalkers"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
+		"""
 		# Accessing with bitalker definition
 		curr_db["tcp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING), ("bihost_bwd_id", ASCENDING)])
 		curr_db["udp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING), ("bihost_bwd_id", ASCENDING)])
