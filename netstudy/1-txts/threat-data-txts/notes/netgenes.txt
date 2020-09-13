@@ -1,0 +1,12 @@
+CIC-IDS-2017 PortScan (159671 flows):
+	- Requested Connection Initiation (1 flows)
+		- Connection Dropped, Null Termination (1 flows)
+	- Two-way Handshake Initiation (158414 flows)
+		- Half-duplex Connection Established, Abort Termination (484 flows)
+			- (A->B) SYN, (B->A) SYN-ACK, (A->B) RST
+		- Connection Rejected, Abort Termination (157930 flows)
+			- (A->B) SYN, (B->A) RST-ACK
+	- Three-way Handshake Initiation, Full-duplex Connection Established (1256 flows):
+		- Abort Termination (1250 flows)
+		- Graceful Termination (6 flows)
+

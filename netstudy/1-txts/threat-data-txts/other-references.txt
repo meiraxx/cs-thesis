@@ -1,4 +1,4 @@
-More interesting but not so related references:
+More interesting (but not so related) references about protocols:
 - https://www.auvik.com/franklymsp/blog/tcp-window-size/
 - https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Headers/Keep-Alive
 - https://www.cellstream.com/reference-reading/tipsandtricks/314-the-purpose-of-the-ip-id-field-demystified
@@ -42,3 +42,7 @@ More interesting but not so related references:
 - https://tech.labs.oliverwyman.com/blog/2016/11/07/4-way-tcp-handshake-and-firewalls/
 - https://superuser.com/questions/298919/what-is-tcp-half-open-connection-and-tcp-half-closed-connection
 - https://community.checkpoint.com/t5/General-Topics/TCP-packet-out-of-state-First-packet-isn-t-SYN-tcp-flags-SYN-ACK/td-p/37166
+
+Other random references:
+- https://blog.corserva.com/why-siem-if-already-have-a-firewall
+- https://www.1337pwn.com/layered-dmz-network-security-architecture-design/

@@ -206,11 +206,48 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
 
                         flow_initiation_type = "Requested Connection"
                         initiation_packet_index = i
+                        
+                        if (not is_curr_last_packet) and flag_ack1:
+                            # if this condition is reached, it means that the first packet that was captured in the
+                            # current flow is a SYN-ACK packet. Most likely, this means that this packet was physically
+                            # sent or received (depending on where you're capturing) after but was processed before.
+                            # This condition will apply a work-around (NOT A FIX, in my opinion), because I don't know
+                            # how I could do this better right now. Anyways, we will simply need to correct the flow id,
+                            # the initiation type to "2-way Handshake", set the first_init as the next packet, the
+                            # second_init as the current packet. This solves everything because packet order is not taken
+                            # into account elsewhere, except for the packet inter-arrival times, but these won't be affected
+                            # unless I would actually correct the packet order, thus putting an earlier timestamp in front of
+                            # a latter timestamp, which would not be good since I didn't use the "abs()" function in the timestamps
+                            # to help me detect errors. This program is starting to be a patch hell, so I'll need to improve it
+                            # in a next iteration, probably after my thesis... if this goes open-source as it is expected, maybe
+                            # I'll have someone input and help me with some of these work arounds. Also, probably it would be good
+                            # to remove any useless features that I have may added (thinking about flag counts and rates, for example)
+                            # in flows, talkers and hosts. Also, maybe talkers and hosts working only on top of already extracted flow
+                            # would be the way to go actually, because it's messy done all in one go. I also want Talker/Host analysis
+                            # taking flow timestamps into account for finding correlated flow sets, for example, instead of taking the
+                            # whole Talker or Host network object. We'll see what happens... I'll stop rambling and continue experimenting
+                            # now. Thanks for reading... ;)
+                            second_rel_packet = curr_5tuple_flow[i+1]
+                            first_init_packet = second_rel_packet
+                            second_init_packet = first_rel_packet
+                            biflow_parameters = second_rel_packet[0]
+                            flow_initiation_type = "2-way Handshake"
+
+                        rfc793_tcp_biflow_id = (biflow_parameters[0], biflow_parameters[1], biflow_parameters[2],
+                        biflow_parameters[3], tmp_tcp_biflow_id[4], tmp_tcp_biflow_id[5] + flow_inner_sep_counter)
+
                         # Init1 - Requested Connection (syn)
                         # Valid connection states:
                         # Init1.1 - Dropped Connection (current packet is last non-duplicate packet)
                         # DEV-NOTE: need to test with multiple duplicate syn packets
                         # (thus, belonging to the same flow)
+                        # NOTE: If a "Requested Connection" initiation is output, then the connection has
+                        # been dropped. An active "Dropped Connection" state, the way it is programmed
+                        # right now, will flag multiple attempts (more than one) of connecting to a certain
+                        # destination port, from the same source port, and using the same initiated connection
+                        # as before (hence, the duplicate packet test), which might be useful, though the name
+                        # of this state is not at all correct, since a "Requested Connection" is also a dropped
+                        # connection... it might be useful to consider this, but I'm considering removing this.
                         for j in range(i+1, curr_5tuple_flow_n_packets):
                             packet_n = curr_5tuple_flow[j]
                             tcp_dup_p1_pn = duplicate_packet_test(first_init_packet, packet_n)

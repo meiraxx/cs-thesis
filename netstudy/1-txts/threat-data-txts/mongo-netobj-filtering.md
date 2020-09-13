@@ -16,7 +16,7 @@ Note: Filters do not include features, only additional information elements, sin
 - BiTalker filter: "{$or: [{$and: [{bihost_fwd_id: '147.32.84.165-TCP'}, {bihost_bwd_id: '111.89.136.28-TCP'}]}, {$and: [{bihost_fwd_id: '111.89.136.28-TCP'}, {bihost_bwd_id: '147.32.84.165-TCP'}]}]}"
 - threat class filtering: {"Threat Class": "PortScan"}
 - non-labeled filtering: {"Threat Class": {$not: {$regex: "PortScan"}}}
-
+- no-label filtering: {"Threat Class" : {$exists: false, $eq: null}}
 **BiFlow Sorts:**  
 - 1: {biflow_any_first_packet_time: 1, biflow_any_last_packet_time: 1}
 - 2: {bihost_fwd_id: 1, bihost_bwd_id: 1, biflow_any_first_packet_time: 1, biflow_any_last_packet_time: 1}
