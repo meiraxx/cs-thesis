@@ -50,7 +50,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] EthL1-EthL2-IPv4-TCP packets: 20512 packets
 [-] EthL1-EthL2-IPv4-SCTP packets: 0 packets
 [-] EthL1-EthL2-IPv4-<Other L3+/L4> packets: 0 packets
-[T] Built in: 1.25 seconds
+[T] Built in: 1.019 seconds
 
 ======================================================================================================
 2. Layer-3 Flow Construction and Layer-4 Separation
@@ -60,7 +60,7 @@ NetGenes by Protocol Stacks and NetObjects
 ---------------------------------------
 [+] IPv4 Packets preserved: 20604 IPv4 Packets
 [+] IPv4 UniFlows detected: 85 IPv4 UniFlows
-[T] Built in: 0.013 seconds
+[T] Built in: 0.014 seconds
 
 --------------------------------------
 2.2. Layer-3 Bidirectional Flows: IPv4
@@ -77,7 +77,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-TCP Packets disconected: 23 IPv4-TCP DCed Packets
 [+] IPv4-UDP BiFlows detected: 6 IPv4-UDP BiFlows
 [+] IPv4-TCP BiFlows detected: 40 IPv4-TCP BiFlows
-[T] Built in: 0.027 seconds
+[T] Built in: 0.026 seconds
 
 ================================================================================================================================
 3. Layer-3/Layer-4 NetObject Construction and NetGene Extraction
@@ -89,7 +89,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-UDP BiFlows detected: 6 IPv4-UDP BiFlows
 [+] IPv4-UDP BiTalkers detected: 3 IPv4-UDP BiTalkers
 [+] IPv4-UDP BiHosts detected: 4 IPv4-UDP BiHosts
-[T] Calculated and saved in: 0.03 seconds
+[T] Calculated and saved in: 0.031 seconds
 
 -----------------------------------------------------------
 3.2. IPv4-TCP NetObject Construction and NetGene Extraction
@@ -98,12 +98,12 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-TCP BiFlows detected: 40 IPv4-TCP BiFlows
 [+] IPv4-TCP BiTalkers detected: 14 IPv4-TCP BiTalkers
 [+] IPv4-TCP BiHosts detected: 15 IPv4-TCP BiHosts
-[T] Calculated and saved in: 0.939 seconds
+[T] Calculated and saved in: 1.077 seconds
 
 ==========================================
 Total Extraction Time
 ==========================================
-[T] Script took 2.258 seconds to complete
+[T] Script took 2.168 seconds to complete
 
 [+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 0.109 MBs (megabytes)
 

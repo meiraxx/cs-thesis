@@ -50,7 +50,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] EthL1-EthL2-IPv4-TCP packets: 24026 packets
 [-] EthL1-EthL2-IPv4-SCTP packets: 0 packets
 [-] EthL1-EthL2-IPv4-<Other L3+/L4> packets: 1756815 packets
-[T] Built in: 2683.113 seconds
+[T] Built in: 2545.064 seconds
 
 ======================================================================================================
 2. Layer-3 Flow Construction and Layer-4 Separation
@@ -60,14 +60,14 @@ NetGenes by Protocol Stacks and NetObjects
 ---------------------------------------
 [+] IPv4 Packets preserved: 3169730 IPv4 Packets
 [+] IPv4 UniFlows detected: 6865 IPv4 UniFlows
-[T] Built in: 2.056 seconds
+[T] Built in: 1.977 seconds
 
 --------------------------------------
 2.2. Layer-3 Bidirectional Flows: IPv4
 --------------------------------------
 [+] IPv4 Packets preserved: 3169730 IPv4 Packets
 [+] IPv4 BiFlows detected: 3569 IPv4 BiFlows
-[T] Built in: 0.033 seconds
+[T] Built in: 0.035 seconds
 
 --------------------------------------------
 2.3. Bidirectional Flows: IPv4-UDP, IPv4-TCP
@@ -77,7 +77,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-TCP Packets disconected: 3253 IPv4-TCP DCed Packets
 [+] IPv4-UDP BiFlows detected: 216 IPv4-UDP BiFlows
 [+] IPv4-TCP BiFlows detected: 3599 IPv4-TCP BiFlows
-[T] Built in: 0.063 seconds
+[T] Built in: 0.076 seconds
 
 ================================================================================================================================
 3. Layer-3/Layer-4 NetObject Construction and NetGene Extraction
@@ -89,7 +89,7 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-UDP BiFlows detected: 216 IPv4-UDP BiFlows
 [+] IPv4-UDP BiTalkers detected: 73 IPv4-UDP BiTalkers
 [+] IPv4-UDP BiHosts detected: 20 IPv4-UDP BiHosts
-[T] Calculated and saved in: 123.498 seconds
+[T] Calculated and saved in: 125.612 seconds
 
 -----------------------------------------------------------
 3.2. IPv4-TCP NetObject Construction and NetGene Extraction
@@ -98,12 +98,12 @@ NetGenes by Protocol Stacks and NetObjects
 [+] IPv4-TCP BiFlows detected: 3599 IPv4-TCP BiFlows
 [+] IPv4-TCP BiTalkers detected: 131 IPv4-TCP BiTalkers
 [+] IPv4-TCP BiHosts detected: 58 IPv4-TCP BiHosts
-[T] Calculated and saved in: 10.085 seconds
+[T] Calculated and saved in: 10.123 seconds
 
 ==========================================
 Total Extraction Time
 ==========================================
-[T] Script took 2818.848 seconds to complete
+[T] Script took 2682.887 seconds to complete
 
 [+] Network-object (BiFlows, BiTalkers and BiHosts) genes extracted: 3.06 MBs (megabytes)
 
