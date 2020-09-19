@@ -17,7 +17,7 @@ This tool grabs a PCAP/PCAPNG file and extracts useful conceptual and statistica
 
 ### How to use it
 ```pip3 install -r requirements.txt```  
-```python3 netgenes-tool.py```  
+```python3 netgenes-packet-tool.py```  
 
 ### Supported platforms
 Any Linux or Windows platform with python >=3.6 should work.  

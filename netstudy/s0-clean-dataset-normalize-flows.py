@@ -179,7 +179,7 @@ if __name__ == "__main__":
 	cicids2017_header_str = " Source IP, Source Port, Destination IP, Destination Port, Protocol, Label,Flow ID"
 	cicids2017_fname_dict = {
 		"Monday-WorkingHours.pcap_ISCX.csv": "Monday-WorkingHours", #Monday
-		"Tuesday-WorkingHours.pcap_ISCX.csv":"Tuesday-WorkingHours", #Tuesday
+		"Tuesday-WorkingHours.pcap_ISCX.csv": "Tuesday-WorkingHours", #Tuesday
 		"Wednesday-workingHours.pcap_ISCX.csv": "Wednesday-WorkingHours", #Wednesday
 		"Thursday-WorkingHours-Morning-WebAttacks.pcap_ISCX.csv": "Thursday-WorkingHours", #Thursday
 		"Thursday-WorkingHours-Afternoon-Infilteration.pcap_ISCX.csv": "Thursday-WorkingHours", #Thursday

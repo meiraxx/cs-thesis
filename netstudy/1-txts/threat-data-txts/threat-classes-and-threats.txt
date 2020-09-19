@@ -57,6 +57,8 @@ Intent: Probe multiple ports of a given host, for a given L4 protocol.
 
 Generic Attack Technique(s):
 - FTP Bounce Scan (-b) - this method allows an attacker to use a vulnerable FTP server as a proxy to portscan other hosts. [2]
+- Single-source Port Scan - a single host probes multiple ports of a host.
+- Distributed Port Scan - multiple hosts probe multiple ports of a host.
 
 Specific Attack Technique(s):
 - UDP Scan (-sU) - the attacker sends a UDP packet to each port. If the target responds with service data, the port is open. If the target does not respond, the port is either closed or filtered. [2.1]
@@ -242,3 +244,7 @@ Program Applicability: Custom exploits.
 Programs:
 <name> (<L1-4 protocols supported>) (<L5-7 protocols supported>)
 NA NA NA
+
+
+
+

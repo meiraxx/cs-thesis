@@ -12,7 +12,7 @@ then
 	do
 		pcapng_fullpath="$pcapng_dir/$pcapng_file"
 		# Verbose; Output = CSV
-		./netgenes-tool.py $pcapng_fullpath -v | tee >(sed 's/\x1b\[[0-9;]*m//g' > "$extraction_logs_dir/${pcapng_file%.*}.txt")
+		./netgenes-packet-tool.py $pcapng_fullpath -v | tee >(sed 's/\x1b\[[0-9;]*m//g' > "$extraction_logs_dir/${pcapng_file%.*}.txt")
 	done
 fi
 

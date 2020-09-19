@@ -100,16 +100,16 @@ class NetGenesArgs:
                     ",".join(supported_output_types) + Colors.ENDC, flush=True)
                 exit()
 
-        oparser = argparse.ArgumentParser(prog="NetGenes", description="Description: NetGene extraction tool", \
+        oparser = argparse.ArgumentParser(prog="NetGenes", description="Description: NetGenes extraction tool (from packets)", \
             epilog="For any enquiries, please contact me at joao[dot]meira[dot]cs[at]gmail[dot]com", add_help=False)
         oparser.add_argument("pcap_path", metavar="PCAP-File-Path", nargs="?", help="Input PCAP file", default="")
         oparser.add_argument("-h", "-H", "--help", action="store_true", help="See this help message", dest="print_help")
         oparser.add_argument("-V", "--version", action="version", help="See NetGenes version", version="%(prog)s 1.0")
         oparser.add_argument("-s", "--safe-check", action="store_true", help="Perform safe checks", dest="safe_check")
-        oparser.add_argument("-d", metavar="Debug Verbose", help="Specify debug output: 1 (packet), 2 (flow)", dest="debug")
+        oparser.add_argument("-d", "--debug-verbose", metavar="Debug Verbose", help="Specify debug output: 1 (packet), 2 (flow)", dest="debug")
         oparser.add_argument("-v", "--verbose", action="store_true", help="Verbose output", dest="verbose")
-        oparser.add_argument("-D", metavar="Data Directory", help="Specify data directory: store inputs (e.g. PCAP) and outputs (e.g. CSV)", dest="data_dir", default="data-files")
-        oparser.add_argument("-T", metavar="Output Type", help="Specify output type: csv, json, ...", dest="output_type", type=str.lower, default="csv")
+        oparser.add_argument("-D", "--data-dir", metavar="Data Directory", help="Specify data directory where inputs (e.g. PCAP) and outputs (e.g. CSV) are stored", dest="data_dir", default="data-files")
+        oparser.add_argument("-T", "--output-type", metavar="Output Type", help="Specify output type: csv, json, ...", dest="output_type", type=str.lower, default="csv")
         optional_args_noreq_header = "Optional arguments (does not require other arguments)"
         optional_args_noreq_repr = ":\n  -h, -H, --help     See this help message\n  -V, --version      See NetGenes version"
         optional_args_req_header = "Optional arguments (requires a PCAP file)"
@@ -218,6 +218,9 @@ def output_net_genes(net_genes_generator_lst, l4_protocol, network_object_type):
         # CSV Directory
         os.makedirs(netgenes_globals.csv_output_dir, exist_ok=True)
         # Save NetGenes
+        if l4_protocol.lower()=="tcp":
+            print(net_genes_generator_lst)
+            exit()
         save_csv_file(net_genes_header_lst, net_genes_generator_lst, "ipv4-%s-%ss.csv"%(l4_protocol.lower(), network_object_type))
 
 # ===================

@@ -1,4 +1,4 @@
-CIC-IDS-2017 PortScan (159679 flows):
+CIC-IDS-2017 PortScan (159671 flows):
 	- Requested Connection Initiation (1 flows)
 		- Connection Dropped, Null Termination (1 flows)
 	- Two-way Handshake Initiation (158414 flows)
