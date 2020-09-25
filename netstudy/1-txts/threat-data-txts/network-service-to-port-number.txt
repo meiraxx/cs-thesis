@@ -1,0 +1,8 @@
+Network services TO port number MAPPING:
+- https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
+- https://www.speedguide.net/port.php?port=XXXXX
+- https://docs.microsoft.com/en-us/troubleshoot/windows-server/networking/service-overview-and-network-port-requirements
+
+Unnofficial:
+- http://ksi.kiev.ua/11-articles-microsoft/36-ports-for-windows-ad-insfrastructure-on-linux-gateway.html
+- https://www.reddit.com/r/sysadmin/comments/9z637e/listening_ports_49664_49665_49668_what_services/

@@ -67,3 +67,4 @@ References:
 - https://www.gont.com.ar/papers/tn-03-09-security-assessment-TCP.pdf
 - https://www.grc.com/sn/notes-164.htm
 - https://ddos-guard.net/en/terminology/attack_type
+- https://www.varonis.com/blog/smb-port/

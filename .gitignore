@@ -1,18 +1,3 @@
-# =============
-# Pycache Files
-# =============
-# Normal Runs
-netgenes/pylib/pyaux/__pycache__/
-netgenes/pylib/pynet/__pycache__/
-
-# PyInstaller
-netgenes/__pycache__/
-
-# Prepared Data Files - I/O (I: PCAPNGs/PCAPs; O: CSVs, JSONs)
-netgenes/data-files/
-netgenes/flow-input/
-netgenes/flow-output/
-
 # Raw Datasets and MD5s (PCAPNGs, PCAPs and MD5s)
 # Current datasets: CIC-IDS-2017, CSE-CIC-IDS-2018
 raw-datasets/

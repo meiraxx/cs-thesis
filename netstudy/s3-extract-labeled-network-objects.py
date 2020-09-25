@@ -1,7 +1,6 @@
 # USE MongoDb aggregations and schemas, it's really useful.
 """
-1. Get threat-class flows, talkers and hosts, into separate CSVs
-2. Use AI to study those
+Get threat-class flows, talkers and hosts, into separate CSVs
 """
 import os
 import errno
@@ -65,7 +64,6 @@ def mongo_to_csv(database_list, dataset_name, output_grouping, output_dir="."):
 	clear_dir(output_dir, ".csv")
 	
 	mongo_client = MongoClient("mongodb://localhost:27017")
-	# df.to_csv('my_csv.csv', mode='a', header=False)
 	for file_name in database_list:
 		curr_db = mongo_client[file_name]
 		collection = curr_db["tcp_biflows"]
@@ -91,6 +89,13 @@ def mongo_to_csv(database_list, dataset_name, output_grouping, output_dir="."):
 			print("[T] Read took", round(time.time() - mongo_read_time, 3), "seconds to complete")
 			# work with DF
 
+			if not threat_class:
+				# if the threat class (and, implicitly, the other stats) does not exist,
+				# we will still put it (them) in the CSV
+				df["Threat Class"] = "None"
+				df["Threat"] = "None"
+				df["Tool"] = "None"
+				df["Mapping"] = "None"
 			# ------
 			# OUTPUT
 			# ------
@@ -100,24 +105,35 @@ def mongo_to_csv(database_list, dataset_name, output_grouping, output_dir="."):
 			elif output_grouping == "by-dataset-by-threat":
 				output_fpath = os.path.join(output_dir, '%s-%s.csv'%(dataset_name, threat_class))
 				_df_to_csv(df, output_fpath, "append")
-				
+			elif output_grouping == "by-dataset":
+				output_fpath = os.path.join(output_dir, '%s.csv'%(dataset_name))
+				_df_to_csv(df, output_fpath, "append")
 			#df.to_csv(output_fpath, index=False)
 			
 	mongo_client.close()
 	
 
 if __name__ == '__main__':
-	output_dir = "s3-labeled-csvs"
-	mkdir_p(output_dir)
+	output_dir1 = os.path.join("s3-netgenes-labeled-flows", "by-dataset-by-file-by-threat")
+	output_dir2 = os.path.join("s3-netgenes-labeled-flows", "by-dataset-by-threat")
+	output_dir3 = os.path.join("s3-netgenes-labeled-flows", "by-dataset")
+	mkdir_p(output_dir1)
+	mkdir_p(output_dir2)
+	mkdir_p(output_dir3)
+
 	cicids2017_database_list = ["Friday-WorkingHours", "Monday-WorkingHours", "Thursday-WorkingHours",
 		"Tuesday-WorkingHours", "Wednesday-WorkingHours"]
+
+	#mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-file-by-threat", output_dir1)
+	#mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-threat", output_dir2)
+	#mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset", output_dir3)
+
 	ctu13_database_list = ["botnet-capture-20110810-neris","botnet-capture-20110811-neris",
 		"botnet-capture-20110812-rbot", "botnet-capture-20110815-fast-flux", "botnet-capture-20110815-fast-flux-2",
 		"botnet-capture-20110815-rbot-dos", "botnet-capture-20110816-donbot", "botnet-capture-20110816-qvod",
 		"botnet-capture-20110816-sogou", "botnet-capture-20110817-bot", "botnet-capture-20110818-bot",
 		"botnet-capture-20110818-bot-2", "botnet-capture-20110819-bot"]
-
-	mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-file-by-threat", output_dir)
+	
 	
 
 

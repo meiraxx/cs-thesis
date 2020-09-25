@@ -1,0 +1,15 @@
+# =============
+# Pycache Files
+# =============
+# Normal Runs
+pylib/pyaux/__pycache__/
+pylib/pynet/__pycache__/
+
+# PyInstaller
+__pycache__/
+
+# Prepared Data Files - I/O (I: PCAPNGs/PCAPs; O: CSVs, JSONs)
+data-files/
+s5-flow-input/
+s5-flow-output/
+s5-human-readable-flow-output/

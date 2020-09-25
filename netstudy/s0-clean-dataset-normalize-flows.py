@@ -1,6 +1,6 @@
 import os
 import errno
-import pandas
+import pandas as pd
 import numpy as np
 
 def mkdir_p(path):
@@ -142,14 +142,14 @@ def normalize_flow_based_datasets(dataset_name, interest_header, fname_dict, has
 			"""
 			Choose one:
 			# get all unique rows into dataframe and escape unicoded fields
-			df = pandas.read_csv(fpath, encoding='unicode_escape')[interest_header_lst].drop_duplicates()
+			df = pd.read_csv(fpath, encoding='unicode_escape')[interest_header_lst].drop_duplicates()
 			# get all unique rows into dataframe
-			df = pandas.read_csv(fpath)[interest_header_lst].drop_duplicates()
+			df = pd.read_csv(fpath)[interest_header_lst].drop_duplicates()
 			# get all rows into dataframe
-			df = pandas.read_csv(fpath)[interest_header_lst]
+			df = pd.read_csv(fpath)[interest_header_lst]
 			"""
 			# Drop duplicate dataset rows: may be flows, may be packets
-			df = pandas.read_csv(fpath)[interest_header_lst].drop_duplicates()
+			df = pd.read_csv(fpath)[interest_header_lst].drop_duplicates()
 
 			# Get standard netgenes-defining flows and labels
 			df = get_standard_flow_label_keys(df, interest_header_lst, has_author_flow_id)
