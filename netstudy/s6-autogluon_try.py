@@ -1,5 +1,6 @@
 import autogluon as ag
 from autogluon import TabularPrediction as task
+from utils import *
 
 # use on cic-ids-2017 portscan and benign
 train_data = task.Dataset(file_path="ipv4-tcp-bihosts.csv")

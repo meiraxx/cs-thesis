@@ -3,6 +3,7 @@ import sys
 import subprocess
 import time
 from pymongo import MongoClient
+from utils import *
 
 file_to_netobject_types = {
 	"ipv4-tcp-biflows.csv": "tcp_biflows",

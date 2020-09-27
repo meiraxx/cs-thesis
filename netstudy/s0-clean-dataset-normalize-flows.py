@@ -2,24 +2,7 @@ import os
 import errno
 import pandas as pd
 import numpy as np
-
-def mkdir_p(path):
-	try:
-		os.makedirs(path)
-	except OSError as exc:  # Python >2.5
-		if exc.errno == errno.EEXIST and os.path.isdir(path):
-			pass
-		else:
-			raise
-
-def replace_string_in_file(file_path, original_string, new_string):
-	with open(file_path, "r") as f:
-		s = f.read()
-
-	s = s.replace(original_string, new_string)
-
-	with open(file_path, "w") as f:
-		f.write(s)
+from utils import *
 
 def handle_bad_data(fpath, fname):
 	""" Any data that needs to be fixed in an input dataset can be fixed here"""
