@@ -11,7 +11,7 @@ bwd_flag_rate = float(bwd_flag_count/bwd_n_pkts)
 connection_requested  
 connection_established  
 connection_refused  
-connection_dropped  
+connection_redropped  
 
 (tcp initiation type)  
 full_duplex_initiation  
@@ -53,27 +53,27 @@ port-6697
 fwd_n_connections_requested  
 fwd_n_connections_established  
 fwd_n_connections_refused  
-fwd_n_connections_dropped  
+fwd_n_connections_redropped  
 bwd_n_connections_requested  
 bwd_n_connections_established  
 bwd_n_connections_refused  
-bwd_n_connections_dropped  
+bwd_n_connections_redropped  
   
 (ports/tcp-connections)  
 fwd_unique_port_n_connections_requested  
 fwd_unique_port_n_connections_established  
 fwd_unique_port_n_connections_refused  
-fwd_unique_port_n_connections_dropped  
+fwd_unique_port_n_connections_redropped  
 bwd_unique_port_n_connections_requested  
 bwd_unique_port_n_connections_established  
 bwd_unique_port_n_connections_refused  
-bwd_unique_port_n_connections_dropped  
+bwd_unique_port_n_connections_redropped  
 fwd_diff_port_n_connections_requested  
 fwd_diff_port_n_connections_established  
 fwd_diff_port_n_connections_refused  
-fwd_diff_port_n_connections_dropped  
+fwd_diff_port_n_connections_redropped  
 bwd_diff_port_n_connections_requested  
-bwd_diff_port_n_connections_dropped  
+bwd_diff_port_n_connections_redropped  
 bwd_diff_port_n_connections_established  
 bwd_diff_port_n_connections_refused  
 

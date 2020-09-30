@@ -23,7 +23,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                 self.biflow_eth_ipv4_tcp_full_duplex_connection_established = False
                 self.biflow_eth_ipv4_tcp_half_duplex_connection_established = False
                 self.biflow_eth_ipv4_tcp_connection_rejected = False
-                self.biflow_eth_ipv4_tcp_connection_dropped = False
+                self.biflow_eth_ipv4_tcp_connection_redropped = False
                 self.biflow_eth_ipv4_tcp_termination_graceful = False
                 self.biflow_eth_ipv4_tcp_termination_abort = False
                 self.biflow_eth_ipv4_tcp_termination_null = False
@@ -50,7 +50,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                 self.biflow_eth_ipv4_tcp_full_duplex_connection_established = False
                 self.biflow_eth_ipv4_tcp_half_duplex_connection_established = False
                 self.biflow_eth_ipv4_tcp_connection_rejected = False
-                self.biflow_eth_ipv4_tcp_connection_dropped = False
+                self.biflow_eth_ipv4_tcp_connection_redropped = False
                 self.biflow_eth_ipv4_tcp_termination_graceful = False
                 self.biflow_eth_ipv4_tcp_termination_abort = False
                 self.biflow_eth_ipv4_tcp_termination_null = False
@@ -61,7 +61,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                     self.biflow_eth_ipv4_tcp_full_duplex_connection_established,
                     self.biflow_eth_ipv4_tcp_half_duplex_connection_established,
                     self.biflow_eth_ipv4_tcp_connection_rejected,
-                    self.biflow_eth_ipv4_tcp_connection_dropped,
+                    self.biflow_eth_ipv4_tcp_connection_redropped,
                     self.biflow_eth_ipv4_tcp_termination_graceful,
                     self.biflow_eth_ipv4_tcp_termination_abort,
                     self.biflow_eth_ipv4_tcp_termination_null
@@ -199,7 +199,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                             # ------------------
                             # Dropped connection
                             # ------------------
-                            rfc793.biflow_eth_ipv4_tcp_connection_dropped = True
+                            rfc793.biflow_eth_ipv4_tcp_connection_redropped = True
 
                     # the flow end conditions are r1 and r2, (fin,fin-ack,ack)/(rst,!rst,---),
                     # or if the packet is the last one of the existing communication
@@ -270,7 +270,7 @@ def build_l4_biflows(l3_biflows, l3_biflow_ids, debug=False):
                                 biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
                         elif rfc793.biflow_eth_ipv4_tcp_connection_rejected:
                             print("[D] IPv4-TCP Rejected Connection (2-way Handshake): " + biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
-                        elif rfc793.biflow_eth_ipv4_tcp_connection_dropped:
+                        elif rfc793.biflow_eth_ipv4_tcp_connection_redropped:
                             print("[D] IPv4-TCP Dropped Connection (No Handshake): " + biflow_id_to_pcap_filter(tmp_tcp_biflow_id), flush=True)
 
                         # Termination Types

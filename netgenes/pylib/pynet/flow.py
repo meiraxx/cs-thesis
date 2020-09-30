@@ -509,7 +509,7 @@ def get_l3_l4_biflow_gene_generators(genes_dir, biflows, biflow_ids, l4_protocol
                     biflow_eth_ipv4_tcp_initiation_requested_connection = curr_biflow_l4_conceptual_features[0]
                     biflow_eth_ipv4_tcp_initiation_two_way_handshake = curr_biflow_l4_conceptual_features[1]
                     biflow_eth_ipv4_tcp_initiation_three_way_handshake = curr_biflow_l4_conceptual_features[2]
-                    biflow_eth_ipv4_tcp_connection_dropped = curr_biflow_l4_conceptual_features[3]
+                    biflow_eth_ipv4_tcp_connection_redropped = curr_biflow_l4_conceptual_features[3]
                     biflow_eth_ipv4_tcp_connection_rejected = curr_biflow_l4_conceptual_features[4]
                     biflow_eth_ipv4_tcp_connection_established_half_duplex = curr_biflow_l4_conceptual_features[5]
                     biflow_eth_ipv4_tcp_connection_established_full_duplex = curr_biflow_l4_conceptual_features[6]

@@ -2,7 +2,7 @@ SYN1-ACK1, RST2
 "biflow_eth_ipv4_tcp_initiation_requested_connection": 1
 "biflow_eth_ipv4_tcp_initiation_two_way_handshake": 0
 "biflow_eth_ipv4_tcp_initiation_three_way_handshake": 0
-"biflow_eth_ipv4_tcp_connection_dropped": 0
+"biflow_eth_ipv4_tcp_connection_redropped": 0
 "biflow_eth_ipv4_tcp_connection_rejected": 0
 "biflow_eth_ipv4_tcp_connection_established_half_duplex": 0
 "biflow_eth_ipv4_tcp_connection_established_full_duplex": 0
