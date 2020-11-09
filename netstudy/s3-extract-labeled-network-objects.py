@@ -8,6 +8,8 @@ import pandas as pd
 from pymongo import MongoClient, ASCENDING, DESCENDING
 import time
 from utils import *
+# for some reason, the asterisk is not catching this function (wtf)
+from utils import _df_to_csv
 
 def _connect_mongo(host, port, username, password, db):
 	""" A util for making a connection to mongo """
@@ -101,9 +103,9 @@ if __name__ == '__main__':
 	cicids2017_database_list = ["Friday-WorkingHours", "Monday-WorkingHours", "Thursday-WorkingHours",
 		"Tuesday-WorkingHours", "Wednesday-WorkingHours"]
 
-	#mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-file-by-threat", output_dir1)
-	#mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-threat", output_dir2)
-	#mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset", output_dir3)
+	mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-file-by-threat", output_dir1)
+	mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-threat", output_dir2)
+	mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset", output_dir3)
 
 	ctu13_database_list = ["botnet-capture-20110810-neris","botnet-capture-20110811-neris",
 		"botnet-capture-20110812-rbot", "botnet-capture-20110815-fast-flux", "botnet-capture-20110815-fast-flux-2",

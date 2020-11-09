@@ -117,11 +117,14 @@ def get_full_header_lst(l4_protocol, genes_dir, network_object_type):
 	return net_genes_header_lst
 
 if __name__ == "__main__":
-	"""
+	# RUN: python s5-netgenes-flow-tool.py <flow-file-path> --hr
 	output_id = os.path.splitext(os.path.basename(args.flow_path))[0]
 
 	# get flows' netgenes from the CSV to df
 	df = pd.read_csv(args.flow_path)
+	# remove netstudy columns
+	df = df.drop(['Threat Class', 'Threat', 'Tool', 'Mapping'], axis=1)
+
 	# get netgenes from df to list
 	ipv4_tcp_biflow_genes_generator_lst = df.values.tolist()
 	#print(ipv4_tcp_biflow_genes_generator_lst)
@@ -131,7 +134,7 @@ if __name__ == "__main__":
 	ipv4_tcp_biflow_genes_generator_lst = [list(map(lambda x: str(round(x, 3)) if type(x)==float else str(x), net_genes)) for net_genes in ipv4_tcp_biflow_genes_generator_lst]
 	tcp_biflow_ids = [net_genes[0] for net_genes in ipv4_tcp_biflow_genes_generator_lst]
 	# Save TCP BiFlow Genes
-	output_net_genes(ipv4_tcp_biflow_genes_generator_lst, "TCP", "biflow", args.output_dir, output_id)
+	output_net_genes(ipv4_tcp_biflow_genes_generator_lst, "TCP", "biflow", args.output_dir, ml_genes_dir, output_id)
 
 	# -----------
 	# TCP Talkers
@@ -151,7 +154,7 @@ if __name__ == "__main__":
 		ml_genes_dir, tcp_bitalkers, tcp_bitalker_ids, l4_protocol="TCP")
 
 	# Save TCP BiTalker Genes
-	output_net_genes(ipv4_tcp_bitalker_genes_generator_lst, "TCP", "bitalker", args.output_dir, output_id)
+	output_net_genes(ipv4_tcp_bitalker_genes_generator_lst, "TCP", "bitalker", args.output_dir, ml_genes_dir, output_id)
 
 	# -----------
 	# TCP Hosts
@@ -167,8 +170,8 @@ if __name__ == "__main__":
 	del(tcp_bihosts, tcp_bihost_ids)
 
 	# Save TCP BiHost Genes
-	output_net_genes(ipv4_tcp_bihost_genes_generator_lst, "TCP", "bihost", args.output_dir, output_id)
-	"""
+	output_net_genes(ipv4_tcp_bihost_genes_generator_lst, "TCP", "bihost", args.output_dir, ml_genes_dir, output_id)
+
 	#TODO
 	if args.hreadable:
 		human_readable_input_dir = args.output_dir

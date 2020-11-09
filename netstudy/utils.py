@@ -1,6 +1,7 @@
 import os
 import errno
 import pandas as pd
+import shutil
 
 def mkdir_p(path):
 	try:
@@ -33,3 +34,6 @@ def _df_to_csv(df, output_fpath, operation):
 			df.to_csv(output_fpath, index=False, mode='a', header=False)
 		else:
 			df.to_csv(output_fpath, index=False)
+
+def rmdir(dir_path):
+	shutil.rmtree(dir_path)

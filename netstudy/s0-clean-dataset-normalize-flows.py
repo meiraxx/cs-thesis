@@ -103,6 +103,7 @@ def normalize_flow_based_datasets(dataset_name, interest_header, fname_dict, has
 	"""
 	input_dir = os.path.join("s0-author-labeled-flows", dataset_name)
 	output_dir = os.path.join("s2-author-normalized-labeled-flows", dataset_name)
+	rmdir(output_dir)
 	mkdir_p(output_dir)
 	interest_header_lst = interest_header.split(",")
 
