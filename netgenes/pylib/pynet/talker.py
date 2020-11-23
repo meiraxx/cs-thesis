@@ -197,7 +197,7 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
             # -----------------------
             # BiFlow Initiation Types
             # -----------------------
-            bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations = list()
+            bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations = list()
             bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = list()
             bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations = list()
 
@@ -342,7 +342,7 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                         curr_biflow_eth_ipv4_tcp_termination_graceful = int(curr_biflow[135])
 
                         # save initiation type
-                        bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations.append(curr_biflow_eth_ipv4_tcp_initiation_requested_connection)
+                        bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations.append(curr_biflow_eth_ipv4_tcp_initiation_requested_connection)
                         bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_biflow_eth_ipv4_tcp_initiation_two_way_handshake)
                         bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations.append(curr_biflow_eth_ipv4_tcp_initiation_three_way_handshake)
 
@@ -604,12 +604,12 @@ def get_l3_l4_bitalker_gene_generators(genes_dir, bitalkers, bitalker_ids, l4_pr
                     # ---------------------------
                     # TCP BiFlow Initiation Types
                     # ---------------------------
-                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_total = round(sum(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_mean = round(np.mean(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_std = round(np.std(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_var = round(np.var(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_max = round(max(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_min = round(min(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
+                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_total = round(sum(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_mean = round(np.mean(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_std = round(np.std(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_var = round(np.var(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_max = round(max(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_min = round(min(bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
 
                     bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_total = round(sum(bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)
                     bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_mean = round(np.mean(bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)

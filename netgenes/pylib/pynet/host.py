@@ -143,9 +143,9 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
             # ---------------------
             # TCP Innitiation Types
             # ---------------------
-            bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations = list()
-            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations = list()
-            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations = list()
+            bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations = list()
+            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations = list()
+            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations = list()
 
             bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = list()
             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = list()
@@ -268,8 +268,8 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                         # --------------------
                         # TCP Initiation Types
                         # --------------------
-                        curr_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations = int(curr_bitalker[135])
-                        bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations.append(curr_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations)
+                        curr_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations = int(curr_bitalker[135])
+                        bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations)
 
                         curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations = int(curr_bitalker[141])
                         bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations)
@@ -305,7 +305,7 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
 
                         if curr_bitalker_direction == "fwd":
                             # init
-                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations.append(curr_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations)
+                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations)
                             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations)
                             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations)
                             # connect
@@ -320,7 +320,7 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                             bihost_fwd_bitalker_eth_ipv4_tcp_biflow_abort_terminations.append(curr_bitalker_eth_ipv4_tcp_biflow_abort_terminations)
                         else:
                             # init
-                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations.append(curr_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations)
+                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations)
                             bihost_bwd_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations)
                             bihost_bwd_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations.append(curr_bitalker_eth_ipv4_tcp_biflow_three_way_handshake_initiations)
                             
@@ -500,38 +500,38 @@ def get_l3_l4_bihost_gene_generators(genes_dir, bihosts, bihost_ids, l4_protocol
                     # ------------------------------
                     # TCP BiTalker Innitiation Types
                     # ------------------------------
-                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_total = round(sum(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_mean = round(np.mean(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_std = round(np.std(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_var = round(np.var(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_max = round(max(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_min = round(min(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_total = round(sum(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_mean = round(np.mean(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_std = round(np.std(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_var = round(np.var(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_max = round(max(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                    bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_min = round(min(bihost_any_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
 
-                    if len(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations) == 0:
-                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_total = bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_max = \
-                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_min = 0
-                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_mean = bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_std = \
-                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_var = 0.0
+                    if len(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations) == 0:
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_total = bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_max = \
+                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_min = 0
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_mean = bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_std = \
+                            bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_var = 0.0
                     else:
-                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_total = round(sum(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_mean = round(np.mean(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_std = round(np.std(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_var = round(np.var(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_max = round(max(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_min = round(min(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_total = round(sum(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_mean = round(np.mean(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_std = round(np.std(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_var = round(np.var(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_max = round(max(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_min = round(min(bihost_fwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
                     
-                    if len(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations) == 0:
-                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_total = bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_max = \
-                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_min = 0
-                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_mean = bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_std = \
-                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_var = 0.0
+                    if len(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations) == 0:
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_total = bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_max = \
+                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_min = 0
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_mean = bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_std = \
+                            bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_var = 0.0
                     else:
-                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_total = round(sum(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_mean = round(np.mean(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_std = round(np.std(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_var = round(np.var(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_max = round(max(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
-                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations_min = round(min(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connectioninitiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_total = round(sum(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_mean = round(np.mean(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_std = round(np.std(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_var = round(np.var(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_max = round(max(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
+                        bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations_min = round(min(bihost_bwd_bitalker_eth_ipv4_tcp_biflow_requested_dropped_connection_initiations), 3)
 
                     bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_total = round(sum(bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)
                     bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations_mean = round(np.mean(bihost_any_bitalker_eth_ipv4_tcp_biflow_two_way_handshake_initiations), 3)

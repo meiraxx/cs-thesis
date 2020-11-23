@@ -22,6 +22,7 @@ for dname, dirs, files in os.walk(sys.argv[1]):
 			#replace_string_in_file(fpath, "|", ",")
 			#replace_string_in_file(fpath, "False", "0")
 			#replace_string_in_file(fpath, "True", "1")
+			replace_string_in_file(fpath, "connection_initiation", "connection_initiation")
 		except (UnicodeDecodeError, PermissionError):
 			continue
 
