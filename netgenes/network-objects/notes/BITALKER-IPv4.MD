@@ -40,7 +40,7 @@ bitalker_bwd_biflow_bytes_per_sec
 
 ### Statistical Features
 **IP Previous Statistical Features**  
-Excluding IPv4 Data Lengthes, not added because it's an exaggeration at this level  
+Excluding IPv4 Data Lengthes, other statistical features are not added because it's an exaggeration at this level  
 
 *IPv4 Data Lengthes*  
 bitalker_any_biflow_eth_ipv4_data_lens_total  
