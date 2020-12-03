@@ -171,8 +171,7 @@ if __name__ == "__main__":
 
 	# Save TCP BiHost Genes
 	output_net_genes(ipv4_tcp_bihost_genes_generator_lst, "TCP", "bihost", args.output_dir, ml_genes_dir, output_id)
-
-	#TODO
+	
 	if args.hreadable:
 		human_readable_input_dir = args.output_dir
 		human_readable_genes_dir = "s5-human-readable-genes"

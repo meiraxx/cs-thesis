@@ -118,7 +118,14 @@ def normalize_flow_based_datasets(dataset_name, interest_header, fname_dict, has
 			# (cic-flow-meter does not perform flow-id separation for different flows,
 			# rather keeps it the same, and only uses the 5-minute timeout for flow separation,
 			# but this does still not explain why there are duplicates)
-			# e.g.:
+			# I found out why this happens (flow is 172.16.0.1-53888-192.168.10.50-80):
+			# the same 5-tuple flow has multiple labels on its 6-tuple flows, so it duplicates
+			# the records. It generates stuff like:
+			# 6,172.16.0.1,53888,192.168.10.50,80,DoS slowloris,172.16.0.1-192.168.10.50-53888-80-6
+			# 6,192.168.10.50,80,172.16.0.1,53888,BENIGN,172.16.0.1-192.168.10.50-53888-80-6
+			# 6,172.16.0.1,53888,192.168.10.50,80,DoS Hulk,172.16.0.1-192.168.10.50-53888-80-6
+			# ...
+			# (another example i don't remember):
 			# 6,192.168.10.9,1038,192.168.10.3,88,BENIGN,192.168.10.3-192.168.10.9-88-1038-6
 			# 6,192.168.10.3,88,192.168.10.9,1045,BENIGN,192.168.10.3-192.168.10.9-88-1045-6
 			# ...
