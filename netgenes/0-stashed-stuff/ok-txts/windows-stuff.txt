@@ -1,0 +1,1 @@
+Windows "wc -l <word>": find /C "<stuff>" "mail.txt"

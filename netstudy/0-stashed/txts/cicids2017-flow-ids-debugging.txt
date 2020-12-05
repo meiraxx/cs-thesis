@@ -1,0 +1,17 @@
+CIC-IDS-2017 To-Map Flow:
+<L3-L4 Protocol,Source IP,Source Port,Destination IP,Destination Port,Author Label,Start Time,Author Flow ID>
+
+NetGenes Flow:
+<biflow_id,unitalker_id,bihost_fwd_id,bihost_bwd_id,biflow_src_port,biflow_dst_port,biflow_any_first_packet_time,biflow_any_last_packet_time>
+
+
+
+CIC-IDS-2017 ex1:
+6,104.16.207.165,443,192.168.10.5,54865,BENIGN,7/7/2017 3:30,192.168.10.5-104.16.207.165-54865-443-6
+6,192.168.10.5,54865,104.16.207.165,443,BENIGN,7/7/2017 3:30,192.168.10.5-104.16.207.165-54865-443-6
+6,192.168.10.5,54865,104.16.207.165,443,BENIGN,7/7/2017 3:27,192.168.10.5-104.16.207.165-54865-443-6
+
+NetGenes ex1:
+192.168.10.5-54865-104.16.207.165-443-TCP-0,192.168.10.5-104.16.207.165-TCP,192.168.10.5-TCP,104.16.207.165-TCP,54865,443,2017-07-07 18:27:24.933452,2017-07-07 18:30:26.688195
+
+

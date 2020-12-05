@@ -30,11 +30,10 @@ def main():
 
 	df = pd.read_csv(tcp_flows_benign_fpath)
 
-	# TODO: change DF to apply the filter on the flows, which will consequently apply changes on
-	# the higher contextual network objects generated from those (talkers and hosts)
 	df = df[df["Threat Class"] == "BENIGN"]
-	# TODO: save csv in "s4-netgenes-labeled-corrected-flows" directory
 
+	# NOTE these ids were/are having suspicious behaviors. maybe this was due to miss-labelling of the underlying
+	# flows, so we'll see if it's still needed
 	bitalker_ids = ["172.16.0.1-192.168.10.50-TCP", "192.168.10.12-192.168.10.50-TCP",
 	"192.168.10.14-192.168.10.50-TCP", "192.168.10.15-192.168.10.50-TCP", "192.168.10.16-192.168.10.50-TCP",
 	"192.168.10.17-192.168.10.50-TCP", "192.168.10.19-192.168.10.50-TCP", "192.168.10.25-192.168.10.50-TCP",

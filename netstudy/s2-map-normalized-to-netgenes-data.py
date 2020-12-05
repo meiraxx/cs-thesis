@@ -1,7 +1,10 @@
 import os
+import sys
 import errno
 import pandas
 import numpy as np
+import datetime
+import re
 #from random import randint
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from utils import *
@@ -23,7 +26,7 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 	# Author Files
 	# ------------
 	# Add "Author Flow ID" if needed, but only some datasets have it
-	normalized_header_str = "L3-L4 Protocol,Source IP,Source Port,Destination IP,Destination Port,Author Label"
+	normalized_header_str = "L3-L4 Protocol,Source IP,Source Port,Destination IP,Destination Port,Author Label,Start Time"
 	input_dir = os.path.join("s2-author-normalized-labeled-flows", dataset_name)
 	
 	# NetGenes MongoDb Client
@@ -50,6 +53,9 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 			curr_db = mongo_client[database_id]
 			print("[+] Mapping original dataset flows and labels to database (flows) '%s'" %(database_id))
 
+			# Create index for flow filtering based on 5-tuple info (protocol excluded since dataset is
+			# already separated in TCP and UDP collections) - deactivated to use timers as well
+			"""
 			biflow_compound_index = [
 				("bihost_fwd_id", ASCENDING),
 				("bihost_bwd_id", ASCENDING),
@@ -58,6 +64,22 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 			]
 			curr_db["tcp_biflows"].create_index(biflow_compound_index)
 			curr_db["udp_biflows"].create_index(biflow_compound_index)
+			# the following indexes could be used if database searches are performed separately
+			#curr_db["tcp_biflows"].create_index([("biflow_any_first_packet_time", ASCENDING), ("biflow_any_last_packet_time", ASCENDING)])
+			#curr_db["udp_biflows"].create_index([("biflow_any_first_packet_time", ASCENDING), ("biflow_any_last_packet_time", ASCENDING)])
+			"""
+			# Create index for flow filtering based on first_packet_time and last_packet_time
+			biflow_timed_biflow_compound_index = [
+				("bihost_fwd_id", ASCENDING),
+				("bihost_bwd_id", ASCENDING),
+				("biflow_src_port", ASCENDING),
+				("biflow_dst_port", ASCENDING),
+				("biflow_any_first_packet_time", ASCENDING),
+				("biflow_any_last_packet_time", ASCENDING)
+			]
+			curr_db["tcp_biflows"].create_index(biflow_timed_biflow_compound_index)
+			curr_db["udp_biflows"].create_index(biflow_timed_biflow_compound_index)
+			
 
 			for index, row in df.iterrows():
 				# Get parameters from DF
@@ -66,6 +88,98 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 				dst_ip = str(row["Destination IP"])
 				src_port = int(row["Source Port"])
 				dst_port = int(row["Destination Port"])
+				start_time = row["Start Time"]
+				splitted_start_time = re.split(" |/|:|\.", start_time)
+
+				# Parse Timestamp
+				second = 0
+				millisecond = 0
+				day, month, year, hour, minute = map(int, splitted_start_time[0:5])
+
+				n_time_units = len(splitted_start_time)
+				if (n_time_units < 5) or (n_time_units > 7):
+					print("Error: unknown timestamp format '%s'"%(start_time))
+					sys.exit(1)
+				elif len(splitted_start_time)==6:
+					second = int(splitted_start_time[5])
+				elif len(splitted_start_time)==7:
+					second = int(splitted_start_time[5])
+					millisecond = int(splitted_start_time[6])
+					
+				
+				# +3 hours, since e.g., 3:30 (pm) is equal to 18:30 in pcap data
+				# Also, since PM and AM is not defined by CIC-IDS-2017 CSV files, we'll have to try both... :)
+				am_hour = (hour+3)%12
+				pm_hour = (hour+3)%12 + 12
+				# Prepare filters to check if am_datetime is between packet start and end times OR
+				# if pm_datetime is between packet start and end times. These filters are added to the
+				# standard_biflow_filter and inverse_biflow_filter for checking
+				# datetime with dates as strings filtering example:
+				# in-between: {"biflow_any_first_packet_time": {"$gte": "2015-08-28 00:00:00", "$lt": "2015-08-29 00:00:00"}}
+				# reverse in-between: {"biflow_any_first_packet_time": {"$lte": "2017-07-07 18:30:00"}, "biflow_any_last_packet_time": {"$gte": "2017-07-07 18:30:00"}}
+				
+				# NOTE: we'll add 1 minute to the start_time and subtract 1 minute from the last_time caps
+				# to include all flows, since . This provides a 2-minute window in which 6-tuple
+				# flows will be correctly captured. This 2-minute window is provided because CIC-IDS-2017
+				# only provides accuracy at the level of the minute in all of its week-days, except for
+				# Monday. This causes, for example 12:00 to not be in an interval between 12:45:12.345678
+				# and 12:46:00.000001. For exampele, in Friday, which has 347994 records, only 36967 were
+				# being mapped without this window and, with it, 347624 flows were labeled.
+				# It's worth remarking again that we need to consider the time because CIC-IDS-2017 flow-ids
+				# are not enough for us to separate all labels in their due place. Without this times, we
+				# would have just assigned all 6-tuple flows the last generated 5-tuple flow label that the
+				# script had found, so our label mapping wouldn't be accurate. Now, we can use this to correctly
+				# separate all the threat classes into their CSV.
+				# Mapping TCP Flows
+				# Mapped/Labeled: '{$or: [{Mapping: "Inverse"}, {Mapping: "Standard"}]}'
+				# Unmapped/Unlabeled: '{$nor: [{Mapping: "Inverse"}, {Mapping: "Standard"}]}'
+				
+				# No WINDOW: caused the same number of labeled/unlabeled flows as the 10-minute window filter,
+				# however a lot of flows were misslabeled
+				# Week Day | N_Labeled_TCP_Flows | N_Unlabeled_TCP_Flows | N_Labeled_UDP_Flows | N_Unlabeled_UDP_Flows
+				# Monday | 132208 | 10 | ... | ...
+				# Tuesday | 109133 | 31 | ... | ...
+				# Wednesday | 273836 | 22 | ... | ...
+				# Thursday | 167808 | 95 | ... | ...
+				# Friday | 347821 | 173 | ... | ...
+				# NOTE: Friday flows improved due to 2 flows: "192.229.163.213-443-192.168.10.16-51046-TCP-1"
+				# "192.229.163.213-443-192.168.10.16-51048-TCP-1" now being caught. The rest of the flows
+				# have the flow separation counter set to 0 and do not exist in the provided CIC-IDS-2017
+				# CSV datasets.
+
+				# USING 2-MINUTE Window (start_time - 1 minute > target_time > end_time + 1 minute )
+				# Week Day | N_Labeled_TCP_Flows | N_Unlabeled_TCP_Flows | N_Labeled_UDP_Flows | N_Unlabeled_UDP_Flows
+				# Monday | 132208 | 10 | ... | ...
+				# Tuesday | 109105 | 59 | ... | ...
+				# Wednesday | 273678 | 180 | ... | ...
+				# Thursday | 167803 | 100 | ... | ...
+				# Friday | 347624 | 370 | ... | ...
+				# NOTE: The following results are better in terms of catching more CIC-IDS-2017 flows,
+				# but if multiple 6-tuple flows with the same 5-tuple flow are too close to each other in
+				# terms of timing, both flows will keep the last flow's label.
+
+				# USING 10-MINUTE Window (start_time - 5 minutes > target_time > end_time + 5 minutes )
+				# Week Day | N_Labeled_TCP_Flows | N_Unlabeled_TCP_Flows | N_Labeled_UDP_Flows | N_Unlabeled_UDP_Flows
+				# Monday | 132208 | 10 | 117366 | 1
+				# Tuesday | 109133 | 31 | 103433 | 1
+				# Wednesday | 273836 | 22 | 109024 | 0
+				# Thursday | 167808 | 95 | 98990 | 0
+				# Friday | 347823 | 171 | 102526 | 267
+				# NOTE: after checking multiple records, I came to the conclusion that all the labeled flows
+				# that are missing are, in fact, non-existent in the CIC-IDS-2017 CSV dataset files, so it is
+				# not possible to retrieve their label
+				am_datetime = datetime.datetime(year, month, day, am_hour, minute, second, millisecond)
+				pm_datetime = datetime.datetime(year, month, day, pm_hour, minute, second, millisecond)
+				one_minute = datetime.timedelta(minutes=1)
+				five_minutes = datetime.timedelta(minutes=5)
+				am_datetime_filter = {
+					"biflow_any_first_packet_time": {"$lte": (am_datetime + five_minutes).isoformat(sep=" ")},
+					"biflow_any_last_packet_time": {"$gte": (am_datetime - five_minutes).isoformat(sep=" ")}
+				}
+				pm_datetime_filter = {
+					"biflow_any_first_packet_time": {"$lte": (pm_datetime + five_minutes).isoformat(sep=" ")},
+					"biflow_any_last_packet_time": {"$gte": (pm_datetime - five_minutes).isoformat(sep=" ")}
+				}
 
 				# Select NetGenes MongoDb collection based on current row's protocol
 				netgenes_protocol = author_protocol_to_netgenes_protocol[author_protocol]
@@ -80,7 +194,11 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 				# Note: sometimes, the biflow_fwd_id and the biflow_bwd_id are exchanged in different
 				# cases, due to the flow being defined in a different way. This is solved by exchanging
 				# the source and destination IPs if standard queried results were not found.
-				# e.g.:
+
+				# CICIDS2017 Flow Id is "192.168.10.5-104.16.207.165-54865-443-6" and catches cases where
+				# flow_src_ip and flow_src_port are switched up with flow_dst_ip and flow_dst_port
+				# NetGenes 5-tuple flow-id is "192.168.10.5-54865-104.16.207.165-443-TCP"
+				# e.g., in Friday:
 				# > standard (not found on netgenes) - {'bihost_fwd_id': '104.16.207.165-TCP', 'bihost_bwd_id': '192.168.10.5-TCP', 'biflow_src_port': 443, 'biflow_dst_port': 54865}
 				# > inverse (found on netgenes) - {'bihost_fwd_id': '192.168.10.5-TCP', 'bihost_bwd_id': '104.16.207.165-TCP', 'biflow_src_port': 54865, 'biflow_dst_port': 443}
 				standard_biflow_filter = {
@@ -104,25 +222,50 @@ def map_original_to_netgenes_dataset(dataset_name, author_protocol_to_netgenes_p
 					"Tool": row["Author Label"]
 				}
 
+				am_standard_biflow_filter = {**standard_biflow_filter, **am_datetime_filter}
+				pm_standard_biflow_filter = {**standard_biflow_filter, **pm_datetime_filter}
+				am_inverse_biflow_filter = {**inverse_biflow_filter, **am_datetime_filter}
+				pm_inverse_biflow_filter = {**inverse_biflow_filter, **pm_datetime_filter}
+
 				# Update current collection with 4 new fields
 				# filter: {$or: [{Mapping: "Inverse"}, {Mapping: "Standard"}]}
 				update_data["Mapping"] = "Standard"
-				standard_biflow_modifications = curr_collection.update_many(standard_biflow_filter,
-					{"$set": update_data})
+				# uncomment the following code for am-pm standard-inverse stats... "exit()" to stop execution
+				"""
+				standard_biflow_modifications1 = curr_collection.count_documents(am_standard_biflow_filter)
+				standard_biflow_modifications2 = curr_collection.count_documents(pm_standard_biflow_filter)
+				standard_biflow_modifications3 = curr_collection.count_documents(am_inverse_biflow_filter)
+				standard_biflow_modifications4 = curr_collection.count_documents(pm_inverse_biflow_filter)
+				print(am_standard_biflow_filter, "-->", standard_biflow_modifications1)
+				print(pm_standard_biflow_filter, "-->", standard_biflow_modifications2)
+				print(am_inverse_biflow_filter, "-->", standard_biflow_modifications3)
+				print(pm_inverse_biflow_filter, "-->", standard_biflow_modifications4)
+				exit()
+				"""
 
-				curr_flow_log = "Collection: %s | Standard modification: %s | Standard filter: %s" %(
-					netobject_type, standard_biflow_modifications.modified_count, standard_biflow_filter)
+				# PRE-SELECT only standard_biflow_filter
+				#standardly_filtered_biflow_docs = curr_collection.aggregate(standard_biflow_filter)
+				# UPDATE COLLECTIONS HAVING AM/PM TIMES INTO ACCOUNT
+				am_standard_biflow_modifications = curr_collection.update_many(am_standard_biflow_filter, {"$set": update_data})
+				pm_standard_biflow_modifications = curr_collection.update_many(pm_standard_biflow_filter, {"$set": update_data})
+				
+				curr_flow_log = "Collection: %s | Standard modifications (AM): %s | Standard modifications (PM): %s | Standard filter: %s" %(
+					netobject_type, am_standard_biflow_modifications.modified_count, pm_standard_biflow_modifications.modified_count, standard_biflow_filter)
 
-				if standard_biflow_modifications.modified_count == 0:
+				if (am_standard_biflow_modifications.modified_count + pm_standard_biflow_modifications.modified_count) == 0:
 					update_data["Mapping"] = "Inverse"
-					inverse_biflow_modifications = curr_collection.update_many(inverse_biflow_filter,
-						{"$set": update_data})
-					if inverse_biflow_modifications.modified_count == 0:
-						curr_flow_log = "Collection: %s | No modification | Standard filter: %s | Inverse filter: %s" %(
+					# PRE-SELECT only inverse_biflow_filter
+					#inversely_filtered_biflow_docs = curr_collection.aggregate(inverse_biflow_filter)
+					# UPDATE COLLECTIONS HAVING AM/PM TIMES INTO ACCOUNT
+					am_inverse_biflow_modifications = curr_collection.update_many(am_inverse_biflow_filter, {"$set": update_data})
+					pm_inverse_biflow_modifications = curr_collection.update_many(pm_inverse_biflow_filter, {"$set": update_data})
+
+					if (am_inverse_biflow_modifications.modified_count + pm_inverse_biflow_modifications.modified_count) == 0:
+						curr_flow_log = "Collection: %s | No modifications | Standard filter: %s | Inverse filter: %s" %(
 						netobject_type, standard_biflow_filter, inverse_biflow_filter)
 					else:
-						curr_flow_log = "Collection: %s | Inverse modification: %s | Inverse filter: %s" %(
-						netobject_type, inverse_biflow_modifications.modified_count, inverse_biflow_filter)
+						curr_flow_log = "Collection: %s | Inverse modifications (AM): %s | Inverse modifications (PM): %s | Inverse filter: %s" %(
+						netobject_type, am_inverse_biflow_modifications.modified_count, pm_inverse_biflow_modifications.modified_count, inverse_biflow_filter)
 				# else, everything ok
 				#print(curr_flow_log)
 	mongo_client.close()
@@ -297,6 +440,8 @@ if __name__ == "__main__":
 	# ------
 	# CTU-13
 	# ------
+	# CTU-13 deactivated
+	"""
 	ctu13_author_protocol_to_netgenes_protocol = {
 		"tcp": "tcp",
 		"udp": "udp"
@@ -311,3 +456,4 @@ if __name__ == "__main__":
 	"botnet-capture-20110816-sogou", "botnet-capture-20110817-bot", "botnet-capture-20110818-bot",
 	"botnet-capture-20110818-bot-2", "botnet-capture-20110819-bot"]
 	update_bitalkers_bihosts("CTU-13", database_list)
+	"""
