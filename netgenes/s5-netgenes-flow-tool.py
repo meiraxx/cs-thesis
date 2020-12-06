@@ -2,7 +2,7 @@ import os
 import errno
 import argparse
 import pandas as pd
-
+from glob import glob
 from pylib.pyaux.utils import Colors, OperatingSystem
 
 from pylib.pynet import talker
@@ -30,7 +30,8 @@ if os.name == "nt":
 # the flows, which would mean that it would also be a flow-based feature, rather than talker-based
 
 oparser = argparse.ArgumentParser(description='NetGenes extraction tool (from netgenes flows)')
-oparser.add_argument("flow_path", metavar="Flow-File-Path", nargs="?", help="Input Flow CSV file", default="")
+# nargs="?" -> 1 file; nargs="+" -> multiple files
+oparser.add_argument("flow_paths", metavar="Flow-File-Path", nargs='+', help="Input Flow CSV file", default="")
 # COULD-TODO: could uncomment help and add custom argparser in the future
 #oparser.add_argument("-h", "-H", "--help", action="store_true", help="See this help message", dest="print_help")
 oparser.add_argument("-V", "--version", action="version", help="See NetGenes version", version="%(prog)s 1.0")
@@ -39,8 +40,8 @@ oparser.add_argument("-o", "--output-dir", help="output directory", dest='output
 args = oparser.parse_args()
 
 acceptable_independent_args = [args.hreadable,]
-if args.flow_path=="" and (not any(acceptable_independent_args)):
-	print(Colors.RED + "Please give me a Flow CSV file as an input!" + Colors.ENDC, flush=True)
+if args.flow_paths=="" and (not any(acceptable_independent_args)):
+	print(Colors.RED + "You must input one or more Flow CSV files!" + Colors.ENDC, flush=True)
 	exit()
 
 ml_genes_dir = os.path.join("network-objects", "genes")
@@ -116,12 +117,12 @@ def get_full_header_lst(l4_protocol, genes_dir, network_object_type):
 
 	return net_genes_header_lst
 
-if __name__ == "__main__":
+def generate_netgenes_from_flow(flow_path):
 	# RUN: python s5-netgenes-flow-tool.py <flow-file-path> --hr
-	output_id = os.path.splitext(os.path.basename(args.flow_path))[0]
+	output_id = os.path.splitext(os.path.basename(flow_path))[0]
 
 	# get flows' netgenes from the CSV to df
-	df = pd.read_csv(args.flow_path)
+	df = pd.read_csv(flow_path)
 	# remove netstudy columns
 	df = df.drop(['Threat Class', 'Threat', 'Tool', 'Mapping'], axis=1)
 
@@ -174,13 +175,13 @@ if __name__ == "__main__":
 	
 	if args.hreadable:
 		human_readable_input_dir = args.output_dir
-		human_readable_genes_dir = "s5-human-readable-genes"
+		human_readable_genes_dir = "aux-s5-human-readable-genes"
 
 		hr_biflow_header_lst = get_full_header_lst("TCP", human_readable_genes_dir, "biflow")
 		hr_bitalker_header_lst = get_full_header_lst("TCP", human_readable_genes_dir, "bitalker")
 		hr_bihost_header_lst = get_full_header_lst("TCP", human_readable_genes_dir, "bihost")
 
-		human_readable_output_dir = "s5-human-readable-flow-output"
+		human_readable_output_dir = (args.output_dir).rstrip(os.sep) +  "-human-readable"
 		mkdir_p(human_readable_output_dir)
 
 		fname_header_dict = {
@@ -203,3 +204,17 @@ if __name__ == "__main__":
 				no_ext_fname = os.path.splitext(os.path.basename(fname))[0]
 				human_readable_output_fpath = os.path.join(human_readable_output_dir, "hr-%s.csv"%(no_ext_fname))
 				_df_to_csv(df, human_readable_output_fpath, "write")
+
+
+if __name__ == "__main__":
+	# Preferable output directories:
+	# s5-flow-output/ --> python s5-netgenes-flow-tool.py s5-flow-input 
+	# s5-flow-output-by-dataset-by-threat/ --> python s5-netgenes-flow-tool.py s5-flow-input-by-dataset-by-threat\*.csv -o s5-flow-output-by-dataset-by-threat
+	# s5-flow-output-by-dataset-by-file/ --> python s5-netgenes-flow-tool.py s5-flow-input-by-dataset-by-file\*.csv -o s5-flow-output-by-dataset-by-file
+	mkdir_p(args.output_dir)
+	# flow_paths is a list with the same number of items as the number of files you input, however JUST in 1 argument
+	flow_paths = glob(args.flow_paths[0])
+	for flow_path in flow_paths:
+		print("Generating netgenes based on", flow_path, "file.")
+		generate_netgenes_from_flow(flow_path)
+	
