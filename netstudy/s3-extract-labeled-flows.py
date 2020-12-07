@@ -39,13 +39,13 @@ def read_mongo(db, collection, filter_query={}, sort_query={}, host='localhost',
 
 	return df
 
-def mongo_to_csv(database_list, dataset_name, output_grouping, output_dir="."):
+def mongo_to_csv(database_list, dataset_name, l4_protocol, output_grouping, output_dir="."):
 	clear_dir(output_dir, ".csv")
 	
 	mongo_client = MongoClient("mongodb://localhost:27017")
 	for file_name in database_list:
 		curr_db = mongo_client[file_name]
-		collection = curr_db["tcp_biflows"]
+		collection = curr_db["%s_biflows"%(l4_protocol)]
 
 		collection.create_index([("Threat Class", ASCENDING)])
 		# UniTalker sort query
@@ -64,7 +64,7 @@ def mongo_to_csv(database_list, dataset_name, output_grouping, output_dir="."):
 				# None -> filter for no threat class
 				threat_class_filter = {"Threat Class" : {"$exists": False, "$eq": None}}
 			mongo_read_time = time.time()
-			df = read_mongo(file_name, 'tcp_biflows', threat_class_filter, sort_query, 'localhost', 27017)
+			df = read_mongo(file_name, '%s_biflows'%(l4_protocol), threat_class_filter, sort_query, 'localhost', 27017)
 			print("[T] Read took", round(time.time() - mongo_read_time, 3), "seconds to complete")
 			# work with DF
 
@@ -79,16 +79,16 @@ def mongo_to_csv(database_list, dataset_name, output_grouping, output_dir="."):
 			# OUTPUT
 			# ------
 			if output_grouping == "by-dataset-by-file-by-threat":
-				output_fpath = os.path.join(output_dir, '%s-%s-%s.csv'%(dataset_name, file_name, threat_class))
+				output_fpath = os.path.join(output_dir, '%s-%s-%s-ipv4-%s-biflows.csv'%(dataset_name, file_name, threat_class, l4_protocol))
 				_df_to_csv(df, output_fpath, "write")
 			elif output_grouping == "by-dataset-by-file":
-				output_fpath = os.path.join(output_dir, '%s-%s.csv'%(dataset_name, file_name))
+				output_fpath = os.path.join(output_dir, '%s-%s-ipv4-%s-biflows.csv'%(dataset_name, file_name, l4_protocol))
 				_df_to_csv(df, output_fpath, "append")
 			elif output_grouping == "by-dataset-by-threat":
-				output_fpath = os.path.join(output_dir, '%s-%s.csv'%(dataset_name, threat_class))
+				output_fpath = os.path.join(output_dir, '%s-%s-ipv4-%s-biflows.csv'%(dataset_name, threat_class, l4_protocol))
 				_df_to_csv(df, output_fpath, "append")
 			elif output_grouping == "by-dataset":
-				output_fpath = os.path.join(output_dir, '%s.csv'%(dataset_name))
+				output_fpath = os.path.join(output_dir, '%s-ipv4-%s-biflows.csv'%(dataset_name, l4_protocol))
 				_df_to_csv(df, output_fpath, "append")
 			#df.to_csv(output_fpath, index=False)
 			
@@ -96,11 +96,12 @@ def mongo_to_csv(database_list, dataset_name, output_grouping, output_dir="."):
 	
 
 if __name__ == '__main__':
-	output_dir1 = os.path.join("s3-netgenes-labeled-flows", "by-dataset-by-file-by-threat")
+	# USAGE: python s3-extract-labeled-flows.py
+	#output_dir1 = os.path.join("s3-netgenes-labeled-flows", "by-dataset-by-file-by-threat")
 	output_dir2 = os.path.join("s3-netgenes-labeled-flows", "by-dataset-by-file")
 	output_dir3 = os.path.join("s3-netgenes-labeled-flows", "by-dataset-by-threat")
 	output_dir4 = os.path.join("s3-netgenes-labeled-flows", "by-dataset")
-	mkdir_p(output_dir1)
+	#mkdir_p(output_dir1)
 	mkdir_p(output_dir2)
 	mkdir_p(output_dir3)
 	mkdir_p(output_dir4)
@@ -108,10 +109,19 @@ if __name__ == '__main__':
 	cicids2017_database_list = ["Friday-WorkingHours", "Monday-WorkingHours", "Thursday-WorkingHours",
 		"Tuesday-WorkingHours", "Wednesday-WorkingHours"]
 
-	mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-file-by-threat", output_dir1)
-	mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-file", output_dir2)
-	mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset-by-threat", output_dir3)
-	mongo_to_csv(cicids2017_database_list, "cicids2017", "by-dataset", output_dir4)
+	# Extract TCP flows
+	"""
+	#mongo_to_csv(cicids2017_database_list, "cicids2017", "tcp", "by-dataset-by-file-by-threat", output_dir1)
+	mongo_to_csv(cicids2017_database_list, "cicids2017", "tcp", "by-dataset-by-file", output_dir2)
+	mongo_to_csv(cicids2017_database_list, "cicids2017", "tcp", "by-dataset-by-threat", output_dir3)
+	mongo_to_csv(cicids2017_database_list, "cicids2017", "tcp", "by-dataset", output_dir4)
+	"""
+	# Extract UDP flows
+	#mongo_to_csv(cicids2017_database_list, "cicids2017", "udp", "by-dataset-by-file-by-threat", output_dir1)
+	mongo_to_csv(cicids2017_database_list, "cicids2017", "udp", "by-dataset-by-file", output_dir2)
+	mongo_to_csv(cicids2017_database_list, "cicids2017", "udp", "by-dataset-by-threat", output_dir3)
+	mongo_to_csv(cicids2017_database_list, "cicids2017", "udp", "by-dataset", output_dir4)
+
 	"""
 	ctu13_database_list = ["botnet-capture-20110810-neris","botnet-capture-20110811-neris",
 		"botnet-capture-20110812-rbot", "botnet-capture-20110815-fast-flux", "botnet-capture-20110815-fast-flux-2",

@@ -37,3 +37,6 @@ def _df_to_csv(df, output_fpath, operation):
 
 def rmdir(dir_path):
 	shutil.rmtree(dir_path)
+
+def substring_between_str1_str2(original_string, str1, str2):
+	print original_string[original_string.find(str1)+len(str1):original_string.rfind(str2)]

@@ -1,0 +1,78 @@
+# IPv4-TCP BiFlow
+## CURRENT NUMBER OF GENES
+**58 BiFlow Genes:**
+- 58 Conceptual Features
+- 0 Statistical Features
+
+## GENES
+### Conceptual Features
+**TCP Flow Initiation Type Features**  
+biflow_eth_ipv4_tcp_initiation_requested_connection
+biflow_eth_ipv4_tcp_initiation_two_way_handshake
+biflow_eth_ipv4_tcp_initiation_three_way_handshake
+
+**TCP Flow Connection Type Features**  
+biflow_eth_ipv4_tcp_connection_redropped  
+biflow_eth_ipv4_tcp_connection_rejected  
+biflow_eth_ipv4_tcp_connection_established_half_duplex  
+biflow_eth_ipv4_tcp_connection_established_full_duplex  
+
+**TCP Flow Termination Type Features**  
+biflow_eth_ipv4_tcp_termination_abort  
+biflow_eth_ipv4_tcp_termination_null  
+biflow_eth_ipv4_tcp_termination_graceful  
+
+**TCP Flow Flags**  
+biflow_any_eth_ipv4_tcp_n_active_fin_flags  
+biflow_any_eth_ipv4_tcp_active_fin_flags_rate  
+biflow_any_eth_ipv4_tcp_n_active_syn_flags  
+biflow_any_eth_ipv4_tcp_active_syn_flags_rate  
+biflow_any_eth_ipv4_tcp_n_active_rst_flags  
+biflow_any_eth_ipv4_tcp_active_rst_flags_rate  
+biflow_any_eth_ipv4_tcp_n_active_psh_flags  
+biflow_any_eth_ipv4_tcp_active_psh_flags_rate  
+biflow_any_eth_ipv4_tcp_n_active_ack_flags  
+biflow_any_eth_ipv4_tcp_active_ack_flags_rate  
+biflow_any_eth_ipv4_tcp_n_active_urg_flags  
+biflow_any_eth_ipv4_tcp_active_urg_flags_rate  
+biflow_any_eth_ipv4_tcp_n_active_ece_flags  
+biflow_any_eth_ipv4_tcp_active_ece_flags_rate  
+biflow_any_eth_ipv4_tcp_n_active_cwr_flags  
+biflow_any_eth_ipv4_tcp_active_cwr_flags_rate  
+
+biflow_fwd_eth_ipv4_tcp_n_active_fin_flags  
+biflow_fwd_eth_ipv4_tcp_active_fin_flags_rate  
+biflow_fwd_eth_ipv4_tcp_n_active_syn_flags  
+biflow_fwd_eth_ipv4_tcp_active_syn_flags_rate  
+biflow_fwd_eth_ipv4_tcp_n_active_rst_flags  
+biflow_fwd_eth_ipv4_tcp_active_rst_flags_rate  
+biflow_fwd_eth_ipv4_tcp_n_active_psh_flags  
+biflow_fwd_eth_ipv4_tcp_active_psh_flags_rate  
+biflow_fwd_eth_ipv4_tcp_n_active_ack_flags  
+biflow_fwd_eth_ipv4_tcp_active_ack_flags_rate  
+biflow_fwd_eth_ipv4_tcp_n_active_urg_flags  
+biflow_fwd_eth_ipv4_tcp_active_urg_flags_rate  
+biflow_fwd_eth_ipv4_tcp_n_active_ece_flags  
+biflow_fwd_eth_ipv4_tcp_active_ece_flags_rate  
+biflow_fwd_eth_ipv4_tcp_n_active_cwr_flags  
+biflow_fwd_eth_ipv4_tcp_active_cwr_flags_rate  
+
+biflow_bwd_eth_ipv4_tcp_n_active_fin_flags  
+biflow_bwd_eth_ipv4_tcp_active_fin_flags_rate  
+biflow_bwd_eth_ipv4_tcp_n_active_syn_flags  
+biflow_bwd_eth_ipv4_tcp_active_syn_flags_rate  
+biflow_bwd_eth_ipv4_tcp_n_active_rst_flags  
+biflow_bwd_eth_ipv4_tcp_active_rst_flags_rate  
+biflow_bwd_eth_ipv4_tcp_n_active_psh_flags  
+biflow_bwd_eth_ipv4_tcp_active_psh_flags_rate  
+biflow_bwd_eth_ipv4_tcp_n_active_ack_flags  
+biflow_bwd_eth_ipv4_tcp_active_ack_flags_rate  
+biflow_bwd_eth_ipv4_tcp_n_active_urg_flags  
+biflow_bwd_eth_ipv4_tcp_active_urg_flags_rate  
+biflow_bwd_eth_ipv4_tcp_n_active_ece_flags  
+biflow_bwd_eth_ipv4_tcp_active_ece_flags_rate  
+biflow_bwd_eth_ipv4_tcp_n_active_cwr_flags  
+biflow_bwd_eth_ipv4_tcp_active_cwr_flags_rate  
+
+### Statistical Features
+None contemplated

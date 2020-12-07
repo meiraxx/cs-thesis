@@ -301,13 +301,7 @@ def update_bitalkers_bihosts(dataset_name, database_list):
 
 		curr_db["tcp_biflows"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
 		curr_db["udp_biflows"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
-		"""
-		# Accessing bitalker records with unitalker key (wrong)
-		#curr_db["tcp_bitalkers"].create_index([("unitalker_id", ASCENDING)])
-		#curr_db["udp_bitalkers"].create_index([("unitalker_id", ASCENDING)])
-		#curr_db["tcp_bitalkers"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
-		#curr_db["udp_bitalkers"].create_index([("unitalker_id", ASCENDING), ("Mapping", ASCENDING)])
-		"""
+
 		# Accessing with bitalker definition
 		curr_db["tcp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING), ("bihost_bwd_id", ASCENDING)])
 		curr_db["udp_bitalkers"].create_index([("bihost_fwd_id", ASCENDING), ("bihost_bwd_id", ASCENDING)])
@@ -421,7 +415,8 @@ if __name__ == "__main__":
 	- Threat
 	- Tool.
 	"""
-
+	# TODO: update biflow netgenes labels for threat class, threat and tool
+	
 	# ------------
 	# CIC-IDS-2017
 	# ------------
@@ -431,7 +426,6 @@ if __name__ == "__main__":
 	}
 	# use "s2-author-normalized-labeled-flows" information to label dataset in MongoDb
 	map_original_to_netgenes_dataset("CIC-IDS-2017", cicids2017_author_protocol_to_netgenes_protocol)
-	# TODO: update biflow netgenes labels for threat class, threat and tool
 	# update bitalkers and bihosts labels based on biflow labels (can be done independently of the previous mapping)
 	database_list = ["Friday-WorkingHours", "Monday-WorkingHours", "Thursday-WorkingHours",
 		"Tuesday-WorkingHours", "Wednesday-WorkingHours"]

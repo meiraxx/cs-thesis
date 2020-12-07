@@ -11,18 +11,3 @@ __pycache__/
 # Prepared Data Files - I/O (I: PCAPNGs/PCAPs; O: CSVs, JSONs)
 data-files/
 
-s5-flow-input/
-s5-flow-output/
-s5-flow-output-human-readable/
-s6-netgenes-data-stats/
-
-s5-flow-input-by-dataset-by-threat/
-s5-flow-output-by-dataset-by-threat/
-s5-flow-output-human-readable-by-dataset-by-threat/
-s6-netgenes-data-stats-by-dataset-by-threat/
-
-s5-flow-input-by-dataset-by-file/
-s5-flow-output-by-dataset-by-file/
-s5-flow-output-human-readable-by-dataset-by-file/
-s6-netgenes-data-stats-by-dataset-by-file/
-

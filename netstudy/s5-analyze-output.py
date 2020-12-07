@@ -7,7 +7,7 @@ from glob import glob
 
 oparser = argparse.ArgumentParser(description='NetStudy - Labeled NetGenes Analyzer')
 oparser.add_argument("netgenes_paths", metavar="NetGenes-Path", nargs="+", help="Input NetGenes path", default="")
-oparser.add_argument("-o", "--output-dir", help="output directory", dest='output_dir', default="s6-netgenes-data-stats")
+oparser.add_argument("-o", "--output-dir", help="output directory", dest='output_dir', default="s5-netgenes-data-stats")
 oparser.add_argument("-V", "--version", action="version", help="See NetStudy version", version="%(prog)s 1.0")
 args = oparser.parse_args()
 
@@ -20,13 +20,10 @@ def mkdir_p(path):
 		else:
 			raise
 
-# CONSTANTS
-base_protocol = "ipv4"
-flows_netgene_id = "tcp-biflows.csv"
-talkers_netgene_id = "tcp-bitalkers.csv"
-hosts_netgene_id = "tcp-bihosts.csv"
+def substring_between_str1_str2(original_string, str1, str2):
+	return original_string[original_string.find(str1)+len(str1):original_string.rfind(str2)]
 
-def analyze_output_stats(netgenes_path):
+def analyze_output_stats(netgenes_path, base_protocol, l4_protocol):
 	netgenes_dir = os.path.dirname(netgenes_path)
 	netgenes_filename = os.path.basename(netgenes_path)
 	dataset_id, netgenes_id = netgenes_filename.split("-%s-"%(base_protocol))
@@ -51,7 +48,7 @@ def analyze_output_stats(netgenes_path):
 	print("Talkers Shape:", talkers_df.shape)
 	print("Hosts Shape:", hosts_df.shape)
 
-	curr_dname = args.output_dir + os.sep + flows_fname.rsplit("-ipv4")[0]
+	curr_dname = args.output_dir
 	mkdir_p(curr_dname)
 
 	# FLOW
@@ -114,12 +111,19 @@ def analyze_output_stats(netgenes_path):
 # MAIN
 if __name__ == "__main__":
 	# Preferable output directories:
-	# s6-netgenes-data-stats/ --> python s6-analyze-output.py 
-	# s6-netgenes-data-stats-by-dataset-by-threat/ --> python s6-analyze-output.py s5-flow-output-by-dataset-by-threat\*.csv -o s6-netgenes-data-stats-by-dataset-by-threat
-	# s6-netgenes-data-stats-by-dataset-by-file/ --> python s6-analyze-output.py s5-flow-output-by-dataset-by-file\*.csv -o s6-netgenes-data-stats-by-dataset-by-file
+	# s5-netgenes-data-stats/ --> python s5-analyze-output.py 
+	# s5-netgenes-data-stats-by-dataset-by-threat/ --> python s5-analyze-output.py s4-netgenes-by-dataset-by-threat\tcp\*.csv -o s5-netgenes-data-stats-by-dataset-by-threat\tcp
+	# s5-netgenes-data-stats-by-dataset-by-file/ --> python s5-analyze-output.py s4-netgenes-by-dataset-by-file\tcp\*.csv -o s5-netgenes-data-stats-by-dataset-by-file\tcp
+
 	netgenes_paths = glob(args.netgenes_paths[0])
 	for netgenes_path in netgenes_paths:
+		base_protocol = "ipv4"
+		l4_protocol = substring_between_str1_str2(netgenes_path.split(os.sep)[-1], "-ipv4-", "-biflows")
+		flows_netgene_id = "%s-biflows.csv"%(l4_protocol)
+		talkers_netgene_id = "%s-bitalkers.csv"%(l4_protocol)
+		hosts_netgene_id = "%s-bihosts.csv"%(l4_protocol)
 		if ("bitalkers" in netgenes_path) or ("bihosts" in netgenes_path):
 			continue
-		print("Generating", netgenes_path.split(os.sep)[-1].replace("-ipv4-tcp-biflows.csv",""), "netgenes stats.")
-		analyze_output_stats(netgenes_path)
+		data_id = netgenes_path.split(os.sep)[-1].replace("-ipv4-%s-biflows.csv"%(l4_protocol),"")
+		print("Generating", data_id, "netgenes stats.")
+		analyze_output_stats(netgenes_path, base_protocol, l4_protocol)

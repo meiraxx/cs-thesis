@@ -10,4 +10,15 @@ s0-author-labeled-flows/
 s1-netgenes-unlabeled-csv-data-files/
 s2-author-normalized-labeled-flows/
 s3-netgenes-labeled-flows/
-s4-netgenes-labeled-corrected-flows/
+
+s4-netgenes-by-dataset/
+s4-netgenes-by-dataset-human-readable/
+s5-netgenes-data-stats/
+
+s4-netgenes-by-dataset-by-threat/
+s4-netgenes-by-dataset-by-threat-human-readable/
+s5-netgenes-data-stats-by-dataset-by-threat/
+
+s4-netgenes-by-dataset-by-file/
+s4-netgenes-by-dataset-by-file-human-readable/
+s5-netgenes-data-stats-by-dataset-by-file/
