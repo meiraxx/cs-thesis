@@ -14,11 +14,14 @@ s3-netgenes-labeled-flows/
 s4-netgenes-by-dataset/
 s4-netgenes-by-dataset-human-readable/
 s5-netgenes-data-stats/
+s5-netgenes-data-analysis/
 
 s4-netgenes-by-dataset-by-threat/
 s4-netgenes-by-dataset-by-threat-human-readable/
 s5-netgenes-data-stats-by-dataset-by-threat/
+s5-netgenes-data-analysis-by-dataset-by-threat/
 
 s4-netgenes-by-dataset-by-file/
 s4-netgenes-by-dataset-by-file-human-readable/
 s5-netgenes-data-stats-by-dataset-by-file/
+s5-netgenes-data-analysis-by-dataset-by-file/

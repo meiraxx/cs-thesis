@@ -40,8 +40,6 @@ def read_mongo(db, collection, filter_query={}, sort_query={}, host='localhost',
 	return df
 
 def mongo_to_csv(database_list, dataset_name, l4_protocol, output_grouping, output_dir="."):
-	clear_dir(output_dir, ".csv")
-	
 	mongo_client = MongoClient("mongodb://localhost:27017")
 	for file_name in database_list:
 		curr_db = mongo_client[file_name]
@@ -52,6 +50,9 @@ def mongo_to_csv(database_list, dataset_name, l4_protocol, output_grouping, outp
 		sort_query = [("unitalker_id", ASCENDING), ("biflow_any_first_packet_time", ASCENDING)]
 		# UniHost sort query
 		#sort_query = [("bihost_fwd_id", ASCENDING), ("biflow_any_first_packet_time", ASCENDING)]
+		# Just TIME sort query
+		#sort_query = [("biflow_any_first_packet_time", ASCENDING)]
+		
 		collection.create_index(sort_query)
 		threat_class_results = collection.distinct("Threat Class", {})
 
@@ -71,10 +72,13 @@ def mongo_to_csv(database_list, dataset_name, l4_protocol, output_grouping, outp
 			if not threat_class:
 				# if the threat class (and, implicitly, the other stats) does not exist,
 				# we will still put it (them) in the CSV
-				df["Threat Class"] = "None"
-				df["Threat"] = "None"
-				df["Tool"] = "None"
+
+				# note: maintain mongodb order by orderly defining each value
 				df["Mapping"] = "None"
+				df["Threat"] = "None"
+				df["Threat Class"] = "None"
+				df["Tool"] = "None"
+
 			# ------
 			# OUTPUT
 			# ------
@@ -102,20 +106,23 @@ if __name__ == '__main__':
 	output_dir3 = os.path.join("s3-netgenes-labeled-flows", "by-dataset-by-threat")
 	output_dir4 = os.path.join("s3-netgenes-labeled-flows", "by-dataset")
 	#mkdir_p(output_dir1)
+	#clear_dir(output_dir1, ".csv")
 	mkdir_p(output_dir2)
+	clear_dir(output_dir2, ".csv")
 	mkdir_p(output_dir3)
+	clear_dir(output_dir3, ".csv")
 	mkdir_p(output_dir4)
+	clear_dir(output_dir4, ".csv")
 
 	cicids2017_database_list = ["Friday-WorkingHours", "Monday-WorkingHours", "Thursday-WorkingHours",
 		"Tuesday-WorkingHours", "Wednesday-WorkingHours"]
 
 	# Extract TCP flows
-	"""
 	#mongo_to_csv(cicids2017_database_list, "cicids2017", "tcp", "by-dataset-by-file-by-threat", output_dir1)
 	mongo_to_csv(cicids2017_database_list, "cicids2017", "tcp", "by-dataset-by-file", output_dir2)
 	mongo_to_csv(cicids2017_database_list, "cicids2017", "tcp", "by-dataset-by-threat", output_dir3)
 	mongo_to_csv(cicids2017_database_list, "cicids2017", "tcp", "by-dataset", output_dir4)
-	"""
+	
 	# Extract UDP flows
 	#mongo_to_csv(cicids2017_database_list, "cicids2017", "udp", "by-dataset-by-file-by-threat", output_dir1)
 	mongo_to_csv(cicids2017_database_list, "cicids2017", "udp", "by-dataset-by-file", output_dir2)

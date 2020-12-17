@@ -389,6 +389,7 @@ def update_bitalkers_bihosts(dataset_name, database_list):
 				bihost_bitalker_threat_results = bitalker_collection.distinct("Threat", fk_bihost_filter)
 				bihost_bitalker_tool_results = bitalker_collection.distinct("Tool", fk_bihost_filter)
 				mapping, threat_class, threat, tool = get_compound_label_values(bihost_bitalker_mapping_results, bihost_bitalker_threat_class_results, bihost_bitalker_threat_results, bihost_bitalker_tool_results, "+")
+				
 				update_data = {
 					"Mapping": mapping,
 					"Threat Class": threat_class,

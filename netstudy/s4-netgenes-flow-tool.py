@@ -49,21 +49,6 @@ ml_genes_dir = os.path.join("network-objects", "genes")
 def output_net_genes(net_genes_generator_lst, l4_protocol, network_object_type, csv_output_dir, genes_dir, output_id):
 	""" Output all NetObjects present on a PCAP file: biflows, bitalkers and bihosts, along with
 	their respective genes (NetGenes): conceptual and statistical features. """
-	ipv4_net_genes_header_lst = get_network_object_header(genes_dir, network_object_type, "ipv4")
-	ipv4_l4_net_genes_header_lst = get_network_object_header(genes_dir, network_object_type, "ipv4-l4")
-	net_genes_header_lst = ""
-
-	if l4_protocol.lower() == "udp":
-		ipv4_udp_net_genes_header_lst = ipv4_net_genes_header_lst + ipv4_l4_net_genes_header_lst
-		net_genes_header_lst = ipv4_udp_net_genes_header_lst
-	elif l4_protocol.lower() == "udp":
-		ipv4_tcp_net_genes_header_lst = ipv4_net_genes_header_lst + ipv4_l4_net_genes_header_lst +\
-			get_network_object_header(genes_dir, network_object_type, "ipv4-tcp")
-		net_genes_header_lst = ipv4_tcp_net_genes_header_lst
-	else:
-		print("Unknown protocol '%s'"%(l4_protocol), flush=True)
-		exit()
-
 	def save_csv_file(net_genes_header_lst, net_genes_generator_lst, csv_filepath):
 		# CSV Header
 		net_genes_header_str = ",".join(net_genes_header_lst)
@@ -75,6 +60,9 @@ def output_net_genes(net_genes_generator_lst, l4_protocol, network_object_type, 
 		f = open(csv_filepath, "w")
 		f.write(net_genes_output)
 		f.close()
+
+	net_genes_header_lst = get_full_header_lst(l4_protocol, genes_dir, network_object_type)
+	
 	# CSV Directory
 	os.makedirs(csv_output_dir, exist_ok=True)
 	# Save NetGenes
@@ -118,16 +106,22 @@ def get_full_header_lst(l4_protocol, genes_dir, network_object_type):
 		print("Unknown protocol '%s'"%(l4_protocol), flush=True)
 		exit()
 
+	# MAINTAIN PREVIOUS LABELS ON FLOWS
+	# for general purposes, remove the following netstudy code
+	if network_object_type == "biflow":
+		net_genes_header_lst += ["Mapping", "Threat Class", "Threat", "Tool"]
+
 	return net_genes_header_lst
 
 def generate_netgenes_from_flow(flow_path):
 	# RUN: python s4-netgenes-flow-tool.py <flow-file-path> --hr
-	output_id = os.path.splitext(os.path.basename(flow_path))[0]
-	l4_protocol = substring_between_str1_str2(output_id, "-ipv4-", "-biflows")
+	input_id = os.path.splitext(os.path.basename(flow_path))[0]
+	output_id = input_id.replace("-biflows", "")
+	l4_protocol = substring_between_str1_str2(input_id, "-ipv4-", "-biflows")
 	# get flows' netgenes from the CSV to df
 	df = pd.read_csv(flow_path)
-	# remove netstudy columns
-	df = df.drop(['Threat Class', 'Threat', 'Tool', 'Mapping'], axis=1)
+	# for general purposes, remove netstudy columns
+	# df = df.drop(['Threat Class', 'Threat', 'Tool', 'Mapping'], axis=1)
 
 	# get netgenes from df to list
 	ipv4_l4_biflow_genes_generator_lst = df.values.tolist()
@@ -153,7 +147,7 @@ def generate_netgenes_from_flow(flow_path):
 
 	# BiTalker Genes Extraction
 	ipv4_l4_bitalker_genes_generator_lst = talker.get_l3_l4_bitalker_gene_generators(\
-		ml_genes_dir, l4_bitalkers, l4_bitalker_ids, l4_protocol=l4_protocol)
+		ml_genes_dir, l4_bitalkers, l4_bitalker_ids, l4_protocol=l4_protocol.upper())
 
 	# Save BiTalker Genes
 	output_net_genes(ipv4_l4_bitalker_genes_generator_lst, l4_protocol, "bitalker", args.output_dir, ml_genes_dir, output_id)
@@ -168,7 +162,7 @@ def generate_netgenes_from_flow(flow_path):
 
 	# BiHost Genes Extraction
 	ipv4_l4_bihost_genes_generator_lst = host.get_l3_l4_bihost_gene_generators(\
-		ml_genes_dir, l4_bihosts, l4_bihost_ids, l4_protocol=l4_protocol)
+		ml_genes_dir, l4_bihosts, l4_bihost_ids, l4_protocol=l4_protocol.upper())
 	del(l4_bihosts, l4_bihost_ids)
 
 	# Save BiHost Genes

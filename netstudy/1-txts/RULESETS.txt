@@ -1,0 +1,11 @@
+A. Feature rules
+Based on each threat definitions, we define a rule-set that strives to detect those but, at the same time, correctly tags BENIGN network objects as such and ignores them.
+
+
+Since there are CIC-IDS-2017 flows that are misslabeled due to mixing benign and malicious traffic, we need to take these labels with a grain of salt. We will use Monday's flows as our only guaranteed BENIGN flows.
+
+A.1. Bi-Flows
+
+A.2. Bi-Talkers
+
+

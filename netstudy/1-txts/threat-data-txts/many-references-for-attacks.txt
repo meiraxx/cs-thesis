@@ -68,3 +68,4 @@ References:
 - https://www.grc.com/sn/notes-164.htm
 - https://ddos-guard.net/en/terminology/attack_type
 - https://www.varonis.com/blog/smb-port/
+- https://securitytrails.com/blog/top-scanned-ports

@@ -50,7 +50,6 @@ After applying the above filter, the following destination ports remained in the
 
 Originally, the benign dataset had: 61443 talkers, 18880 hosts
 By applying the above filter, we now have: 509111 flows, 61426 talkers, 18879 hosts
-50911 flows in 
 
 1.1. A benign talker will, usually, present a low number of flows.
 Host A will only communicate with host B to obtain what it wants from B, which should happen using a small set of flows. Host A may talk to multiple other hosts, using small sets of flows for each one, due to benign activities such as browsing websites. Examples of human behavior that may cause a low number of flows are:
