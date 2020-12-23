@@ -1,0 +1,3 @@
+Useful OS cmds:
+- linux: cat <file> | grep <whatever>
+- windows: type <file> | find <whatever>

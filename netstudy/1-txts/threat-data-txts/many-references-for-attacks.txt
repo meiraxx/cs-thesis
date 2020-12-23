@@ -69,3 +69,4 @@ References:
 - https://ddos-guard.net/en/terminology/attack_type
 - https://www.varonis.com/blog/smb-port/
 - https://securitytrails.com/blog/top-scanned-ports
+- https://www.extrahop.com/company/blog/2016/how-to-recognize-malicious-network-scanning-port-scanning/
