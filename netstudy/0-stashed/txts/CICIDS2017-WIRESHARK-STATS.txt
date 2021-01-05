@@ -1,0 +1,26 @@
+WIRESHARK
+Monday:
+TCP/IPv4 Packets - 10718485
+TCP/IPv4 Flows - 131765
+TCP/IPv4 Talkers - 21563
+
+Tuesday:
+TCP/IPv4 Packets - 10710320
+TCP/IPv4 Flows - 108195
+TCP/IPv4 Talkers - 19188
+
+Wednesday:
+TCP/IPv4 Packets - 12943381
+TCP/IPv4 Flows - 278209
+TCP/IPv4 Talkers - 19669
+
+Thursday:
+TCP/IPv4 Packets - 8538185
+TCP/IPv4 Flows - 159810
+TCP/IPv4 Talkers - 18394
+
+Friday:
+TCP/IPv4 Packets - 9192354
+TCP/IPv4 Flows - 345060
+TCP/IPv4 Talkers - 17563
+

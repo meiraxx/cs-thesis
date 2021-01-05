@@ -41,10 +41,6 @@ def calc_metrics(tp, tn, fp, fn, total_results):
 	positive_results = tp+fn
 	negative_results = tn+fp
 
-	# if any of the following values is 0, the dataset does not contain enough samples
-	# and cannot calculate 
-	assert(all([n!=0 for n in (total_results, positive_results, negative_results, class_results, non_class_results, 2*tp+incorrect_results)]))
-
 	print("===========================")
 	print("===========================")
 	print("TP: %d"%(tp))
@@ -53,31 +49,83 @@ def calc_metrics(tp, tn, fp, fn, total_results):
 	print("FN: %d"%(fn))
 	print("---------------------------")
 
-	Overall_Accuracy = round(float(correct_results)/float(total_results), 5)
-	# PS: 0.9981695086696897
-	Sensitivity = round(float(tp)/float(positive_results), 5)
-	# PS: 0.9964398037488992
-	Specificity = round(float(tn)/float(negative_results), 5)
-	# PS: 0.9996243664490461
-	Fallout = round(float(fp)/float(negative_results), 5)
-	# PS: 0.0003756335509538976
-	Miss_Rate = round(float(fn)/float(positive_results), 5)
-	# PS: 0.003560196251100767
-	Precision = round(float(tp)/float(class_results), 5)
-	# PS: 0.9995520080764742
-	F1_Score = round(float(2*tp)/float(2*tp+incorrect_results), 5)
-	# PS: 0.9979934795961759
-	MCC = round(float(tp*tn - fp*fn)/float(math.sqrt((class_results)*(positive_results)*(negative_results)*(non_class_results))), 5)
-	# PS: 0.9963147248538874
+	Sensitivity = None
+	Miss_Rate = None
+	Specificity = None
+	Fallout = None
+	Overall_Accuracy = None
+	Precision = None
+	F1_Score = None
+	MCC = None
 
-	print("Sensitivity (TPR): %.3f%%"%(Sensitivity*100))
-	print("Specificity (TNR): %.3f%%"%(Specificity*100))
-	print("Fallout (FPR): %.3f%%"%(Fallout*100))
-	print("Miss Rate (FNR): %.3f%%"%(Miss_Rate*100))
-	print("Overall Accuracy: %.3f%%"%(Overall_Accuracy*100))
-	print("Precision: %.3f%%"%(Precision*100))
-	print("F1-Score: %.3f%%"%(F1_Score*100))
-	print("MCC: %.3f%%"%(MCC*100))
+	if positive_results != 0:
+		Sensitivity = round(float(tp)/float(positive_results), 5)
+		# PS: 0.9964398037488992
+		Miss_Rate = round(float(fn)/float(positive_results), 5)
+		# PS: 0.003560196251100767
+
+	if negative_results != 0:
+		Specificity = round(float(tn)/float(negative_results), 5)
+		# PS: 0.9996243664490461
+		Fallout = round(float(fp)/float(negative_results), 5)
+		# PS: 0.0003756335509538976
+
+	if total_results != 0:
+		Overall_Accuracy = round(float(correct_results)/float(total_results), 5)
+		# PS: 0.9981695086696897
+
+	if class_results != 0:
+		Precision = round(float(tp)/float(class_results), 5)
+		# PS: 0.9995520080764742
+
+	if 2*tp+incorrect_results != 0:
+		F1_Score = round(float(2*tp)/float(2*tp+incorrect_results), 5)
+		# PS: 0.9979934795961759
+
+	if math.sqrt((class_results)*(positive_results)*(negative_results)*(non_class_results)) != 0:
+		MCC = round(float(tp*tn - fp*fn)/float(math.sqrt((class_results)*(positive_results)*(negative_results)*(non_class_results))), 5)
+		# PS: 0.9963147248538874
+
+	# LOVELY REPEATED CODE <3 happens when I'm in a hurry >:(
+	if Sensitivity!=None:
+		print("Sensitivity (TPR): %.3f%%"%(Sensitivity*100))
+	else:
+		print("Sensitivity (TPR): NA")
+
+	if Specificity!=None:
+		print("Specificity (TNR): %.3f%%"%(Specificity*100))
+	else:
+		print("Specificity (TNR): NA")
+
+	if Fallout!=None:
+		print("Fallout (FPR): %.3f%%"%(Fallout*100))
+	else:
+		print("Fallout (FPR): NA")
+
+	if Miss_Rate!=None:
+		print("Miss Rate (FNR): %.3f%%"%(Miss_Rate*100))
+	else:
+		print("Miss Rate (FNR): NA")
+
+	if Overall_Accuracy!=None:
+		print("Overall Accuracy: %.3f%%"%(Overall_Accuracy*100))
+	else:
+		print("Overall Accuracy: NA")
+
+	if Precision!=None:
+		print("Precision: %.3f%%"%(Precision*100))
+	else:
+		print("Precision: NA")
+
+	if F1_Score!=None:
+		print("F1-Score: %.3f%%"%(F1_Score*100))
+	else:
+		print("F1-Score: NA")
+
+	if MCC!=None:
+		print("MCC: %.3f%%"%(MCC*100))
+	else:
+		print("MCC: NA")
 	print("===========================")
 	print("===========================")
 	return
@@ -115,8 +163,9 @@ def biflow_filter(biflow_ordered_dict, attack_type, unitalker_ids_list):
 		fr_2 = (biflow_ordered_dict["biflow_eth_ipv4_tcp_initiation_two_way_handshake"] == 1)
 		fr_2_1 = fr_2 and (biflow_ordered_dict["biflow_eth_ipv4_tcp_connection_rejected"] == 1)
 		fr_2_2 = fr_2 and (biflow_ordered_dict["biflow_eth_ipv4_tcp_connection_established_half_duplex"] == 1)
-		fr_2_2_1 = fr_2_2 and (biflow_ordered_dict["biflow_eth_ipv4_tcp_termination_abort"]==1) and (biflow_ordered_dict["biflow_fwd_eth_ipv4_tcp_n_active_rst_flags"]>0)
-
+		fr_2_2_1 = fr_2_2 and (biflow_ordered_dict["biflow_eth_ipv4_tcp_termination_abort"] == 1) and (biflow_ordered_dict["biflow_fwd_eth_ipv4_tcp_n_active_rst_flags"] > 0)
+		fr_3 = (biflow_ordered_dict["biflow_eth_ipv4_tcp_initiation_three_way_handshake"] == 1) and (biflow_ordered_dict["biflow_bwd_n_packets"] == 1) and (biflow_ordered_dict["biflow_fwd_eth_ipv4_tcp_n_active_rst_flags"] > 0)
+		
 		# SIMPLE
 		port_scan_biflow_filter1 = biflow_filter_query
 		port_scan_biflow_filter2 = biflow_filter_query and fr_1
@@ -124,11 +173,13 @@ def biflow_filter(biflow_ordered_dict, attack_type, unitalker_ids_list):
 		port_scan_biflow_filter4 = biflow_filter_query and fr_2_1
 		port_scan_biflow_filter5 = biflow_filter_query and fr_2_2
 		port_scan_biflow_filter6 = biflow_filter_query and fr_2_2_1
+		port_scan_biflow_filter7 = biflow_filter_query and fr_3
 
 		# COMPOUND
-		port_scan_biflow_filter7 = biflow_filter_query and (fr_1 or fr_2)
+		port_scan_biflow_filter8 = biflow_filter_query and (fr_1 or fr_2)
+		port_scan_biflow_filter9 = biflow_filter_query and (fr_1 or fr_2 or fr_3)
 
-		biflow_filter_query = port_scan_biflow_filter7
+		biflow_filter_query = port_scan_biflow_filter9
 	return biflow_filter_query
 
 def filter_biflows_ordered_dict(biflows_ordered_dict_list, attack_type, unitalker_ids_list):

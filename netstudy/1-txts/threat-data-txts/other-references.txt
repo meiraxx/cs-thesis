@@ -42,6 +42,8 @@ More interesting (but not so related) references about protocols:
 - https://tech.labs.oliverwyman.com/blog/2016/11/07/4-way-tcp-handshake-and-firewalls/
 - https://superuser.com/questions/298919/what-is-tcp-half-open-connection-and-tcp-half-closed-connection
 - https://community.checkpoint.com/t5/General-Topics/TCP-packet-out-of-state-First-packet-isn-t-SYN-tcp-flags-SYN-ACK/td-p/37166
+- https://nmap.org/book/nmap-defenses-detection.html
+- https://www.hackingarticles.in/detect-nmap-scan-using-snort/
 
 Other random references:
 - https://blog.corserva.com/why-siem-if-already-have-a-firewall
