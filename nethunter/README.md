@@ -15,4 +15,7 @@ NetHunter has the objective of helping normal users work on NetGenes-based datas
 - Providing controls for using labeled datasets in the construction of:
 	- Train Datasets
 	- Test Datasets
-- ... (let's see how many time I have left to develop, but if so, will be able to also run and test classifiers, as well as extracting key features for each test-run)
+
+## Disclaimer
+
+This tool was never implemented due to time constraints.
